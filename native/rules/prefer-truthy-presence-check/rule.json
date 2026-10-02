@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/prefer-truthy-presence-check",
+  "description": "Prefer truthiness checks over undefined comparisons when resolved types prove boolean equivalence.",
+  "requiresTypeChecking": true
+}

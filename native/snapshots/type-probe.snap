@@ -1,0 +1,14 @@
+
+[TestTypeProbe/invalid-0 - 1]
+Diagnostic 1: numberResult (1:42 - 1:48)
+Message: Type checker resolved a number result.
+   1 | import { value } from "./dependency.js"; value();
+     |                                          ~~~~~~~
+---
+
+[TestTypeProbe/invalid-1 - 1]
+Diagnostic 1: numberResult (1:42 - 1:50)
+Message: Type checker resolved a number result.
+   1 | function value<T>(x: T): T { return x; } value(42);
+     |                                          ~~~~~~~~~
+---

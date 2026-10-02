@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/max-interpretation-spread",
+  "description": "Limit how many files check a closed literal vocabulary for particular values without the compiler pointing to them when a value is added.",
+  "requiresTypeChecking": true
+}

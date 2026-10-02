@@ -1,0 +1,75 @@
+{
+  "name": "aexlint",
+  "version": "0.0.0",
+  "description": "Custom Oxlint JavaScript rules and native Go type-aware rules, both run by Oxlint.",
+  "keywords": [
+    "lint",
+    "oxlint",
+    "oxlint-plugin",
+    "readability",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": "Elies Lou",
+  "files": [
+    "dist",
+    "docs",
+    "AGENTS.md",
+    "README.md"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./typed-plugin": {
+      "types": "./dist/typed/plugin.d.ts",
+      "default": "./dist/typed/plugin.js"
+    }
+  },
+  "publishConfig": {
+    "executableFiles": [
+      "dist/native/linux-x64/aexlint-typed",
+      "dist/native/linux-arm64/aexlint-typed",
+      "dist/native/darwin-x64/aexlint-typed",
+      "dist/native/darwin-arm64/aexlint-typed",
+      "dist/native/win32-x64/aexlint-typed.exe",
+      "dist/native/win32-arm64/aexlint-typed.exe"
+    ]
+  },
+  "scripts": {
+    "build": "node scripts/build.ts",
+    "build:release": "node scripts/build.ts --release",
+    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/lint.ts",
+    "lint:classifications": "oxlint -c .oxlintrc.classifications.json",
+    "format": "oxfmt . && pnpm native:format",
+    "format:check": "oxfmt --check . && node scripts/native.ts format:check",
+    "test": "pnpm build && pnpm native:test && node scripts/test.ts",
+    "test:rule": "node --test",
+    "rule:new": "node scripts/new-rule.ts",
+    "rule:new:typed": "node scripts/new-typed-rule.ts",
+    "native:prepare": "node scripts/native.ts prepare",
+    "native:build": "node scripts/native.ts build",
+    "native:test": "node scripts/native.ts test",
+    "native:format": "node scripts/native.ts format",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
+    "test:package": "pnpm build && node --test tests/package.test.ts",
+    "prepack": "pnpm build:release"
+  },
+  "dependencies": {
+    "@oxlint/plugins": "1.83.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.4",
+    "oxfmt": "0.68.0",
+    "oxlint": "1.83.0",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.33.4 <11"
+  },
+  "packageManager": "pnpm@10.33.4"
+}

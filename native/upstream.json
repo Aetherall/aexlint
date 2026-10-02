@@ -1,0 +1,12 @@
+{
+  "tsgolint": {
+    "repository": "oxc-project/tsgolint",
+    "revision": "67a75c1a118f57b3c959a59a4fea99a65691991f",
+    "sha256": "99933e1e61b61b614cf43e29eef6c6f3326801bb0fe8e89186b10124a6e6a078"
+  },
+  "typescript-go": {
+    "repository": "microsoft/typescript-go",
+    "revision": "2bd066d87f5bafd315be9f40889d0a60b9e58e0b",
+    "sha256": "5ccb47dbb3f68cd0da58b71e6f445eee36a50bd3e9f9f330cc23a97b88500119"
+  }
+}

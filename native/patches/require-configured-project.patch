@@ -1,0 +1,12 @@
+--- a/cmd/tsgolint/headless.go
++++ b/cmd/tsgolint/headless.go
+@@ -287,7 +287,8 @@
+ 	result := tsConfigResolver.FindTsConfigParallel(normalizedFiles)
+ 	for file, tsconfig := range result {
+ 		if tsconfig == "" {
+-			workload.UnmatchedFiles = append(workload.UnmatchedFiles, file)
++			writeErrorMessage(fmt.Sprintf("File %s is not included in a TypeScript project; check tsconfig.json includes and references", file))
++			return 1
+ 		} else {
+ 			workload.Programs[tsconfig] = append(workload.Programs[tsconfig], file)
+ 		}
