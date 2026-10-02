@@ -1,0 +1,138 @@
+--- a/cmd/tsgolint/headless.go
++++ b/cmd/tsgolint/headless.go
+@@ -150,6 +150,7 @@
+ 	headlessMessageTypeError headlessMessageType = iota
+ 	headlessMessageTypeDiagnostic
+ 	headlessMessageTypeTiming
++	headlessMessageTypeProgramFiles
+ )
+ 
+ type headlessMessagePayloadError struct {
+@@ -182,6 +183,11 @@
+ type anyDiagnostic struct {
+ 	ruleDiagnostic     *rule.RuleDiagnostic
+ 	internalDiagnostic *diagnostic.Internal
++	programFiles       []string
++}
++
++type headlessProgramFilesPayload struct {
++	Files []string `json:"files"`
+ }
+ 
+ func ruleToAny(d rule.RuleDiagnostic) anyDiagnostic {
+@@ -251,6 +257,11 @@
+ 		return 1
+ 	}
+ 
++	if payload.WholePrograms && len(payload.Configs) != 1 {
++		writeErrorMessage("whole_programs requires exactly one config")
++		return 1
++	}
++
+ 	baseFS := osvfs.FS()
+ 	if len(payload.SourceOverrides) > 0 {
+ 		baseFS = newOverlayFS(baseFS, payload.SourceOverrides)
+@@ -336,6 +347,10 @@
+ 		w := bufio.NewWriterSize(os.Stdout, 4096*100)
+ 		defer w.Flush()
+ 		for d := range diagnosticsChan {
++			if d.programFiles != nil {
++				writeMessage(w, headlessMessageTypeProgramFiles, headlessProgramFilesPayload{Files: d.programFiles})
++				continue
++			}
+ 			var hd headlessDiagnostic
+ 
+ 			if d.ruleDiagnostic != nil {
+@@ -418,7 +433,10 @@
+ 		Workers:          runtime.GOMAXPROCS(0),
+ 		FS:               fs,
+ 		GetRulesForFile: func(sourceFile *ast.SourceFile) []linter.ConfiguredRule {
+-			cfg := fileConfigs[sourceFile.FileName()]
++			cfg, ok := fileConfigs[sourceFile.FileName()]
++			if !ok && payload.WholePrograms {
++				cfg = payload.Configs[0].Rules
++			}
+ 			rules := make([]linter.ConfiguredRule, len(cfg))
+ 
+ 			for i, headlessRule := range cfg {
+@@ -448,6 +466,9 @@
+ 		},
+ 		SuppressProgramDiagnostics: suppressProgramDiagnostics(),
+ 		TimingStore:                timingStore,
++		WholePrograms:              payload.WholePrograms,
++		AssignPrograms:             tsConfigResolver.FindTsConfigParallel,
++		OnProgramFiles:             func(files []string) { diagnosticsChan <- anyDiagnostic{programFiles: files} },
+ 	})
+ 
+ 	close(diagnosticsChan)
+--- a/cmd/tsgolint/payload.go
++++ b/cmd/tsgolint/payload.go
+@@ -23,6 +23,7 @@
+ 	SourceOverrides map[string]string `json:"source_overrides,omitempty"`
+ 	ReportSyntactic bool              `json:"report_syntactic,omitempty"`
+ 	ReportSemantic  bool              `json:"report_semantic,omitempty"`
++	WholePrograms   bool              `json:"whole_programs,omitempty"`
+ }
+ 
+ type headlessConfig struct {
+--- a/internal/linter/linter.go
++++ b/internal/linter/linter.go
+@@ -61,6 +61,9 @@
+ 	TypeErrors                 TypeErrors
+ 	SuppressProgramDiagnostics bool
+ 	TimingStore                *RuleTimingStore
++	WholePrograms              bool
++	AssignPrograms             func(files []string) map[string]string
++	OnProgramFiles             func(files []string)
+ }
+ 
+ // This is same as `RunLinterOptions` but for a single program.
+@@ -90,6 +93,9 @@
+ 	typeErrors := options.TypeErrors
+ 	suppressProgramDiagnostics := options.SuppressProgramDiagnostics
+ 	timingStore := options.TimingStore
++	wholePrograms := options.WholePrograms
++	assignPrograms := options.AssignPrograms
++	onProgramFiles := options.OnProgramFiles
+ 
+ 	idx := 0
+ 	for configFileName, filePaths := range workload.Programs {
+@@ -123,9 +129,22 @@
+ 			fileSet[f] = struct{}{}
+ 		}
+ 
++		var assigned map[string]string
++		if wholePrograms {
++			var candidates []string
++			for _, sf := range program.SourceFiles() {
++				if !sf.IsDeclarationFile && !program.IsSourceFileFromExternalLibrary(sf) &&
++					(tspath.HasTSFileExtension(sf.FileName()) || tspath.HasJSFileExtension(sf.FileName())) {
++					candidates = append(candidates, sf.FileName())
++				}
++			}
++			assigned = assignPrograms(candidates)
++		}
++
+ 		sourceFiles := make([]*ast.SourceFile, 0, len(filePaths))
+ 		for _, sf := range program.SourceFiles() {
+-			if _, ok := fileSet[sf.FileName()]; ok {
++			_, ok := fileSet[sf.FileName()]
++			if ok || (wholePrograms && assigned[sf.FileName()] == configFileName) {
+ 				sourceFiles = append(sourceFiles, sf)
+ 				delete(fileSet, sf.FileName())
+ 			}
+@@ -148,6 +167,14 @@
+ 			panic(fmt.Sprintf("Expected file '%s' to be in program '%s'", unmatchedFilesString, configFileName))
+ 		}
+ 
++		if wholePrograms && onProgramFiles != nil {
++			names := make([]string, len(sourceFiles))
++			for i, sf := range sourceFiles {
++				names[i] = sf.FileName()
++			}
++			onProgramFiles(names)
++		}
++
+ 		err = RunLinterOnProgram(RunLinterOnProgramOptions{
+ 			LogLevel:             logLevel,
+ 			Program:              program,

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.pi/
+.devenv/
+.direnv/
+.native/
+devenv.lock
+pnpm-lock.yaml

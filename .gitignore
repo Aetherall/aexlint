@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+*.tgz
+.pi/
+.devenv/
+.direnv/
+.native/
+devenv.local.nix
+devenv.local.yaml

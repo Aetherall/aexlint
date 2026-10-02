@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "jsPlugins": ["./src/index.ts"],
+  "categories": { "correctness": "off" },
+  "rules": {
+    "aexlint/prefer-domain-predicate": "warn",
+    "aexlint/max-held-context": ["warn", { "max": 3 }]
+  },
+  "ignorePatterns": ["node_modules", "dist", ".native", ".pi", ".devenv", ".direnv"]
+}

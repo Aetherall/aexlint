@@ -1,0 +1,131 @@
+--- a/cmd/tsgolint/main.go
++++ b/cmd/tsgolint/main.go
+@@ -431,6 +431,9 @@
+ 	if len(os.Args) > 1 && os.Args[1] == "headless" {
+ 		return runHeadless(os.Args[2:])
+ 	}
++	if len(os.Args) > 1 && os.Args[1] == "serve" {
++		return runServe(os.Args[2:])
++	}
+ 
+ 	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
+ 
+--- a/cmd/tsgolint/serve.go
++++ b/cmd/tsgolint/serve.go
+@@ -0,0 +1,116 @@
++package main
++
++import (
++	"bytes"
++	"encoding/binary"
++	"errors"
++	"flag"
++	"fmt"
++	"io"
++	"os"
++
++	"github.com/go-json-experiment/json"
++)
++
++type serveResult struct {
++	Status int     `json:"status"`
++	Signal *string `json:"signal"`
++	Error  *string `json:"error"`
++	Stderr string  `json:"stderr"`
++}
++
++// runServe answers one headless payload per request frame from a single process, so that
++// parsed source files stay in the process-wide cache across requests. Frames are a four-byte
++// little-endian length followed by the bytes. Once both streams are open, a "ready" frame is
++// written. Each response is a JSON result frame followed by the headless output frame. The loop
++// ends when the request stream is closed.
++func runServe(args []string) int {
++	if len(args) != 2 {
++		fmt.Fprintln(os.Stderr, "usage: serve <request-fifo> <response-fifo>")
++		return 1
++	}
++	requests, err := os.OpenFile(args[0], os.O_RDONLY, 0)
++	if err != nil {
++		fmt.Fprintf(os.Stderr, "error opening requests: %v\n", err)
++		return 1
++	}
++	defer requests.Close()
++	responses, err := os.OpenFile(args[1], os.O_RDWR, 0)
++	if err != nil {
++		fmt.Fprintf(os.Stderr, "error opening responses: %v\n", err)
++		return 1
++	}
++	defer responses.Close()
++	if writeServeFrame(responses, []byte("ready")) != nil {
++		return 1
++	}
++	for {
++		payload, err := readServeFrame(requests)
++		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
++			return 0
++		}
++		if err != nil {
++			fmt.Fprintf(os.Stderr, "error reading request: %v\n", err)
++			return 1
++		}
++		output, status := serveHeadless(payload)
++		result, err := json.Marshal(serveResult{Status: status})
++		if err != nil {
++			return 1
++		}
++		if writeServeFrame(responses, result) != nil || writeServeFrame(responses, output) != nil {
++			return 1
++		}
++	}
++}
++
++func serveHeadless(payload []byte) ([]byte, int) {
++	stdin, stdout, commandLine := os.Stdin, os.Stdout, flag.CommandLine
++	inputReader, inputWriter, err := os.Pipe()
++	if err != nil {
++		return nil, 1
++	}
++	outputReader, outputWriter, err := os.Pipe()
++	if err != nil {
++		return nil, 1
++	}
++	go func() {
++		inputWriter.Write(payload)
++		inputWriter.Close()
++	}()
++	var output bytes.Buffer
++	copied := make(chan struct{})
++	go func() {
++		io.Copy(&output, outputReader)
++		close(copied)
++	}()
++	os.Stdin, os.Stdout = inputReader, outputWriter
++	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
++	status := runHeadless(nil)
++	os.Stdin, os.Stdout, flag.CommandLine = stdin, stdout, commandLine
++	outputWriter.Close()
++	<-copied
++	inputReader.Close()
++	outputReader.Close()
++	return output.Bytes(), status
++}
++
++func readServeFrame(r io.Reader) ([]byte, error) {
++	var header [4]byte
++	if _, err := io.ReadFull(r, header[:]); err != nil {
++		return nil, err
++	}
++	payload := make([]byte, binary.LittleEndian.Uint32(header[:]))
++	_, err := io.ReadFull(r, payload)
++	return payload, err
++}
++
++func writeServeFrame(w io.Writer, payload []byte) error {
++	var header [4]byte
++	binary.LittleEndian.PutUint32(header[:], uint32(len(payload)))
++	if _, err := w.Write(header[:]); err != nil {
++		return err
++	}
++	_, err := w.Write(payload)
++	return err
++}
