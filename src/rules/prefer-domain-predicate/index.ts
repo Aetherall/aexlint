@@ -20,8 +20,9 @@ function isMembershipMethod(method: string | undefined): boolean {
 
 function literal(node: ESTree.Node): string | undefined {
   const value = unwrap(node);
-  if (value.type === "TemplateLiteral" && value.expressions.length === 0)
+  if (value.type === "TemplateLiteral" && value.expressions.length === 0) {
     return `string:${value.quasis[0]?.value.cooked}`;
+  }
   if (isSignedExpression(value)) {
     const argument = unwrap(value.argument);
     if (argument.type !== "Literal") return;
@@ -144,9 +145,9 @@ function validationBodyOf(node: ESTree.Node): ESTree.BlockStatement | undefined 
   const result = compositionRoot(node);
   let statement = result.parent;
   if (!statement) return;
-  if (statement.type === "VariableDeclarator" && statement.init === result)
+  if (statement.type === "VariableDeclarator" && statement.init === result) {
     statement = statement.parent;
-  else if (statement.type !== "IfStatement" || statement.test !== result) return;
+  } else if (statement.type !== "IfStatement" || statement.test !== result) return;
   const body = statement.parent;
   if (body?.type !== "BlockStatement") return;
   const fn = body.parent;

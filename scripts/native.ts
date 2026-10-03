@@ -59,8 +59,9 @@ function run(
     maxBuffer: 32 * 1024 * 1024,
   });
   if (result.error) throw result.error;
-  if (result.status !== 0)
+  if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")}\n${result.stdout}${result.stderr}`);
+  }
   if (result.stderr) process.stderr.write(result.stderr);
   return result.stdout;
 }
@@ -87,12 +88,14 @@ async function prepare(): Promise<void> {
       );
       if (!response.ok) throw new Error(`Download ${name}: HTTP ${response.status}`);
       const bytes = Buffer.from(await response.arrayBuffer());
-      if (createHash("sha256").update(bytes).digest("hex") !== pin.sha256)
+      if (createHash("sha256").update(bytes).digest("hex") !== pin.sha256) {
         throw new Error(`${name}: source checksum mismatch`);
+      }
       writeFileSync(archive, bytes);
     }
-    if (createHash("sha256").update(readFileSync(archive)).digest("hex") !== pin.sha256)
+    if (createHash("sha256").update(readFileSync(archive)).digest("hex") !== pin.sha256) {
       throw new Error(`${name}: cached source checksum mismatch`);
+    }
     const destination = name === "tsgolint" ? source : join(source, "typescript-go");
     mkdirSync(destination, { recursive: true });
     run("tar", ["-xzf", archive, "--strip-components=1", "-C", destination], root);
@@ -112,8 +115,9 @@ async function prepare(): Promise<void> {
   const collections = join(source, "internal/collections");
   mkdirSync(collections, { recursive: true });
   for (const file of readdirSync(join(source, "typescript-go/internal/collections"))) {
-    if (file.endsWith(".go") && !file.endsWith("_test.go"))
+    if (file.endsWith(".go") && !file.endsWith("_test.go")) {
       cpSync(join(source, "typescript-go/internal/collections", file), join(collections, file));
+    }
   }
   writeFileSync(join(source, ".aexlint-ready"), stamp);
 }
@@ -218,15 +222,17 @@ function isFormattingAction(action: string): boolean {
 }
 
 function assertSourceAction(action: string): void {
-  if (!["build", "release", "test", "prepare"].includes(action))
+  if (!["build", "release", "test", "prepare"].includes(action)) {
     throw new Error(`Unknown native action: ${action}`);
+  }
 }
 
 export async function native(action: string, args: string[] = []): Promise<void> {
   if (isFormattingAction(action)) {
     const output = run("gofmt", [action === "format" ? "-w" : "-l", "native"], root);
-    if (action === "format:check" && output.trim())
+    if (action === "format:check" && output.trim()) {
       throw new Error(`Run pnpm native:format:\n${output}`);
+    }
     return;
   }
   assertSourceAction(action);
@@ -256,10 +262,11 @@ export async function native(action: string, args: string[] = []): Promise<void>
     else {
       const actualSnapshots = JSON.stringify([...snapshots()].toSorted());
       const expectedSnapshots = JSON.stringify([...before].toSorted());
-      if (actualSnapshots !== expectedSnapshots)
+      if (actualSnapshots !== expectedSnapshots) {
         throw new Error(
           "Native snapshots changed. Review with pnpm native:test --update and retain the snapshots.",
         );
+      }
     }
     build(`${process.platform}-${process.arch}`, names, join(cache, "probe"));
   } else {

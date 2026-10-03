@@ -102,8 +102,9 @@ function readReady(probe: number): boolean {
   try {
     const read = readSync(probe, buffer, 0, buffer.length, null);
     if (read === 0) return false;
-    if (!buffer.subarray(0, read).equals(readyFrame))
+    if (!buffer.subarray(0, read).equals(readyFrame)) {
       throw new Error("The typed backend server sent an unexpected greeting.");
+    }
     return true;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "EAGAIN") return false;
@@ -117,8 +118,9 @@ function awaitServer(path: string, pid: number | undefined, log: number): number
   const deadline = Date.now() + startTimeout;
   try {
     while (!readReady(probe)) {
-      if (exited(pid) || Date.now() > deadline)
+      if (exited(pid) || Date.now() > deadline) {
         throw new Error(`The typed backend did not start: ${logText(log)}`);
+      }
       Atomics.wait(pause, 0, 0, 5);
     }
     return openSync(path, "r");
@@ -145,10 +147,11 @@ function serveChannel(): Channel {
   let responses: number | null = null;
   let stopped = false;
   return (input) => {
-    if (stopped)
+    if (stopped) {
       throw new Error(
         "The typed backend stopped earlier in this run, so this file was not linted.",
       );
+    }
     writeFrame(requests, input);
     if (responses === null) {
       try {
@@ -177,8 +180,9 @@ const batches = new Map<string, Map<string, NativeDiagnostic[]>>();
 let pending: Pending = { file: "", requests: [], diagnostics: null };
 
 function request(context: Context, name: string): void {
-  if (pending.file !== context.filename)
+  if (pending.file !== context.filename) {
     pending = { file: context.filename, requests: [], diagnostics: null };
+  }
   const options: unknown = context.options[0];
   pending.requests.push(options === undefined ? { name } : { name, options });
 }
@@ -198,8 +202,9 @@ function runBatch(
   const { result, stdout } = channel(Buffer.from(JSON.stringify(payload)));
   if (result.error) throw new Error(result.error);
   const messages = decodeFrames(stdout);
-  if (result.status !== 0)
+  if (result.status !== 0) {
     throw new Error(`The typed backend exited ${result.status ?? result.signal}: ${result.stderr}`);
+  }
   const diagnostics = messages.diagnostics as NativeDiagnostic[];
   if (!messages.programFiles.includes(file)) throw new Error(unbuiltProgram(file, diagnostics));
   const byFile = new Map<string, NativeDiagnostic[]>(messages.programFiles.map((f) => [f, []]));
@@ -230,8 +235,9 @@ function diagnosticsFor(context: Context): NativeDiagnostic[] {
   let found = fresh ? cached : undefined;
   if (!found) {
     const store = batches.get(key) ?? new Map<string, NativeDiagnostic[]>();
-    for (const [path, diagnostics] of runBatch(file, text, pending.requests))
+    for (const [path, diagnostics] of runBatch(file, text, pending.requests)) {
       store.set(path, diagnostics);
+    }
     batches.set(key, store);
     found = store.get(file) ?? [];
   }

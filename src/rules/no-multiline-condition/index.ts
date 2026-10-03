@@ -17,8 +17,9 @@ export default defineRule({
     const check = (test: ESTree.Expression | null, statement: string) => {
       if (test === null) return;
       const lines = test.loc.end.line - test.loc.start.line + 1;
-      if (lines > 1)
+      if (lines > 1) {
         context.report({ node: test, messageId: "multiline", data: { statement, lines } });
+      }
     };
     return {
       IfStatement: (node) => check(node.test, "if"),

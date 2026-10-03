@@ -13,19 +13,22 @@ export function defaultBackend(): string {
 
 export function availableRules(backend = defaultBackend()): string[] {
   const manifest = join(dirname(backend), "rules.json");
-  if (!existsSync(backend) || !existsSync(manifest))
+  if (!existsSync(backend) || !existsSync(manifest)) {
     throw new Error(
       `The typed backend is missing for ${process.platform}-${process.arch}. Build with pnpm build, or install a complete release package.`,
     );
+  }
   const names: unknown = JSON.parse(readFileSync(manifest, "utf8"));
-  if (!Array.isArray(names) || !names.every((name) => typeof name === "string"))
+  if (!Array.isArray(names) || !names.every((name) => typeof name === "string")) {
     throw new Error("Invalid native rule manifest.");
+  }
   return names;
 }
 
 function object(value: unknown, label: string): Record<string, unknown> {
-  if (!value || typeof value !== "object" || Array.isArray(value))
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error(`${label} must be an object.`);
+  }
   return value as Record<string, unknown>;
 }
 
@@ -56,7 +59,8 @@ export function decodeFrames(input: Uint8Array): NativeMessages {
 
 function programFiles(payload: unknown): string[] {
   const files = object(payload, "program files").files;
-  if (!Array.isArray(files) || !files.every((file) => typeof file === "string"))
+  if (!Array.isArray(files) || !files.every((file) => typeof file === "string")) {
     throw new Error("Invalid native program files.");
+  }
   return files;
 }

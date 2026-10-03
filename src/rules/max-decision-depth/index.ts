@@ -58,8 +58,9 @@ export default defineRule({
         for (const key of context.sourceCode.visitorKeys[node.type] ?? []) {
           const child = fields[key];
           if (Array.isArray(child)) {
-            for (const element of child)
+            for (const element of child) {
               if (element != null) depth = Math.max(depth, depthOf(element));
+            }
           } else if (child != null) depth = Math.max(depth, depthOf(child));
         }
         if (isLogicalDecision(node)) {
@@ -82,8 +83,9 @@ export default defineRule({
       "Program:exit"() {
         for (const [node, depth] of candidates) {
           let ancestor = node.parent;
-          while (ancestor !== null && !isBoundary(ancestor) && !candidates.has(ancestor))
+          while (ancestor !== null && !isBoundary(ancestor) && !candidates.has(ancestor)) {
             ancestor = ancestor.parent;
+          }
           if (ancestor !== null && candidates.has(ancestor)) continue;
           context.report({ node, messageId: "tooDeep", data: { depth, max } });
         }
