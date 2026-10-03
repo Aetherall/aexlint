@@ -3,6 +3,7 @@
   "categories": { "correctness": "error", "suspicious": "warn" },
   "jsPlugins": ["./src/index.ts"],
   "rules": {
+    "curly": ["error", "multi-line"],
     "aexlint/max-expression-complexity": ["error", { "max": 4 }],
     "aexlint/max-expression-depth": ["error", { "max": 3 }],
     "aexlint/max-decision-depth": ["error", { "max": 2 }]

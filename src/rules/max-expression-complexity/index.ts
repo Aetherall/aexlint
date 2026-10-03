@@ -224,8 +224,9 @@ export default defineRule({
         }
         const expression = unwrap(node);
         const stringLiteral = node.type === "Literal" && typeof node.value === "string";
-        if (stringLiteral || node.type === "TemplateLiteral" || stringValues.has(expression))
+        if (stringLiteral || node.type === "TemplateLiteral" || stringValues.has(expression)) {
           stringValues.add(node);
+        }
         const addition = isAddition(node);
         const concatenation =
           addition && (stringValues.has(node.left) || stringValues.has(node.right));

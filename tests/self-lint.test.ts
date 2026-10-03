@@ -29,7 +29,9 @@ if (node.type === 'Array' || node.type === 'Object') step(node);
 
 test("mandatory and experimental lint configurations cover every rule and TS directory", (t) => {
   const configured = { ...syntaxConfig.rules, ...classificationConfig.rules };
-  const enabled = Object.keys(configured).toSorted();
+  const enabled = Object.keys(configured)
+    .filter((name) => name.startsWith("aexlint/"))
+    .toSorted();
   const expected = Object.keys(rules)
     .map((name) => `aexlint/${name}`)
     .toSorted();
@@ -64,7 +66,8 @@ test("mandatory and experimental lint configurations cover every rule and TS dir
   assert.equal(result.status, 1, result.stderr || result.stdout);
   const diagnostics = JSON.parse(result.stdout).diagnostics;
   assert.equal(diagnostics.length, 9, JSON.stringify(diagnostics, null, 2));
-  for (const qualified of Object.keys(syntaxConfig.rules)) {
+  const syntaxRules = Object.keys(syntaxConfig.rules).filter((name) => name.startsWith("aexlint/"));
+  for (const qualified of syntaxRules) {
     const name = qualified.slice("aexlint/".length);
     const matching = diagnostics.filter(
       (item: { code: string }) => item.code === `aexlint(${name})`,

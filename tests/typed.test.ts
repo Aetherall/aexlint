@@ -170,11 +170,12 @@ test("plugin reports what the backend reports, at the same byte offsets", (t) =>
 test("interpretation spread counts unlinted files and respects disable comments", (t) => {
   const { write, configure, lint } = project(t);
   write("kinds.ts", 'export type Kind = "a" | "b" | "c";\n');
-  for (const name of ["input", "other"])
+  for (const name of ["input", "other"]) {
     write(
       `${name}.ts`,
       'import type { Kind } from "./kinds.js";\nexport const f = (kind: Kind) => kind === "a";\n',
     );
+  }
   configure({ "aexlint-typed/max-interpretation-spread": ["warn", { max: 1 }] });
   const spread = lint(["input.ts"]);
   assert.deepEqual(codes(spread), ["input.ts aexlint-typed(max-interpretation-spread)"]);

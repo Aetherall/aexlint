@@ -31,8 +31,9 @@ test("native rules have contracts, real tests, unique names, and no unfinished p
       JSON.stringify(metadata),
       readFileSync(new URL(`${name}/rule_test.go`, native), "utf8"),
       readFileSync(new URL(`${name}.md`, docs), "utf8"),
-    ])
+    ]) {
       assert.doesNotMatch(text, /\bTODO\b/, `Unfinished native rule: ${name}`);
+    }
   }
 });
 

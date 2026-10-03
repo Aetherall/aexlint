@@ -2,14 +2,16 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 export function newTypedRule(root: string, name: string): void {
-  if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name))
+  if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
     throw new Error("Expected a kebab-case rule name.");
+  }
   const ruleDir = resolve(root, "native/rules", name);
   const docsDir = resolve(root, "docs/typed-rules");
   const docPath = resolve(docsDir, `${name}.md`);
   const jsRuleDir = resolve(root, "src/rules", name);
-  if (existsSync(ruleDir) || existsSync(docPath) || existsSync(jsRuleDir))
+  if (existsSync(ruleDir) || existsSync(docPath) || existsSync(jsRuleDir)) {
     throw new Error(`Rule or documentation already exists: ${name}`);
+  }
   mkdirSync(ruleDir, { recursive: true });
   mkdirSync(docsDir, { recursive: true });
   const goPackage = name.replaceAll("-", "_");

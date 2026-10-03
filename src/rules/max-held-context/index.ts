@@ -182,8 +182,9 @@ class HeldContextMeasure {
   private loop(node: Loop, depth: number, region: Region): void {
     this.decide(node, depth, region);
     const fields = node as unknown as Record<string, ESTree.Node | null | undefined>;
-    for (const key of ["init", "left", "right", "test", "update"])
+    for (const key of ["init", "left", "right", "test", "update"]) {
       if (fields[key]) this.walk(fields[key], depth, region);
+    }
     this.opened(node.body, depth, region);
   }
 
@@ -203,8 +204,9 @@ class HeldContextMeasure {
   private head(node: ESTree.Node): { start: LineColumn; end: LineColumn } {
     const source = this.context.sourceCode;
     const at = (offset: number) => source.getLocFromIndex(offset);
-    if (node.type === "ConditionalExpression" || node.type === "DoWhileStatement")
+    if (node.type === "ConditionalExpression" || node.type === "DoWhileStatement") {
       return { start: at(node.test.range[0]), end: at(node.test.range[1]) };
+    }
     if (node.type === "CatchClause") {
       const end = node.param
         ? source.text.indexOf(")", node.param.range[1]) + 1
