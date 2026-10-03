@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/require-interface-implementations",
+  "description": "Require every interface to be implemented by at least two classes across the TypeScript program.",
+  "requiresTypeChecking": true
+}

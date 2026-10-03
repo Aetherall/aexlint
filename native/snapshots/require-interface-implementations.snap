@@ -1,0 +1,110 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: singleImplementation (1:18 - 1:27)
+Message: `Repository` is implemented only by `PostgresRepository` (../../fixtures/a.ts). Interfaces must be implemented by at least 2 classes.
+Help: With one implementing class, nothing can be substituted for it: the interface and the class change together, and readers following `Repository` reach the contract instead of the code.
+   1 | export interface Repository { find(): string }
+     |                  ~~~~~~~~~~
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: unimplementedInterface (1:11 - 1:21)
+Message: No class implements `ButtonProps`. Interfaces must be implemented by at least 2 classes.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+   1 | interface ButtonProps { label: string }
+     |           ~~~~~~~~~~~
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: singleImplementation (1:18 - 1:22)
+Message: `Shape` is implemented only by `Cube` (../../fixtures/file.ts). Interfaces must be implemented by at least 2 classes.
+Help: With one implementing class, nothing can be substituted for it: the interface and the class change together, and readers following `Shape` reach the contract instead of the code.
+   1 | export interface Shape {}
+     |                  ~~~~~
+   2 | export interface Solid extends Shape {}
+
+Diagnostic 2: singleImplementation (2:18 - 2:22)
+Message: `Solid` is implemented only by `Cube` (../../fixtures/file.ts). Interfaces must be implemented by at least 2 classes.
+Help: With one implementing class, nothing can be substituted for it: the interface and the class change together, and readers following `Solid` reach the contract instead of the code.
+   1 | export interface Shape {}
+   2 | export interface Solid extends Shape {}
+     |                  ~~~~~
+   3 | export class Cube implements Shape, Solid {}
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: singleImplementation (1:18 - 1:22)
+Message: `Named` is implemented only by `A` (../../fixtures/file.ts). Interfaces must be implemented by at least 2 classes.
+Help: With one implementing class, nothing can be substituted for it: the interface and the class change together, and readers following `Named` reach the contract instead of the code.
+   1 | export interface Named { name: string }
+     |                  ~~~~~
+   2 | export class A implements Named { name = "" }
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: singleImplementation (1:18 - 1:22)
+Message: `Named` is implemented only by `A` (../../fixtures/file.ts). Interfaces must be implemented by at least 2 classes.
+Help: With one implementing class, nothing can be substituted for it: the interface and the class change together, and readers following `Named` reach the contract instead of the code.
+   1 | export interface Named { name: string }
+     |                  ~~~~~
+   2 | export class A implements Named { name = "" }
+---
+
+[TestRule/invalid-5 - 1]
+Diagnostic 1: unimplementedInterface (1:11 - 1:13)
+Message: No class implements `Box`. Interfaces must be implemented by at least 2 classes.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+   1 | interface Box { a: number }
+     |           ~~~
+   2 | interface Box { b: number }
+
+Diagnostic 2: unimplementedInterface (2:11 - 2:13)
+Message: No class implements `Box`. Interfaces must be implemented by at least 2 classes.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+   1 | interface Box { a: number }
+   2 | interface Box { b: number }
+     |           ~~~
+---
+
+[TestRule/invalid-6 - 1]
+Diagnostic 1: unimplementedInterface (1:39 - 1:43)
+Message: No class implements `Inner`. Interfaces must be implemented by at least 2 classes.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+   1 | export namespace N { export interface Inner {} }
+     |                                       ~~~~~
+   2 | export function f() { interface Local {} return 1; }
+
+Diagnostic 2: unimplementedInterface (2:33 - 2:37)
+Message: No class implements `Local`. Interfaces must be implemented by at least 2 classes.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+   1 | export namespace N { export interface Inner {} }
+   2 | export function f() { interface Local {} return 1; }
+     |                                 ~~~~~
+---
+
+[TestRule/invalid-7 - 1]
+Diagnostic 1: singleImplementation (1:18 - 1:21)
+Message: `Repo` is implemented only by `(anonymous class)` (../../fixtures/file.ts). Interfaces must be implemented by at least 2 classes.
+Help: With one implementing class, nothing can be substituted for it: the interface and the class change together, and readers following `Repo` reach the contract instead of the code.
+   1 | export interface Repo {}
+     |                  ~~~~
+   2 | export const R = class implements Repo {};
+---
+
+[TestRule/invalid-8 - 1]
+Diagnostic 1: unimplementedInterface (1:18 - 1:22)
+Message: No class implements `Props`. Interfaces must be implemented by at least 2 classes.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+   1 | export interface Props { label: string }
+     |                  ~~~~~
+   2 | export const Button = (props: Props) => <button>{props.label}</button>;
+---
+
+[TestRule/invalid-9 - 1]
+Diagnostic 1: singleImplementation (1:18 - 1:22)
+Message: `Shape` is implemented only by `Circle` (../../fixtures/file.ts). Interfaces must be implemented by at least 2 classes.
+Help: With one implementing class, nothing can be substituted for it: the interface and the class change together, and readers following `Shape` reach the contract instead of the code.
+   1 | export interface Shape { area(): number }
+     |                  ~~~~~
+   2 | export class Circle implements Shape { area() { return 1; } }
+---
