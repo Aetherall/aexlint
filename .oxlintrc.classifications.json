@@ -4,7 +4,8 @@
   "categories": { "correctness": "off" },
   "rules": {
     "aexlint/prefer-domain-predicate": "warn",
-    "aexlint/max-held-context": ["warn", { "max": 3 }]
+    "aexlint/max-held-context": ["warn", { "max": 3 }],
+    "aexlint/no-multiline-condition": "warn"
   },
   "ignorePatterns": ["node_modules", "dist", ".native", ".pi", ".devenv", ".direnv"]
 }

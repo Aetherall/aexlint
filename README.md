@@ -19,6 +19,7 @@ Both run under plain `oxlint`; there is no separate CLI. No rule is enabled by d
 | [max-expression-complexity](docs/rules/max-expression-complexity.md) | stable       | Too much work packed into one expression: calls, operators, logical groups                      | `{ "max": n }`, required |
 | [max-decision-depth](docs/rules/max-decision-depth.md)               | stable       | Logical groups and ternaries nested too deeply, e.g. `a && (b \|\| (c && d))`                   | `{ "max": n }`, required |
 | [max-held-context](docs/rules/max-held-context.md)                   | prototype    | Decisions made inside too many enclosing branches, loops, cases and callbacks                   | `{ "max": n }`, required |
+| [no-multiline-condition](docs/rules/no-multiline-condition.md)       | experimental | An `if`, `while`, `do … while` or `for` condition that spans several lines                      | none                     |
 | [prefer-domain-predicate](docs/rules/prefer-domain-predicate.md)     | experimental | A classification rebuilt from several checks of one subject, with no name of its own            | none                     |
 
 The three stable rules measure separate dimensions of one expression: how deep its inputs go, how much it computes, and how deeply its decisions nest. Enable them together; one expression can be reported by several of them.
