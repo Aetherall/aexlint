@@ -10,7 +10,7 @@ Help: With one implementing class, nothing can be substituted for it: the interf
 [TestRule/invalid-1 - 1]
 Diagnostic 1: unimplementedInterface (1:11 - 1:21)
 Message: No class implements `ButtonProps`. Interfaces must be implemented by at least 2 classes.
-Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.
    1 | interface ButtonProps { label: string }
      |           ~~~~~~~~~~~
 ---
@@ -53,14 +53,14 @@ Help: With one implementing class, nothing can be substituted for it: the interf
 [TestRule/invalid-5 - 1]
 Diagnostic 1: unimplementedInterface (1:11 - 1:13)
 Message: No class implements `Box`. Interfaces must be implemented by at least 2 classes.
-Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.
    1 | interface Box { a: number }
      |           ~~~
    2 | interface Box { b: number }
 
 Diagnostic 2: unimplementedInterface (2:11 - 2:13)
 Message: No class implements `Box`. Interfaces must be implemented by at least 2 classes.
-Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.
    1 | interface Box { a: number }
    2 | interface Box { b: number }
      |           ~~~
@@ -69,14 +69,14 @@ Help: Only `implements` clauses count, including those of base classes and of in
 [TestRule/invalid-6 - 1]
 Diagnostic 1: unimplementedInterface (1:39 - 1:43)
 Message: No class implements `Inner`. Interfaces must be implemented by at least 2 classes.
-Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.
    1 | export namespace N { export interface Inner {} }
      |                                       ~~~~~
    2 | export function f() { interface Local {} return 1; }
 
 Diagnostic 2: unimplementedInterface (2:33 - 2:37)
 Message: No class implements `Local`. Interfaces must be implemented by at least 2 classes.
-Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.
    1 | export namespace N { export interface Inner {} }
    2 | export function f() { interface Local {} return 1; }
      |                                 ~~~~~
@@ -94,7 +94,7 @@ Help: With one implementing class, nothing can be substituted for it: the interf
 [TestRule/invalid-8 - 1]
 Diagnostic 1: unimplementedInterface (1:18 - 1:22)
 Message: No class implements `Props`. Interfaces must be implemented by at least 2 classes.
-Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+Help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.
    1 | export interface Props { label: string }
      |                  ~~~~~
    2 | export const Button = (props: Props) => <button>{props.label}</button>;

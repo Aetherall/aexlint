@@ -73,7 +73,7 @@ interface ButtonProps {
 
 ```text
 No class implements `ButtonProps`. Interfaces must be implemented by at least 2 classes.
-help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.
+help: Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.
 ```
 
 Paths are relative to Oxlint's working directory. An anonymous class expression is named `(anonymous class)`.
@@ -113,6 +113,7 @@ Diagnostic-only. No fixes or suggestions are emitted. Whether to inline the inte
 ## Limitations
 
 - **Data shapes are reported.** Under this rule's definition, every interface that describes data rather than a class contract is reported. Projects that use `interface` for shapes should enable it only where interfaces are class contracts, through `overrides`.
+- **`unimplementedInterface` is a declaration convention.** It is satisfied by redeclaring the same shape with `type`, which changes no behavior. Neither diagnostic establishes whether the data has an owner that maintains its invariants, and neither declaration form is evidence either way. Handwritten copies of an upstream library's types are reported here like any other shape, but converting them to `type` keeps the copy; this rule does not detect that the copy can diverge from the authoritative declaration.
 - **Implementations outside the program are not seen.** A library's public interfaces that consumers implement, interfaces implemented in another tsconfig project, and test doubles in files excluded from the tsconfig are not counted. A deliberate boundary interface, such as a port whose only production adapter is in another layer, is reported when its test doubles are not declared with `implements` in the same program.
 - **Only nominal declarations count.** Object-literal and factory implementations, which are common in TypeScript, are not counted.
 - **`implements` through a type alias or a class name** (`implements SomeAlias`, `implements SomeClass`) is not followed to the interfaces behind it.
