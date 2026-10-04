@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/max-projection-spread",
+  "description": "Limit how many files restate how a value of a project type is projected into an object literal.",
+  "requiresTypeChecking": true
+}
