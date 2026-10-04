@@ -119,7 +119,7 @@ func (m *measure) report(t target, implementers []*ast.Node) {
 		m.ctx.ReportNode(t.declaration.Name(), rule.RuleMessage{
 			Id:          "unimplementedInterface",
 			Description: fmt.Sprintf("No class implements `%s`. Interfaces must be implemented by at least %d classes.", name, required),
-			Help:        "Only `implements` clauses count, including those of base classes and of interfaces that extend this one. A shape that classes do not implement can be a `type` alias.",
+			Help:        "Only `implements` clauses count, including those of base classes and of interfaces that extend this one. This rule reserves `interface` for class contracts. Redeclaring the shape with `type` satisfies that convention without changing how its values are constructed, validated, or changed.",
 		})
 		return
 	}
