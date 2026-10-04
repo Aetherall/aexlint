@@ -1,0 +1,184 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: forgeableValidatedResult (5:17 - 5:29)
+Message: `applySettings` rejects some inputs, then returns `Payload`, which other code can produce without that check.
+Help: Code that receives a value of type `Payload` cannot tell whether it passed `applySettings`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 6.
+   4 | }
+   5 | export function applySettings(before: Payload, input: unknown): Payload {
+     |                 ~~~~~~~~~~~~~
+   6 |   if (!input || typeof input !== "object") throw new Error("payload must be an object");
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: forgeableValidatedResult (5:17 - 5:17)
+Message: `a` rejects some inputs, then returns `A`, which other code can produce without that check.
+Help: Code that receives a value of type `A` cannot tell whether it passed `a`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 5.
+   4 | type I = Base & { model: string };
+   5 | export function a(input: string): A { if (!input) throw new Error("x"); return { model: input }; }
+     |                 ~
+   6 | export function r(input: unknown): R { if (!input) throw new Error("x"); return { ...(input as object) }; }
+
+Diagnostic 2: forgeableValidatedResult (6:17 - 6:17)
+Message: `r` rejects some inputs, then returns `R`, which other code can produce without that check.
+Help: Code that receives a value of type `R` cannot tell whether it passed `r`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 6.
+   5 | export function a(input: string): A { if (!input) throw new Error("x"); return { model: input }; }
+   6 | export function r(input: unknown): R { if (!input) throw new Error("x"); return { ...(input as object) }; }
+     |                 ~
+   7 | export function i(input: string): I { if (!input) throw new Error("x"); return { id: "", model: input }; }
+
+Diagnostic 3: forgeableValidatedResult (7:17 - 7:17)
+Message: `i` rejects some inputs, then returns `I`, which other code can produce without that check.
+Help: Code that receives a value of type `I` cannot tell whether it passed `i`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 7.
+   6 | export function r(input: unknown): R { if (!input) throw new Error("x"); return { ...(input as object) }; }
+   7 | export function i(input: string): I { if (!input) throw new Error("x"); return { id: "", model: input }; }
+     |                 ~
+   8 | export function n(input: string): { model: string } { if (!input) throw new Error("x"); return { model: input }; }
+
+Diagnostic 4: forgeableValidatedResult (8:17 - 8:17)
+Message: `n` rejects some inputs, then returns `{ model: string; }`, which other code can produce without that check.
+Help: Code that receives a value of type `{ model: string; }` cannot tell whether it passed `n`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 8.
+   7 | export function i(input: string): I { if (!input) throw new Error("x"); return { id: "", model: input }; }
+   8 | export function n(input: string): { model: string } { if (!input) throw new Error("x"); return { model: input }; }
+     |                 ~
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: forgeableValidatedResult (2:23 - 2:26)
+Message: `load` rejects some inputs, then returns `Summary`, which other code can produce without that check.
+Help: Code that receives a value of type `Summary` cannot tell whether it passed `load`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 4.
+   1 | type Summary = { summary: string };
+   2 | export async function load(input: { text: string }): Promise<Summary> {
+     |                       ~~~~
+   3 |   const text = input.text.trim();
+
+Diagnostic 2: forgeableValidatedResult (7:17 - 7:20)
+Message: `tier` rejects some inputs, then returns `Summary`, which other code can produce without that check.
+Help: Code that receives a value of type `Summary` cannot tell whether it passed `tier`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 10.
+   6 | }
+   7 | export function tier(input: string): Summary {
+     |                 ~~~~
+   8 |   switch (input) {
+
+Diagnostic 3: forgeableValidatedResult (13:17 - 13:21)
+Message: `named` rejects some inputs, then returns `Summary`, which other code can produce without that check.
+Help: Code that receives a value of type `Summary` cannot tell whether it passed `named`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 13.
+  12 | }
+  13 | export function named({ name }: { name: string }): Summary { if (!name) throw new Error("x"); return { summary: name }; }
+     |                 ~~~~~
+  14 | export function each(input: string[]): Summary { for (const item of input) { if (!item) throw new Error("x"); } return { summary: input.join() }; }
+
+Diagnostic 4: forgeableValidatedResult (14:17 - 14:20)
+Message: `each` rejects some inputs, then returns `Summary`, which other code can produce without that check.
+Help: Code that receives a value of type `Summary` cannot tell whether it passed `each`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 14.
+  13 | export function named({ name }: { name: string }): Summary { if (!name) throw new Error("x"); return { summary: name }; }
+  14 | export function each(input: string[]): Summary { for (const item of input) { if (!item) throw new Error("x"); } return { summary: input.join() }; }
+     |                 ~~~~
+  15 | export const arrow = (input: string): Summary => { if (!input) throw new Error("x"); return { summary: input }; };
+
+Diagnostic 5: forgeableValidatedResult (15:14 - 15:18)
+Message: `arrow` rejects some inputs, then returns `Summary`, which other code can produce without that check.
+Help: Code that receives a value of type `Summary` cannot tell whether it passed `arrow`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 15.
+  14 | export function each(input: string[]): Summary { for (const item of input) { if (!item) throw new Error("x"); } return { summary: input.join() }; }
+  15 | export const arrow = (input: string): Summary => { if (!input) throw new Error("x"); return { summary: input }; };
+     |              ~~~~~
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: forgeableValidatedResult (3:3 - 3:6)
+Message: `bind` rejects some inputs, then returns `Tool`, which other code can produce without that check.
+Help: Code that receives a value of type `Tool` cannot tell whether it passed `bind`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `assertCompatible` (../../fixtures/file.ts) at line 4.
+   2 | export class Policy {
+   3 |   bind(contract: Tool, tool: Tool): Tool {
+     |   ~~~~
+   4 |     this.assertCompatible(contract, tool);
+
+Diagnostic 2: forgeableValidatedResult (7:11 - 7:18)
+Message: `settings` rejects some inputs, then returns `Payload`, which other code can produce without that check.
+Help: Code that receives a value of type `Payload` cannot tell whether it passed `settings`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 8.
+   6 |   }
+   7 |   private settings(input: Record<string, unknown>): Payload {
+     |           ~~~~~~~~
+   8 |     if (Object.keys(input).length > 3) throw new Error("x");
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: forgeableValidatedResult (2:17 - 2:20)
+Message: `bind` rejects some inputs, then returns `Tool`, which other code can produce without that check.
+Help: Code that receives a value of type `Tool` cannot tell whether it passed `bind`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `assertTool` (../../fixtures/policy.ts) at line 2.
+   1 | import { assertTool, type Tool } from "./policy.js";
+   2 | export function bind(tool: Tool): Tool { assertTool(tool); return { ...tool }; }
+     |                 ~~~~
+---
+
+[TestRule/invalid-5 - 1]
+Diagnostic 1: forgeableValidatedResult (3:17 - 3:21)
+Message: `order` rejects some inputs, then returns `Order`, which other code can produce without that check.
+Help: Code that receives a value of type `Order` cannot tell whether it passed `order`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 5.
+   2 | function sum(values: number[]): number { return values.reduce((a, b) => a + b, 0); }
+   3 | export function order(input: { items: number[] }): Order {
+     |                 ~~~~~
+   4 |   const total = sum(input.items);
+
+Diagnostic 2: forgeableValidatedResult (8:17 - 8:23)
+Message: `collect` rejects some inputs, then returns `{ values: string[]; }`, which other code can produce without that check.
+Help: Code that receives a value of type `{ values: string[]; }` cannot tell whether it passed `collect`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 11.
+   7 | }
+   8 | export function collect(input: string[]): { values: string[] } {
+     |                 ~~~~~~~
+   9 |   const out: { values: string[] } = { values: [] };
+---
+
+[TestRule/invalid-6 - 1]
+Diagnostic 1: forgeableValidatedResult (2:17 - 2:20)
+Message: `pair` rejects some inputs, then returns `Pair`, which other code can produce without that check.
+Help: Code that receives a value of type `Pair` cannot tell whether it passed `pair`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 5.
+   1 | type Pair = { first: string; second: string };
+   2 | export function pair(input: { left: string; rest: string[] }): Pair {
+     |                 ~~~~
+   3 |   const { left } = input;
+---
+
+[TestRule/invalid-7 - 1]
+Diagnostic 1: forgeableValidatedResult (3:17 - 3:21)
+Message: `valid` rejects some inputs, then returns `Named`, which other code can produce without that check.
+Help: Code that receives a value of type `Named` cannot tell whether it passed `valid`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 3.
+   2 | function ensureNamed(target: { name: string }): void { if (!target.name) throw new Error("unnamed"); }
+   3 | export function valid(input: { isValid(): boolean; name: string }): Named { if (!input.isValid()) throw new Error("x"); return { ...input }; }
+     |                 ~~~~~
+   4 | export function named(input: { name: string; id: string }): Named { ensureNamed(input); return { name: input.name }; }
+
+Diagnostic 2: forgeableValidatedResult (4:17 - 4:21)
+Message: `named` rejects some inputs, then returns `Named`, which other code can produce without that check.
+Help: Code that receives a value of type `Named` cannot tell whether it passed `named`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `ensureNamed` (../../fixtures/file.ts) at line 4.
+   3 | export function valid(input: { isValid(): boolean; name: string }): Named { if (!input.isValid()) throw new Error("x"); return { ...input }; }
+   4 | export function named(input: { name: string; id: string }): Named { ensureNamed(input); return { name: input.name }; }
+     |                 ~~~~~
+---
+
+[TestRule/invalid-8 - 1]
+Diagnostic 1: forgeableValidatedResult (4:23 - 4:30)
+Message: `generate` rejects some inputs, then returns `{ summary: string; usage: Usage; }`, which other code can produce without that check.
+Help: Code that receives a value of type `{ summary: string; usage: Usage; }` cannot tell whether it passed `generate`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 8.
+   3 | type Completion = (context: string, options: { max: number }) => Promise<Message>;
+   4 | export async function generate(input: { context: string; max: number }, complete: Completion): Promise<{ summary: string; usage: Usage }> {
+     |                       ~~~~~~~~
+   5 |   const response = await complete(input.context, { max: input.max });
+---
+
+[TestRule/invalid-9 - 1]
+Diagnostic 1: forgeableValidatedResult (1:17 - 1:22)
+Message: `ranged` rejects some inputs, then returns `{ value: number; }`, which other code can produce without that check.
+Help: Code that receives a value of type `{ value: number; }` cannot tell whether it passed `ranged`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 2.
+   1 | export function ranged(input: { value: unknown }): { value: number } {
+     |                 ~~~~~~
+   2 |   if (typeof input.value !== "number" || input.value < 0) throw new Error("negative");
+---
+
+[TestRule/invalid-10 - 1]
+Diagnostic 1: forgeableValidatedResult (3:17 - 3:19)
+Message: `get` rejects some inputs, then returns `Payload`, which other code can produce without that check.
+Help: Code that receives a value of type `Payload` cannot tell whether it passed `get`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 3.
+   2 | const cache = new Map<string, Payload>();
+   3 | export function get(key: string): Payload { const found = cache.get(key); if (!found || !found.model) throw new Error("x"); return found; }
+     |                 ~~~
+---

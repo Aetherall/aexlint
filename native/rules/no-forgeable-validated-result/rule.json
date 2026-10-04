@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-forgeable-validated-result",
+  "description": "Report operations that check the data they return and return a project-owned object type other code can produce without that check.",
+  "requiresTypeChecking": true
+}
