@@ -36,6 +36,7 @@ The three stable rules measure separate dimensions of one expression: how deep i
 | [max-interpretation-spread](docs/typed-rules/max-interpretation-spread.md)                 | experimental | A literal union (`"free" \| "team" \| …`) checked for particular values in too many files, none of which the compiler flags when a value is added | `{ "max": n }`, defaults to 4 |
 | [require-interface-implementations](docs/typed-rules/require-interface-implementations.md) | experimental | An interface implemented by fewer than two classes (`implements` clauses) across the TypeScript program                                           | none                          |
 | [no-forgeable-validated-result](docs/typed-rules/no-forgeable-validated-result.md)         | experimental | An operation that checks the data it returns, then returns a project-owned object type other code can produce without that check                  | none                          |
+| [no-caller-enforced-invariant](docs/typed-rules/no-caller-enforced-invariant.md)           | experimental | Data a caller checks, then hands to a project class that stores it without that check                                                             | none                          |
 
 `prefer-truthy-presence-check` requires `strictNullChecks` (or `strict`). `max-interpretation-spread` counts files across the whole TypeScript program of the linted file, including files that are not being linted.
 
