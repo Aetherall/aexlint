@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-caller-enforced-invariant",
+  "description": "Report data a caller checks before passing it to a project class that does not check it itself.",
+  "requiresTypeChecking": true
+}

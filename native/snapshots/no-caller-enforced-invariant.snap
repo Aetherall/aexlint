@@ -1,0 +1,96 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: checkedBeforeHandOff (5:28 - 5:36)
+Message: `expiresAt` is checked at line 4, then handed to `Credential.create`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Credential` is not held to it. The check reads only data `Credential.create` receives. This often means `Credential`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   4 |   if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date()) throw new Error("future");
+   5 |   return Credential.create(expiresAt);
+     |                            ~~~~~~~~~
+   6 | }
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: checkedBeforeHandOff (8:16 - 8:30)
+Message: `input.expiresAt` is checked at line 7, then handed to `Token.extend`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Token` is not held to it. The check reads only data `Token.extend` receives. This often means `Token`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   7 |   if (input.expiresAt <= new Date()) throw new Error("past");
+   8 |   token.extend(input.expiresAt);
+     |                ~~~~~~~~~~~~~~~
+   9 |   return Token.issue(input.expiresAt);
+
+Diagnostic 2: checkedBeforeHandOff (9:22 - 9:36)
+Message: `input.expiresAt` is checked at line 7, then handed to `Token.issue`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Token` is not held to it. The check reads only data `Token.issue` receives. This often means `Token`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   8 |   token.extend(input.expiresAt);
+   9 |   return Token.issue(input.expiresAt);
+     |                      ~~~~~~~~~~~~~~~
+  10 | }
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: checkedBeforeHandOff (4:25 - 4:38)
+Message: `command.userId` is checked at line 3, then handed to `Onboarding.old`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Onboarding` is not held to it. The check also reads `command.actor.root`, which `Onboarding.old` does not receive. This often means `Onboarding`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   3 |   if (!command.actor.root && command.actor.id !== command.userId) throw new Error("other user");
+   4 |   return Onboarding.old(command.userId);
+     |                         ~~~~~~~~~~~~~~
+   5 | }
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: checkedBeforeHandOff (5:23 - 5:36)
+Message: `command.teamId` is checked at line 4, then handed to `Message.send`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Message` is not held to it. The check also reads part of `command.actor`, which `Message.send` does not receive. This often means `Message`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   4 |   command.actor.ensure(command.teamId);
+   5 |   return Message.send(command.teamId, command.actor.id);
+     |                       ~~~~~~~~~~~~~~
+   6 | }
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: checkedBeforeHandOff (9:23 - 9:48)
+Message: `{ site, by: actor.userId }` is checked at line 8, then handed to `Message.send`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Message` is not held to it. The check also reads part of `command.actor`, which `Message.send` does not receive. This often means `Message`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   8 |   site.ensureMayAccess(actor);
+   9 |   return Message.send({ site, by: actor.userId });
+     |                       ~~~~~~~~~~~~~~~~~~~~~~~~~~
+  10 | }
+---
+
+[TestRule/invalid-5 - 1]
+Diagnostic 1: checkedBeforeHandOff (6:26 - 6:39)
+Message: `command.teamId` is checked at line 5, then handed to `Member.enlist`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Member` is not held to it. The check also reads part of `this.subscriptions`, which `Member.enlist` does not receive. This often means `Member`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   5 |     if (!this.subscriptions.enabled(command.teamId)) throw new Error("not installed");
+   6 |     return Member.enlist(command.teamId);
+     |                          ~~~~~~~~~~~~~~
+   7 |   }
+---
+
+[TestRule/invalid-6 - 1]
+Diagnostic 1: checkedBeforeHandOff (6:22 - 6:32)
+Message: `query.owner` is checked at line 4, then handed to `Response.of`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Response` is not held to it. The check also reads `query.root`, which `Response.of` does not receive. This often means `Response`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   5 |   }
+   6 |   return Response.of(query.owner);
+     |                      ~~~~~~~~~~~
+   7 | }
+---
+
+[TestRule/invalid-7 - 1]
+Diagnostic 1: checkedBeforeHandOff (8:31 - 8:41)
+Message: `input.email` is checked at line 7, then handed to `new Account`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Account` is not held to it. The check reads only data `new Account` receives. This often means `Account`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   7 |   if (!input.email.includes("@")) throw new Error("email");
+   8 |   const account = new Account(input.email);
+     |                               ~~~~~~~~~~~
+   9 |   if (input.name.trim() === "") throw new Error("name");
+
+Diagnostic 2: checkedBeforeHandOff (10:18 - 10:27)
+Message: `input.name` is checked at line 9, then handed to `Account.rename`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Account` is not held to it. The check reads only data `Account.rename` receives. This often means `Account`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   9 |   if (input.name.trim() === "") throw new Error("name");
+  10 |   account.rename(input.name);
+     |                  ~~~~~~~~~~
+  11 |   return account;
+---
