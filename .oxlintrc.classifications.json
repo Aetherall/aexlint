@@ -4,7 +4,7 @@
   "categories": { "correctness": "off" },
   "rules": {
     "aexlint/prefer-domain-predicate": "warn",
-    "aexlint/max-call-assembly": ["warn", { "maxWidth": 80, "maxReferences": 3 }],
+    "aexlint/max-call-assembly": ["warn", { "maxWidth": 60, "maxReferences": 3 }],
     "aexlint/max-held-context": ["warn", { "max": 3 }],
     "aexlint/no-else-if": "warn",
     "aexlint/no-multiline-condition": "warn"
