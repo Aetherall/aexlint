@@ -1,10 +1,38 @@
 # aexlint
 
-Readability rules for [Oxlint](https://oxc.rs/docs/guide/usage/linter). Choose the rules you want; none are enabled by default. There is no recommended preset or autofix.
+Readability rules for [Oxlint](https://oxc.rs/docs/guide/usage/linter). Run standalone checks or choose individual rules in your Oxlint configuration. No autofix.
 
-## Setup
+## Standalone CLI
+
+Requires Node.js 24+ and aexlint 0.2.0 or later.
+
+```sh
+pnpx @aetherall/aexlint check
+pnpx @aetherall/aexlint check src --typed
+pnpx @aetherall/aexlint check src --typed --experimental --format json
+```
+
+pnpx downloads and caches aexlint and its pinned Oxlint runtime without adding dependencies or configuration to your project. The first download includes all six native backends (about 46 MB, plus dependencies). No Go installation is needed.
+
+`check` defaults to the current directory and enables these stable syntax rules as errors:
+
+| Rule                        | Maximum |
+| --------------------------- | ------- |
+| `max-expression-depth`      | 3       |
+| `max-expression-complexity` | 4       |
+| `max-decision-depth`        | 2       |
+
+These are CLI starting points, not validated universal limits. `--typed` adds `prefer-truthy-presence-check`; your project still needs its dependencies installed and a usable TypeScript project (see below). `--experimental` adds experimental/prototype syntax rules, including `max-held-context` with maximum 3. Combined with `--typed`, it also adds all experimental typed rules, with interpretation spread maximum 4 and projection spread maximum 2.
+
+The CLI ignores root and nested Oxlint configurations and does not enable unrelated built-in checks. Oxlint's normal file exclusions, ignore files, and disable comments apply. Add repeatable `--ignore-pattern <glob>` options for extra exclusions; use `--` before paths starting with a dash. `--format`/`-f` accepts Oxlint output formats. Findings fail the command; Oxlint's exit code is preserved. Run `--help` or `--version` for CLI information.
+
+For custom rule thresholds, overrides, or additional Oxlint options, use the plugin integration below. Installing the package also provides `pnpm exec aexlint check`.
+
+## Plugin setup
 
 Requires Node.js 24+ and Oxlint 1.83.0 (the tested version).
+
+The plugins enable no rules by default; configure the rules and thresholds you want.
 
 ```sh
 pnpm add -D oxlint@1.83.0 @aetherall/aexlint

@@ -40,7 +40,9 @@ Use Oxlint's real RuleTester for JS and the upstream Go tester for typed rules. 
 
 Ship only `dist/`, rule docs, README, license, and package metadata. `dist/native/` includes six binaries, their rule manifests, source pins, and third-party notices. No tests, contributor guides, caches, or development scripts belong in the tarball.
 
-Package tests resolve and fetch dependencies in a temporary consumer, then install offline from its lockfile. CI runs the full suite on Linux x64 and smoke-tests the same release tarball on Linux, macOS, and Windows, each on x64 and arm64.
+The `aexlint` executable uses the packaged, pinned Oxlint dependency and standalone rule defaults. Build before running `node dist/cli.js check` or `pnpm test:rule tests/cli.test.ts`. CLI tests use real temporary projects without installing tools into them and verify that project files remain unchanged.
+
+Package tests resolve and fetch dependencies in a temporary consumer, then install offline from its lockfile and exercise the installed CLI executable. CI runs the full suite on Linux x64 and smoke-tests both the plugins and CLI from the same release tarball on Linux, macOS, and Windows, each on x64 and arm64.
 
 ## Releasing
 

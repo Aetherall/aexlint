@@ -30,7 +30,7 @@ function run(command: string[], expectedStatus: number): string {
 
 try {
   writeFileSync(join(consumer, "package.json"), JSON.stringify({ private: true, type: "module" }));
-  run([...pnpmCommand, "add", tarball, `oxlint@${manifest.devDependencies.oxlint}`], 0);
+  run([...pnpmCommand, "add", tarball, `oxlint@${manifest.dependencies.oxlint}`], 0);
   writeFileSync(
     join(consumer, "tsconfig.json"),
     JSON.stringify({ compilerOptions: { strict: true, types: [] }, files: ["input.ts"] }),
@@ -61,6 +61,12 @@ try {
     "aexlint(max-expression-depth)",
     "aexlint-typed(prefer-truthy-presence-check)",
   ]);
+  const cliReport = run(
+    [...pnpmCommand, "exec", "aexlint", "check", "--typed", "--format", "json", "input.ts"],
+    1,
+  );
+  const cliCodes = JSON.parse(cliReport).diagnostics.map((item: { code: string }) => item.code);
+  assert.deepEqual(cliCodes, ["aexlint-typed(prefer-truthy-presence-check)"]);
   console.log(`${tarballs[0]} runs both plugins on ${process.platform}-${process.arch}.`);
 } finally {
   rmSync(consumer, { recursive: true, force: true, maxRetries: 5 });
