@@ -7,14 +7,14 @@ Readability rules for [Oxlint](https://oxc.rs/docs/guide/usage/linter). Choose t
 Requires Node.js 24+ and Oxlint 1.83.0 (the tested version).
 
 ```sh
-pnpm add -D oxlint@1.83.0 aexlint
+pnpm add -D oxlint@1.83.0 @aetherall/aexlint
 ```
 
 Add to `.oxlintrc.json`:
 
 ```json
 {
-  "jsPlugins": ["aexlint", "aexlint/typed-plugin"],
+  "jsPlugins": ["@aetherall/aexlint", "@aetherall/aexlint/typed-plugin"],
   "rules": {
     "aexlint/max-expression-depth": ["warn", { "max": 3 }],
     "aexlint/max-expression-complexity": ["warn", { "max": 4 }],
@@ -24,7 +24,7 @@ Add to `.oxlintrc.json`:
 }
 ```
 
-These limits are examples, not recommendations. Remove `aexlint/typed-plugin` and its rule if you only want syntax checks.
+These limits are examples, not recommendations. Remove `@aetherall/aexlint/typed-plugin` and its rule if you only want syntax checks.
 
 ```sh
 pnpm exec oxlint src

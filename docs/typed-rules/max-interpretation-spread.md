@@ -8,7 +8,7 @@ Limit how many files check a literal union for particular values. Adding a value
 
 ```json
 {
-  "jsPlugins": ["aexlint/typed-plugin"],
+  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
   "rules": { "aexlint-typed/max-interpretation-spread": ["warn", { "max": 4 }] }
 }
 ```

@@ -1,5 +1,5 @@
 {
-  "name": "aexlint",
+  "name": "@aetherall/aexlint",
   "version": "0.1.0",
   "description": "Custom Oxlint JavaScript rules and native Go type-aware rules, both run by Oxlint.",
   "keywords": [
@@ -36,6 +36,7 @@
     }
   },
   "publishConfig": {
+    "access": "public",
     "executableFiles": [
       "dist/native/linux-x64/aexlint-typed",
       "dist/native/linux-arm64/aexlint-typed",

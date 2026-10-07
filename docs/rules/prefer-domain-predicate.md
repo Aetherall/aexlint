@@ -6,7 +6,7 @@ Experimental, syntax/scope-only Oxlint JS diagnostic. Finds classifications rebu
 
 ```json
 {
-  "jsPlugins": ["aexlint"],
+  "jsPlugins": ["@aetherall/aexlint"],
   "rules": { "aexlint/prefer-domain-predicate": "warn" }
 }
 ```

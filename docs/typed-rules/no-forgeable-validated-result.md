@@ -8,7 +8,7 @@ Report an operation that checks data, then returns it as a plain object type tha
 
 ```json
 {
-  "jsPlugins": ["aexlint/typed-plugin"],
+  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
   "rules": { "aexlint-typed/no-forgeable-validated-result": "warn" }
 }
 ```

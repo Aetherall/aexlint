@@ -6,7 +6,7 @@ Stable, syntax-only Oxlint JS rule. Limits nested logical groups and ternaries, 
 
 ```json
 {
-  "jsPlugins": ["aexlint"],
+  "jsPlugins": ["@aetherall/aexlint"],
   "rules": { "aexlint/max-decision-depth": ["warn", { "max": 2 }] }
 }
 ```

@@ -8,7 +8,7 @@ Reserve `interface` for contracts shared by at least two classes. A single-class
 
 ```json
 {
-  "jsPlugins": ["aexlint/typed-plugin"],
+  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
   "rules": { "aexlint-typed/require-interface-implementations": "warn" }
 }
 ```

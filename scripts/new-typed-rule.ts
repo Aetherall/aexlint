@@ -77,7 +77,7 @@ TODO: describe the behavior and why existing rules do not cover it.
 
 ## Runtime
 
-Native Go rule, run by Oxlint through the aexlint/typed-plugin JavaScript plugin as aexlint-typed/${name}.
+Native Go rule, run by Oxlint through the @aetherall/aexlint/typed-plugin JavaScript plugin as aexlint-typed/${name}.
 
 ## Type information
 

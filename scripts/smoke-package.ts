@@ -38,7 +38,7 @@ try {
   writeFileSync(
     join(consumer, ".oxlintrc.json"),
     JSON.stringify({
-      jsPlugins: ["aexlint", "aexlint/typed-plugin"],
+      jsPlugins: ["@aetherall/aexlint", "@aetherall/aexlint/typed-plugin"],
       categories: { correctness: "off" },
       rules: {
         "aexlint/max-expression-depth": ["error", { max: 2 }],

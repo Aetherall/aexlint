@@ -8,7 +8,7 @@ Prefer `if (value)` or `if (!value)` when types prove that comparing with `undef
 
 ```json
 {
-  "jsPlugins": ["aexlint/typed-plugin"],
+  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
   "rules": { "aexlint-typed/prefer-truthy-presence-check": "warn" }
 }
 ```

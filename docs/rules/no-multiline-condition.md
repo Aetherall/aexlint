@@ -6,7 +6,7 @@ Experimental, syntax-only Oxlint JS rule. Keeps statement conditions on one line
 
 ```json
 {
-  "jsPlugins": ["aexlint"],
+  "jsPlugins": ["@aetherall/aexlint"],
   "rules": { "aexlint/no-multiline-condition": "warn" }
 }
 ```

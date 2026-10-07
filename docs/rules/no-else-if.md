@@ -8,7 +8,7 @@ This conflicts with [max-held-context](max-held-context.md), which treats unifor
 
 ```json
 {
-  "jsPlugins": ["aexlint"],
+  "jsPlugins": ["@aetherall/aexlint"],
   "rules": { "aexlint/no-else-if": "warn" }
 }
 ```

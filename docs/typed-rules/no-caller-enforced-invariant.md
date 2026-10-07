@@ -8,7 +8,7 @@ Report data a caller checks before handing it to a project class that stores it 
 
 ```json
 {
-  "jsPlugins": ["aexlint/typed-plugin"],
+  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
   "rules": { "aexlint-typed/no-caller-enforced-invariant": "warn" }
 }
 ```
