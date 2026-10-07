@@ -30,4 +30,4 @@ jobs:
           name: package
           path: package
       - run: npm install --global npm@11
-      - run: npm publish package/*.tgz --access public --provenance
+      - run: npm publish ./package/*.tgz --access public --provenance
