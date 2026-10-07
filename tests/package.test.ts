@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { globSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -42,6 +42,22 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
   assert.ok(
     files.every((file) => !/\.test\.|^(?:src|tests|scripts|node_modules)\//.test(file.path)),
   );
+  for (const { path } of files) {
+    assert.match(
+      path,
+      /^(?:dist\/|docs\/(?:typed-)?rules\/[^/]+\.md$|(?:README\.md|LICENSE|package\.json)$)/,
+    );
+    assert.doesNotMatch(path, /(?:^|\/)\.[^/]+|\.map$/);
+  }
+  const packedDocs = files.map((file) => file.path).filter((path) => path.startsWith("docs/"));
+  const ruleDocs = globSync(["docs/rules/*.md", "docs/typed-rules/*.md"], { cwd: root });
+  assert.deepEqual(packedDocs.toSorted(), ruleDocs.toSorted());
+  for (const path of ["README.md", "LICENSE", "package.json"]) {
+    assert.ok(
+      files.some((file) => file.path === path),
+      `Missing ${path}`,
+    );
+  }
   writeFileSync(join(consumer, "package.json"), JSON.stringify({ private: true, type: "module" }));
   const store = run("pnpm", ["store", "path"], root).trim();
   run(

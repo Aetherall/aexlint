@@ -19,9 +19,10 @@
   },
   "files": [
     "dist",
-    "docs",
-    "AGENTS.md",
-    "README.md"
+    "docs/rules/*.md",
+    "docs/typed-rules/*.md",
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
   "exports": {
