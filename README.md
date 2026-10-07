@@ -4,7 +4,7 @@ Readability rules for [Oxlint](https://oxc.rs/docs/guide/usage/linter). Run stan
 
 ## Standalone CLI
 
-Requires Node.js 24+ and aexlint 0.2.1 or later.
+Requires Node.js 24+ and aexlint 0.2.2 or later.
 
 ```sh
 pnpx @aetherall/aexlint check

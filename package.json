@@ -1,6 +1,6 @@
 {
   "name": "@aetherall/aexlint",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Custom Oxlint JavaScript rules and native Go type-aware rules, both run by Oxlint.",
   "keywords": [
     "lint",
