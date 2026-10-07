@@ -22,7 +22,7 @@ pnpx downloads and caches aexlint and its pinned Oxlint runtime without adding d
 | `max-expression-complexity` | 4       |
 | `max-decision-depth`        | 2       |
 
-These are CLI starting points, not validated universal limits. `--typed` adds `prefer-truthy-presence-check`; your project still needs its dependencies installed and a usable TypeScript project (see below). `--experimental` adds experimental/prototype syntax rules, including `max-held-context` with maximum 3. Combined with `--typed`, it also adds all experimental typed rules, with interpretation spread maximum 4 and projection spread maximum 2.
+These are CLI starting points, not validated universal limits. `--typed` adds `prefer-truthy-presence-check`; your project still needs its dependencies installed and a usable TypeScript project (see below). `--experimental` adds experimental/prototype syntax rules, including `max-held-context` with maximum 3 and `max-call-assembly` with maximum width 60 and maximum 3 outside names. Combined with `--typed`, it also adds all experimental typed rules, with interpretation spread maximum 4 and projection spread maximum 2.
 
 The CLI ignores root and nested Oxlint configurations and does not enable unrelated built-in checks. Oxlint's normal file exclusions, ignore files, and disable comments apply. Add repeatable `--ignore-pattern <glob>` options for extra exclusions; use `--` before paths starting with a dash. `--format`/`-f` accepts Oxlint output formats. Findings fail the command; Oxlint's exit code is preserved. Run `--help` or `--version` for CLI information.
 
@@ -69,6 +69,7 @@ Normal Oxlint severities, overrides, ignore patterns, and disable comments apply
 | [max-expression-depth](docs/rules/max-expression-depth.md)           | Nested calls                                      | Stable       |
 | [max-expression-complexity](docs/rules/max-expression-complexity.md) | Work inside one expression                        | Stable       |
 | [max-decision-depth](docs/rules/max-decision-depth.md)               | Nested logical groups and ternaries               | Stable       |
+| [max-call-assembly](docs/rules/max-call-assembly.md)                 | Wide calls drawing on many outside names          | Experimental |
 | [max-held-context](docs/rules/max-held-context.md)                   | Enclosing decisions, loops, and callbacks         | Prototype    |
 | [no-else-if](docs/rules/no-else-if.md)                               | `else if` chains                                  | Experimental |
 | [no-multiline-condition](docs/rules/no-multiline-condition.md)       | Conditions spanning multiple lines                | Experimental |

@@ -123,8 +123,13 @@ test("CLI enables every nonstable syntax rule only with --experimental", (t) => 
   write("held.ts", "if (a) { if (b) { if (c) { if (d) work(); } } }\n");
   write("multiline.ts", "if (a &&\n b) work();\n");
   write("predicate.ts", "if (node.type === 'Array' || node.type === 'Object') use(node);\n");
+  write(
+    "assembly.ts",
+    'export function start() {\n  spawn(command, [first, second, ...rest], { cwd: root, env, stdio: "inherit" });\n}\n',
+  );
   assert.deepEqual(check(), []);
   assert.deepEqual(codes(check(["--experimental"], 1)), [
+    "aexlint(max-call-assembly)",
     "aexlint(max-held-context)",
     "aexlint(no-else-if)",
     "aexlint(no-multiline-condition)",
