@@ -6,7 +6,7 @@ Stable, syntax-only Oxlint JS rule. Limits how deeply input-producing invocation
 
 ```json
 {
-  "jsPlugins": ["aexlint"],
+  "jsPlugins": ["@aetherall/aexlint"],
   "rules": { "aexlint/max-expression-depth": ["warn", { "max": 2 }] }
 }
 ```

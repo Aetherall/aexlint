@@ -6,7 +6,7 @@ Prototype, syntax-only Oxlint JS rule. Limits enclosing contexts a reader must r
 
 ```json
 {
-  "jsPlugins": ["aexlint"],
+  "jsPlugins": ["@aetherall/aexlint"],
   "rules": { "aexlint/max-held-context": ["warn", { "max": 3 }] }
 }
 ```

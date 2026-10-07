@@ -18,7 +18,7 @@
 
 - Syntax/scope rules belong in `src/rules/<name>/` using `defineRule` and the real Oxlint RuleTester (`tests/rule-tester.ts`). Include type, description, `docs.requiresTypeChecking: false`, explicit schema (`[]` for no options), and message IDs.
 - Type-aware rules belong in `native/rules/<name>/`, using the real Go program/checker. Export `var Rule = rule.Rule{...}` named `aexlint/<directory-name>` and retain `rule.json` metadata. Validate options in Go.
-- Oxlint's JS API has no types. Our Go rules run through `aexlint/typed-plugin`, not `--type-aware` or `OXLINT_TSGOLINT_PATH`. Never substitute naming/text heuristics for types or introduce ESLint/a frontend fork without a new decision.
+- Oxlint's JS API has no types. Our Go rules run through `@aetherall/aexlint/typed-plugin`, not `--type-aware` or `OXLINT_TSGOLINT_PATH`. Never substitute naming/text heuristics for types or introduce ESLint/a frontend fork without a new decision.
 - Keep state local to each invocation/file. Cross-file indexes may be shared only when keyed by program, built once under synchronization from syntax alone, immutable, and released on collection. Checker work stays per invocation; see [native](docs/native.md#shared-program-indexes).
 - Use real ASTs, checkers, compiler programs, and test runners. No fabricated contexts or nodes.
 - Upgrade native pins together with the matching compiler revision; review patches and compatibility. Permanent changes belong in source or retained patches, not the generated overlay.

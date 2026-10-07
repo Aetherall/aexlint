@@ -1,6 +1,6 @@
 # Native backend
 
-Oxlint's JS API has no type checker, and its built-in typed backend accepts only built-in rules. `aexlint/typed-plugin` bridges our Go rules to ordinary Oxlint plugin diagnostics.
+Oxlint's JS API has no type checker, and its built-in typed backend accepts only built-in rules. `@aetherall/aexlint/typed-plugin` bridges our Go rules to ordinary Oxlint plugin diagnostics.
 
 ## Source layout
 

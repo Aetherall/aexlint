@@ -6,7 +6,7 @@ Stable, syntax-only Oxlint JS rule. Limits computation packed into one expressio
 
 ```json
 {
-  "jsPlugins": ["aexlint"],
+  "jsPlugins": ["@aetherall/aexlint"],
   "rules": { "aexlint/max-expression-complexity": ["warn", { "max": 4 }] }
 }
 ```

@@ -76,7 +76,7 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
     [
       "--input-type=module",
       "-e",
-      'import plugin from "aexlint"; console.log(JSON.stringify({name: plugin.meta.name, rules: Object.keys(plugin.rules).toSorted()}));',
+      'import plugin from "@aetherall/aexlint"; console.log(JSON.stringify({name: plugin.meta.name, rules: Object.keys(plugin.rules).toSorted()}));',
     ],
     consumer,
   );
@@ -87,7 +87,7 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
 
   writeFileSync(
     join(consumer, "consumer.ts"),
-    'import plugin from "aexlint";\nimport typedPlugin from "aexlint/typed-plugin";\nexport const rules = plugin.rules;\nexport const typedRules = typedPlugin.rules;\n',
+    'import plugin from "@aetherall/aexlint";\nimport typedPlugin from "@aetherall/aexlint/typed-plugin";\nexport const rules = plugin.rules;\nexport const typedRules = typedPlugin.rules;\n',
   );
   const compiler = fileURLToPath(
     new URL("./bin/tsc", import.meta.resolve("typescript/package.json")),
@@ -100,7 +100,7 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
 
   writeFileSync(
     join(consumer, "probe.js"),
-    `import plugin from "aexlint";
+    `import plugin from "@aetherall/aexlint";
 export default {
   ...plugin,
   rules: {
@@ -139,7 +139,7 @@ export default {
 
   writeFileSync(
     join(consumer, ".oxlintrc.json"),
-    JSON.stringify({ jsPlugins: ["aexlint"], categories: { correctness: "off" } }),
+    JSON.stringify({ jsPlugins: ["@aetherall/aexlint"], categories: { correctness: "off" } }),
   );
   run(process.execPath, [oxlint, "-c", ".oxlintrc.json", "valid.ts"], consumer);
   const depthRule = "aexlint/max-expression-depth";
@@ -147,7 +147,7 @@ export default {
     writeFileSync(
       join(consumer, ".oxlintrc.json"),
       JSON.stringify({
-        jsPlugins: ["aexlint"],
+        jsPlugins: ["@aetherall/aexlint"],
         categories: { correctness: "off" },
         rules: { [ruleName]: setting },
       }),
@@ -259,7 +259,7 @@ export default {
       [
         "--input-type=module",
         "-e",
-        'import plugin from "aexlint/typed-plugin"; console.log(JSON.stringify(Object.keys(plugin.rules)));',
+        'import plugin from "@aetherall/aexlint/typed-plugin"; console.log(JSON.stringify(Object.keys(plugin.rules)));',
       ],
       consumer,
     ),
@@ -273,7 +273,7 @@ export default {
   writeFileSync(
     join(consumer, ".oxlintrc.json"),
     JSON.stringify({
-      jsPlugins: ["aexlint/typed-plugin"],
+      jsPlugins: ["@aetherall/aexlint/typed-plugin"],
       categories: { correctness: "off" },
       rules: { "aexlint-typed/prefer-truthy-presence-check": "error" },
     }),

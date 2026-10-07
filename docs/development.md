@@ -44,7 +44,7 @@ Package tests resolve and fetch dependencies in a temporary consumer, then insta
 
 ## Releasing
 
-Always review the package contents and notices. Publish the exact CI-tested tarball, not a local rebuild.
+Publish `@aetherall/aexlint` with public access. Review the contents and notices, and use the exact CI-tested tarball, not a local rebuild.
 
 **First release:** set the version, commit and push without a tag, and wait for all CI jobs. Download the `package` artifact and publish its tarball with an authorized npm account. Then configure npm trusted publishing:
 

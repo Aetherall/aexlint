@@ -8,7 +8,7 @@ Limit how many files repeat how a project-owned value becomes an output object. 
 
 ```json
 {
-  "jsPlugins": ["aexlint/typed-plugin"],
+  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
   "rules": { "aexlint-typed/max-projection-spread": ["warn", { "max": 2 }] }
 }
 ```
