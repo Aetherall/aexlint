@@ -44,7 +44,17 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
   );
   writeFileSync(join(consumer, "package.json"), JSON.stringify({ private: true, type: "module" }));
   const store = run("pnpm", ["store", "path"], root).trim();
-  run("pnpm", ["add", "--offline", "--ignore-scripts", "--store-dir", store, filename], consumer);
+  run(
+    "pnpm",
+    ["add", "--lockfile-only", "--ignore-scripts", "--store-dir", store, filename],
+    consumer,
+  );
+  run("pnpm", ["fetch", "--frozen-lockfile", "--ignore-scripts", "--store-dir", store], consumer);
+  run(
+    "pnpm",
+    ["install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--store-dir", store],
+    consumer,
+  );
   const imported = run(
     process.execPath,
     [

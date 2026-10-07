@@ -58,5 +58,5 @@
 - Keep native source pins synchronized with the matching compiler revision. Do not edit cached upstream code or generated shims as the permanent implementation. Upgrade through `native/upstream.json` and review compatibility as described in `docs/native.md`.
 - Do not edit generated `dist/`, `.native/`, or lockfiles manually. Build/test scripts own generated overlays and serialize their use; do not run native builds/tests concurrently in the same working tree.
 - For parallel agents, generate skeletons serially first, then assign separate rule directories and docs. One owner controls shared helpers, native builds, registries, and dependencies.
-- Package tests install the actual tarball offline using the populated pnpm store. Probes validate infrastructure and semantic access, not correctness of future production rules.
+- Package tests resolve and fetch the actual tarball's dependencies in a temporary consumer (registry access may be needed), then install it offline. Probes validate infrastructure and semantic access, not correctness of future production rules.
 - Do not add inline comments, unrelated refactors, commits, publishing, deployment, or new dependencies without task authorization. Put rule rationale in documentation.

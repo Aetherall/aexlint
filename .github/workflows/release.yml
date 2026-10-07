@@ -1,0 +1,33 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: read
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
+  ci:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: package
+      - run: npm install --global npm@11
+      - run: npm publish package/*.tgz --access public --provenance

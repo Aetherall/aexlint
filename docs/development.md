@@ -66,8 +66,9 @@ See [AGENTS.md](../AGENTS.md) for the agent workflow and [native architecture](n
 | `devenv test`                      | Frozen pnpm install and full checks inside devenv                                                |
 | `pnpm build:release`               | Build all six native targets into the same package                                               |
 | `pnpm pack`                        | Release build and one tarball; does not publish                                                  |
+| `pnpm package:smoke <dir>`         | Install the one tarball in `<dir>` into a fresh consumer and run both plugins on this host       |
 
-CI runs the checks and cross-compiles a release tarball. It does not publish or deploy. Cross-compilation verifies builds, not execution on every operating system.
+CI (`.github/workflows/ci.yml`) runs the checks on every push and pull request and cross-compiles a release tarball. It then installs that same tarball on Linux, macOS and Windows runners, each on x64 and arm64, and runs `pnpm package:smoke`, which lints one file with both plugins and so executes the bundled native backend on each platform. The smoke test checks that each executable starts and reports; the full rule suites run only on the Linux x64 host.
 
 ## Why a second plugin?
 
@@ -85,4 +86,23 @@ One tarball contains all JS rules plus native executables for Linux, macOS, and 
 
 Test-only probe rules, Go source caches, unit tests, and development scripts are excluded. Third-party native license/notice texts and the pinned source revisions are included under `dist/native/`. `dist/` and `.native/` are generated, disposable directories.
 
-Before publishing, choose the npm name/scope and project license, review the implemented rule contracts, review all third-party notices and packed contents, and validate the release binaries on intended platforms. The working name is `aexlint`; npm availability and publishing permissions have not been established.
+## Releasing
+
+`.github/workflows/release.yml` publishes to npm when a `v*` tag is pushed:
+
+1. It fails unless the tag equals `v` plus the `version` in `package.json`.
+2. It runs the whole CI workflow, including the six-platform smoke tests.
+3. It publishes the exact tarball CI tested with `npm publish --provenance`, from the `npm` GitHub environment.
+
+Publishing uses npm trusted publishing (GitHub OIDC), so the repository holds no npm token. On npmjs.com, the `aexlint` package's trusted publisher must name repository `Aetherall/aexlint`, workflow `release.yml` and environment `npm`. npm only accepts that setting for a package that already exists.
+
+For the first publication, choose the release version in `package.json`, commit and push the branch without a release tag, and wait for all six CI smoke tests to pass. Download the `package` artifact from that successful run and publish its tarball manually using an authorized npm account. Configure the trusted publisher before using the tag-triggered workflow for subsequent versions. Do not rebuild the first-release tarball after CI validation or try to publish that same version again through a tag.
+
+For subsequent releases, update `version` in `package.json`, commit, then tag and push:
+
+```sh
+git tag v0.1.0
+git push origin master v0.1.0
+```
+
+Review the rule contracts, third-party notices and packed contents before each release.

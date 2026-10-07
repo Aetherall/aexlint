@@ -1,7 +1,9 @@
 name: CI
 on:
   push:
+    branches: ["**"]
   pull_request:
+  workflow_call:
 permissions:
   contents: read
 jobs:
@@ -20,4 +22,36 @@ jobs:
           cache: false
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm pack
+      - run: pnpm pack --pack-destination package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: package/*.tgz
+          if-no-files-found: error
+  package:
+    name: package (${{ matrix.target }})
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: linux-x64, os: ubuntu-24.04 }
+          - { target: linux-arm64, os: ubuntu-24.04-arm }
+          - { target: darwin-x64, os: macos-15-intel }
+          - { target: darwin-arm64, os: macos-15 }
+          - { target: win32-x64, os: windows-2025 }
+          - { target: win32-arm64, os: windows-11-arm }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: package
+      - shell: bash
+        run: test "$(node -p 'process.platform + "-" + process.arch')" = "${{ matrix.target }}"
+      - run: pnpm package:smoke package
