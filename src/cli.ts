@@ -54,6 +54,7 @@ function check(): number {
   const jsPlugins = [fileURLToPath(new URL("./index.js", import.meta.url))];
   if (values.experimental) {
     Object.assign(rules, {
+      "aexlint/max-call-assembly": ["error", { maxWidth: 60, maxReferences: 3 }],
       "aexlint/max-held-context": ["error", { max: 3 }],
       "aexlint/no-else-if": "error",
       "aexlint/no-multiline-condition": "error",
