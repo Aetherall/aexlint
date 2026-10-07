@@ -1,6 +1,6 @@
 {
   "name": "@aetherall/aexlint",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Custom Oxlint JavaScript rules and native Go type-aware rules, both run by Oxlint.",
   "keywords": [
     "lint",
@@ -16,6 +16,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Aetherall/aexlint.git"
+  },
+  "bin": {
+    "aexlint": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -68,12 +71,12 @@
     "prepack": "pnpm build:release"
   },
   "dependencies": {
-    "@oxlint/plugins": "1.83.0"
+    "@oxlint/plugins": "1.83.0",
+    "oxlint": "1.83.0"
   },
   "devDependencies": {
     "@types/node": "24.13.4",
     "oxfmt": "0.68.0",
-    "oxlint": "1.83.0",
     "typescript": "7.0.2"
   },
   "engines": {

@@ -71,6 +71,17 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
     ["install", "--offline", "--frozen-lockfile", "--ignore-scripts", "--store-dir", store],
     consumer,
   );
+  assert.match(run("pnpm", ["exec", "aexlint", "--help"], consumer), /Usage: aexlint check/);
+  writeFileSync(join(consumer, "cli-input.js"), "wrap(wrap(wrap(wrap(value))));\n");
+  const cliReport = JSON.parse(
+    run("pnpm", ["exec", "aexlint", "check", "--format", "json", "cli-input.js"], consumer, 1),
+  );
+  assert.ok(
+    cliReport.diagnostics.some(
+      (item: { code: string }) => item.code === "aexlint(max-expression-depth)",
+    ),
+  );
+  rmSync(join(consumer, "cli-input.js"));
   const imported = run(
     process.execPath,
     [
