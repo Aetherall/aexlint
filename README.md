@@ -24,7 +24,22 @@ pnpx downloads and caches aexlint and its pinned Oxlint runtime without adding d
 
 These are CLI starting points, not validated universal limits. `--typed` adds `prefer-truthy-presence-check`; your project still needs its dependencies installed and a usable TypeScript project (see below). `--experimental` adds experimental/prototype syntax rules, including `max-held-context` with maximum 3 and `max-call-assembly` with maximum width 60 and maximum 3 outside names. Combined with `--typed`, it also adds all experimental typed rules, with interpretation spread maximum 4 and projection spread maximum 2.
 
-The CLI ignores root and nested Oxlint configurations and does not enable unrelated built-in checks. Oxlint's normal file exclusions, ignore files, and disable comments apply. Add repeatable `--ignore-pattern <glob>` options for extra exclusions; use `--` before paths starting with a dash. `--format`/`-f` accepts Oxlint output formats. Findings fail the command; Oxlint's exit code is preserved. Run `--help` or `--version` for CLI information.
+The CLI ignores root and nested Oxlint configurations and does not enable unrelated built-in checks. Oxlint's normal file exclusions, ignore files, and disable comments apply. Add repeatable `--ignore-pattern <glob>` options for extra exclusions, or list globs one per line in `.aexlintignore` in the current directory (blank lines and `#` comments are skipped). Use `--` before paths starting with a dash. `--format`/`-f` accepts Oxlint output formats. Findings fail the command; Oxlint's exit code is preserved. Run `--help` or `--version` for CLI information.
+
+### Reporting only new findings
+
+To check a branch without fixing existing findings first, record the findings of its base revision in a baseline file, then check the branch against it. Only findings missing from the baseline are reported and fail the command. In CI, for example:
+
+```sh
+aexlint="$PWD/node_modules/.bin/aexlint"
+git worktree add ../base "$(git merge-base origin/master HEAD)"
+(cd ../base && pnpm install --frozen-lockfile && "$aexlint" check --write-baseline /tmp/aexlint-baseline)
+"$aexlint" check --baseline /tmp/aexlint-baseline
+```
+
+Use the same aexlint version, flags and paths for both runs. The base needs its dependencies installed only for `--typed`. The baseline is meant to be generated for each check, not committed.
+
+Each line records a file, a rule and the exact message, without the `help:` text that typed rules append. Paths are relative to the directory aexlint runs from, so run both checks from the root of their checkouts. Findings survive moved lines but come back when the flagged code changes enough to change the message, for example when a measured depth grows. Identical findings in one file are counted: adding another one reports one. Findings caused by changes elsewhere, such as a type change in another file, are reported because they are not in the baseline. Renamed or moved files report all their findings again. Parse errors are never skipped. `--write-baseline` overwrites the file and cannot be combined with `--baseline` or `--format`. Baselines apply only to the CLI, not to the plugins.
 
 For custom rule thresholds, overrides, or additional Oxlint options, use the plugin integration below. Installing the package also provides `pnpm exec aexlint check`.
 

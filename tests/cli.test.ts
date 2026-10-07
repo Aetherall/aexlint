@@ -28,7 +28,12 @@ function snapshot(root: string): Record<string, string> {
 
 function consumer(t: TestContext) {
   const root = mkdtempSync(join(tmpdir(), "aexlint-cli-"));
-  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const outside = mkdtempSync(join(tmpdir(), "aexlint-baseline-"));
+  const baseline = join(outside, "baseline");
+  t.after(() => {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  });
   const write = (name: string, source: string) => {
     const path = join(root, name);
     mkdirSync(dirname(path), { recursive: true });
@@ -66,11 +71,21 @@ function consumer(t: TestContext) {
     }
     return parsed.diagnostics;
   };
-  return { write, run, check };
+  const record = (args: string[] = []) => {
+    assert.match(run(["check", "--write-baseline", baseline, ...args]), /aexlint: recorded \d+/);
+    return readFileSync(baseline, "utf8")
+      .split("\n")
+      .filter((line) => line && !line.startsWith("#"));
+  };
+  return { write, run, check, record, baseline };
 }
 
 function codes(diagnostics: Diagnostic[]): string[] {
   return diagnostics.map(({ code }) => code).toSorted();
+}
+
+function filenames(diagnostics: Diagnostic[]): string[] {
+  return diagnostics.map(({ filename }) => filename).toSorted();
 }
 
 test("CLI defaults to the current directory and enforces stable limits as errors", (t) => {
@@ -178,6 +193,111 @@ test("CLI respects ignore files, repeated ignore patterns, and disable comments"
     "aexlint(max-expression-depth)",
   ]);
   assert.deepEqual(check(["--ignore-pattern", "first.ts", "--ignore-pattern", "second.ts"]), []);
+});
+
+test("CLI skips globs listed in .aexlintignore in addition to other ignore sources", (t) => {
+  const { write, check } = consumer(t);
+  write(".aexlintignore", "# generated code\n\ngenerated/**\n  *.legacy.ts  \n");
+  for (const name of ["generated/output.ts", "old.legacy.ts", "kept.ts", "extra.ts"]) {
+    write(name, depthViolation);
+  }
+  assert.deepEqual(filenames(check([], 1)), ["extra.ts", "kept.ts"]);
+  assert.deepEqual(filenames(check(["--ignore-pattern", "extra.ts"], 1)), ["kept.ts"]);
+});
+
+test("CLI skips diagnostics recorded in a baseline but reports new ones", (t) => {
+  const { write, run, check, record, baseline } = consumer(t);
+  const skip = (args: string[] = [], expectedStatus = 0) =>
+    check(["--baseline", baseline, ...args], expectedStatus);
+  const complexity = "result(a(), b(), c(), d());\n";
+  write("legacy.ts", depthViolation + complexity);
+  write("other.ts", depthViolation);
+  write("broken.ts", "export const = ;\n");
+  const recorded = record();
+  assert.equal(recorded.length, 3);
+  assert.ok(
+    recorded.some((line) => line.startsWith('legacy.ts\taexlint(max-expression-depth)\t"')),
+  );
+  assert.equal(check(["legacy.ts", "other.ts"], 1).length, 3);
+  assert.deepEqual(skip(["legacy.ts", "other.ts"]), []);
+  const remaining = JSON.parse(run(["check", "--format", "json", "--baseline", baseline], 1));
+  assert.deepEqual(
+    remaining.diagnostics.map(({ filename, message }: Diagnostic) => [filename, message]),
+    [["broken.ts", "Unexpected token"]],
+  );
+  write("legacy.ts", `\n\n${complexity}${depthViolation}`);
+  assert.deepEqual(skip(["legacy.ts"]), []);
+  write("legacy.ts", `${depthViolation}${complexity}publish(encode(parse(read(other))));\n`);
+  assert.deepEqual(codes(skip(["legacy.ts"], 1)), ["aexlint(max-expression-depth)"]);
+  write("legacy.ts", `${depthViolation}a(b(c(d(e(input)))));\n`);
+  const changed = skip(["legacy.ts"], 1);
+  assert.equal(changed.length, 1);
+  assert.match(changed[0]?.message ?? "", /depth is 5/);
+  write("other.ts", depthViolation + depthViolation);
+  assert.equal(skip(["other.ts"], 1).length, 1);
+  write("other.ts", "export {};\n");
+  assert.deepEqual(skip(["other.ts"]), []);
+});
+
+test("CLI rejects conflicting, missing, and malformed baselines", (t) => {
+  const { run, baseline } = consumer(t);
+  assert.match(
+    run(["check", "--write-baseline", baseline, "--format", "json"], 2),
+    /--write-baseline cannot be combined with --format/,
+  );
+  assert.match(
+    run(["check", "--baseline", baseline, "--write-baseline", baseline], 2),
+    /--baseline cannot be combined with --write-baseline/,
+  );
+  assert.match(run(["check", "--baseline", baseline], 2), /ENOENT/);
+  writeFileSync(baseline, "not a baseline\n");
+  assert.match(run(["check", "--baseline", baseline], 2), /Malformed baseline line/);
+});
+
+test("CLI --write-baseline replaces the file with the diagnostics of that run", (t) => {
+  const { write, record } = consumer(t);
+  write("first.ts", depthViolation);
+  write("second.ts", "if (a) work(); else if (b) other();\n");
+  const all = record(["--experimental"]);
+  assert.ok(all.some((line) => line.startsWith("second.ts\taexlint(no-else-if)")));
+  assert.deepEqual(
+    record(["first.ts"]).map((line) => line.split("\t").slice(0, 2)),
+    [["first.ts", "aexlint(max-expression-depth)"]],
+  );
+});
+
+test("CLI checks one checkout against a baseline recorded in another", (t) => {
+  const base = consumer(t);
+  const head = consumer(t);
+  for (const checkout of [base, head]) checkout.write("src/legacy.ts", depthViolation);
+  const recorded = base.record();
+  assert.equal(recorded.length, 1);
+  assert.ok(recorded[0]?.startsWith("src/legacy.ts\taexlint(max-expression-depth)\t"));
+  assert.deepEqual(head.check(["--baseline", base.baseline]), []);
+  head.write("src/new.ts", depthViolation);
+  assert.deepEqual(filenames(head.check(["--baseline", base.baseline], 1)), ["src/new.ts"]);
+});
+
+test("CLI skips baseline typed diagnostics", (t) => {
+  const { write, check, record, baseline } = consumer(t);
+  write(
+    "tsconfig.json",
+    JSON.stringify({
+      compilerOptions: { strict: true, target: "ESNext", module: "NodeNext", types: [] },
+      include: ["*.ts"],
+    }),
+  );
+  write("dependency.ts", "export declare const value: { id: string } | undefined;\n");
+  write("input.ts", 'import { value } from "./dependency.js";\nif (value !== undefined) {}\n');
+  assert.equal(record(["--typed"]).length, 1);
+  assert.deepEqual(check(["--typed", "--baseline", baseline]), []);
+  write(
+    "input.ts",
+    'import { value } from "./dependency.js";\nif (value !== undefined) {}\nif (value !== undefined) {}\n',
+  );
+  assert.deepEqual(codes(check(["--typed", "--baseline", baseline], 1)), [
+    "aexlint-typed(prefer-truthy-presence-check)",
+  ]);
 });
 
 test("CLI preserves visible failures for missing typed projects and malformed source", (t) => {
