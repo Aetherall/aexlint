@@ -179,11 +179,13 @@ test("CLI preserves visible failures for missing typed projects and malformed so
   const { write, run } = consumer(t);
   write("input.ts", "export const value = 1;\n");
   assert.match(
-    run(["check", "--typed", "input.ts"], 1),
+    run(["check", "--format", "default", "--typed", "input.ts"], 1),
     /aexlint-typed: File .*input\.ts is not included in a TypeScript project.*tsconfig\.json/,
   );
   write("broken.ts", "export const = ;\n");
-  assert.match(run(["check", "broken.ts"], 1), /broken\.ts.*error: Unexpected token/);
+  const report = JSON.parse(run(["check", "--format", "json", "broken.ts"], 1));
+  assert.equal(report.diagnostics[0].filename, "broken.ts");
+  assert.equal(report.diagnostics[0].message, "Unexpected token");
 });
 
 test("CLI supports help/version, rejects invalid arguments, and honors --", (t) => {
