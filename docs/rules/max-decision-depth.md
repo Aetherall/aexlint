@@ -1,66 +1,45 @@
 # max-decision-depth
 
-## Intent and runtime
-
-Limit nesting of expression-level decisions, separately from expression workload and invocation depth. Syntax-only Oxlint JS rule. It covers logical and ternary nesting, not an entire function's control-flow complexity.
-
-Oxlint 1.83.0's `max-depth` limits block nesting, `complexity` measures control-flow complexity, and `no-nested-ternary` categorically rejects nested ternaries. This rule instead allows configurable depth across logical groups and ternaries, without banning mixed operators.
+Stable, syntax-only Oxlint JS rule. Limits nested logical groups and ternaries, not block nesting or total function complexity.
 
 ## Configuration
 
 ```json
 {
   "jsPlugins": ["aexlint"],
-  "rules": {
-    "aexlint/max-decision-depth": ["warn", { "max": 2 }]
-  }
+  "rules": { "aexlint/max-decision-depth": ["warn", { "max": 2 }] }
 }
 ```
 
-Exactly one options object is required. `max` must be a positive safe integer; unknown properties and extra options are rejected. There is no default. The example limit 2 is illustrative, not a universally established readability boundary.
+Exactly one options object is required. `max` must be a positive safe integer; unknown keys and extra options are rejected. There is no default or recommended limit.
 
-## Measurement
+## What counts
 
-- A contiguous group of logical ANDs or logical ORs counts as one decision level, regardless of length. Parentheses and TypeScript wrappers do not split a same-operator group.
-- Nesting a different logical group adds a level. A ternary also adds one level above the greatest depth in its condition or either alternative.
-- Other expression syntax adds no level but preserves decisions inside it. Calls, operators, arrays, templates, JSX, and `await` are not escape hatches.
-- Nullish coalescing does not add a level, but decisions inside its operands remain visible. Logical assignment does not itself add a level in this initial contract.
-- Negation adds no level, but prevents merging logical groups across it: `a && !(b && c)` contains two groups, not one. No boolean algebra or De Morgan rewriting is attempted.
-- Function and class definitions and object fields are independent boundaries. Their nested decisions are checked, but not charged to the enclosing expression merely receiving those values. Computed object keys and spreads are still inspected.
-- Statement nesting does not add levels. Nested `if`/loop/switch blocks should be assessed with block/control-flow rules; this rule checks their expressions independently.
+- A contiguous `&&` or `||` group adds one level, regardless of length. Parentheses and TypeScript wrappers do not split a same-operator group.
+- A different logical group adds another level. A ternary adds one above the greatest depth in its condition or either alternative.
+- Negation adds no level but separates groups: `a && !(b && c)` has depth 2.
+- Other expression syntax preserves the greatest child depth without adding a level. This includes calls, arrays, JSX, operators, `await`, nullish coalescing and logical assignment.
+- Functions, classes and object fields are checked independently, not charged to the expression receiving them. Computed object keys and spreads are still checked.
+- Statement nesting adds no levels; each statement's expressions are checked independently.
 
-## Accepted and reported examples
+## Example
 
-With `max: 2`:
-
-```ts
-const all = a && b && c && d && e;
-const alternatives = (a && b) || (c && d);
-const selection = enabled ? primary : fallback;
-```
-
-Their decision depths are 1, 2, and 1 respectively.
+With `max: 2`, this reports depth 3:
 
 ```ts
 const nested = a && (b || (c && d));
 ```
 
-This reports `tooDeep` with depth 3. The alternatives example and this nested example both have workload 3 under `max-expression-complexity`, but different decision depths.
-
-A ternary example with depth 3:
+This different grouping is accepted at depth 2; it is not an equivalent rewrite:
 
 ```ts
-const selected = a ? b : c ? d : e ? f : g;
+const alternatives = (a && b) || (c && d);
 ```
 
-Diagnostics span the complete outermost over-limit logical group or ternary. Nested reports covered by the same report are suppressed. Independent function/class/object-field computations retain their own diagnostics. Parentheses clarify grouping but do not lower the measured depth.
+## Reporting and limits
 
-## Options and fixes
+Reports `tooDeep` over the complete outermost over-limit logical group or ternary, with its depth and maximum. Covered nested reports are suppressed; independent function, class and object-field computations keep their own reports.
 
-Only `max`; no auto-fixes or suggestions. Extracting conditions or rewriting boolean expressions can change evaluation order, short-circuit behavior, result values, scope, or side effects. The rule cannot choose meaningful predicate names.
+No fixes or suggestions. Rewriting conditions can change short-circuiting, result values, evaluation order and side effects.
 
-## Limitations and interaction
-
-This is a structural readability heuristic, not proof that an expression is difficult to understand. It does not infer predicate types, inspect callees, prove purity, or evaluate conditions. It does not measure decision count, callback nesting, state history, or total function complexity.
-
-Workload and decision depth are independent: a broad expression may exceed only workload, while a deeply alternating logical structure may exceed only decision depth. Both rules may report the same expression; there is no cross-rule suppression or combined score.
+This is a structural measure, not a type, purity or readability proof. It does not inspect callees or count all decisions. [Expression workload](max-expression-complexity.md) and [input depth](max-expression-depth.md) are separate measures; their rules may report the same expression without cross-rule suppression.
