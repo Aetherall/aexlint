@@ -1,6 +1,6 @@
 {
   "name": "aexlint",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Custom Oxlint JavaScript rules and native Go type-aware rules, both run by Oxlint.",
   "keywords": [
     "lint",
@@ -9,8 +9,14 @@
     "readability",
     "typescript"
   ],
+  "homepage": "https://github.com/Aetherall/aexlint#readme",
+  "bugs": "https://github.com/Aetherall/aexlint/issues",
   "license": "MIT",
   "author": "Elies Lou",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Aetherall/aexlint.git"
+  },
   "files": [
     "dist",
     "docs",
@@ -56,6 +62,7 @@
     "native:format": "node scripts/native.ts format",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
     "test:package": "pnpm build && node --test tests/package.test.ts",
+    "package:smoke": "node scripts/smoke-package.ts",
     "prepack": "pnpm build:release"
   },
   "dependencies": {
