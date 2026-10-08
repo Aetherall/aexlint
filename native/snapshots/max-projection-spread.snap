@@ -1,8 +1,8 @@
 
 [TestRule/invalid-0 - 1]
 Diagnostic 1: spreadProjection (4:5 - 4:6)
-Message: This projection of `Site` restates 2 derivations that other files also restate (maximum 2 files each): `id` (`id.serialize()`) in 3 files, `private` (`getVisibility().is("private")`) in 3 files.
-Help: Changing one of these derivations requires finding each file by hand. Other files, nearest first: ../../fixtures/list.ts, ../../fixtures/search.ts.
+Message: This projection of `Site` restates 2 derivations, each found in more than 2 files: `id` (`id.serialize()`), `private` (`getVisibility().is("private")`).
+Help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 3 files, `private` in 3 files. Other files, nearest first: ../../fixtures/list.ts, ../../fixtures/search.ts.
    3 |   return {
    4 |     id: site.id.serialize(),
      |     ~~
@@ -11,8 +11,8 @@ Help: Changing one of these derivations requires finding each file by hand. Othe
 
 [TestRule/invalid-1 - 1]
 Diagnostic 1: spreadProjection (4:5 - 4:6)
-Message: This projection of `Site` restates 2 derivations that other files also restate (maximum 3 files each): `id` (`id.serialize()`) in 4 files, `private` (`getVisibility().is("private")`) in 4 files.
-Help: Changing one of these derivations requires finding each file by hand. Other files, nearest first: ../../fixtures/list.ts, ../../fixtures/more.ts, ../../fixtures/search.ts.
+Message: This projection of `Site` restates 2 derivations, each found in more than 3 files: `id` (`id.serialize()`), `private` (`getVisibility().is("private")`).
+Help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 4 files, `private` in 4 files. Other files, nearest first: ../../fixtures/list.ts, ../../fixtures/more.ts, ../../fixtures/search.ts.
    3 |   return {
    4 |     id: site.id.serialize(),
      |     ~~
@@ -21,8 +21,8 @@ Help: Changing one of these derivations requires finding each file by hand. Othe
 
 [TestRule/invalid-2 - 1]
 Diagnostic 1: spreadProjection (2:39 - 2:39)
-Message: This projection of `Flags` restates 2 derivations that other files also restate (maximum 2 files each): `x` (`get(true).on()`) in 3 files, `y` (`get(null).on()`) in 3 files.
-Help: Changing one of these derivations requires finding each file by hand. Other files, nearest first: ../../fixtures/b.ts, ../../fixtures/c.ts.
+Message: This projection of `Flags` restates 2 derivations, each found in more than 2 files: `x` (`get(true).on()`), `y` (`get(null).on()`).
+Help: Changing one of these derivations requires finding each file by hand. Restated in: `x` in 3 files, `y` in 3 files. Other files, nearest first: ../../fixtures/b.ts, ../../fixtures/c.ts.
    1 | export interface Flags { get(name: string | number | boolean | null): { on(): boolean } }
    2 | export const a = (flags: Flags) => ({ x: flags.get(true).on(), y: flags.get(null).on(), z: flags.get("1").on() });
      |                                       ~
@@ -30,8 +30,8 @@ Help: Changing one of these derivations requires finding each file by hand. Othe
 
 [TestRule/invalid-3 - 1]
 Diagnostic 1: spreadProjection (2:60 - 2:64)
-Message: This projection of `Account` restates 2 derivations that other files also restate (maximum 2 files each): `email` (`getEmail().normalize()`) in 3 files, `paid` (`getPlan().is("paid")`) in 3 files.
-Help: Changing one of these derivations requires finding each file by hand. Other files, nearest first: ../../fixtures/b.ts, ../../fixtures/c.ts.
+Message: This projection of `Account` restates 2 derivations, each found in more than 2 files: `email` (`getEmail().normalize()`), `paid` (`getPlan().is("paid")`).
+Help: Changing one of these derivations requires finding each file by hand. Restated in: `email` in 3 files, `paid` in 3 files. Other files, nearest first: ../../fixtures/b.ts, ../../fixtures/c.ts.
    1 | export interface Account { getEmail(): { normalize(): string }; getPlan(): { is(name: string): boolean } }
    2 | export function a(account: Account | undefined) { return { email: account!.getEmail().normalize(), paid: account!.getPlan().is("paid") }; }
      |                                                            ~~~~~

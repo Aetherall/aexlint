@@ -52,7 +52,7 @@ const LABELS: Record<Plan, string> = {
 
 Above `max`, reports `spreadInterpretation` once per vocabulary in each linted file that checks it, on the value of its first check. Declaration-only files do not report.
 
-The message gives the count, limit and local check count. Help names other files and declarations so you can judge whether the checks belong together. Suppressing a report does not reduce the count.
+The message names the vocabulary by the declaration this file reads most, and gives the limit and the local check count. It describes only this file, so another file joining the spread does not change it. Help gives the file count and names other files and declarations so you can judge whether the checks belong together. Suppressing a report does not reduce the count.
 
 ## Limitations
 

@@ -181,7 +181,7 @@ test("interpretation spread counts unlinted files and respects disable comments"
   assert.deepEqual(codes(spread), ["input.ts aexlint-typed(max-interpretation-spread)"]);
   assert.equal(
     spread.diagnostics[0]!.message.split("\n")[1],
-    "help: Other files, nearest first: other.ts. Declared as: Kind (kinds.ts).",
+    "help: Checked in 2 files. Other files, nearest first: other.ts. Declared as: Kind (kinds.ts).",
   );
   write(
     "other.ts",

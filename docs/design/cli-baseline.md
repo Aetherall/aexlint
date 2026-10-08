@@ -64,5 +64,6 @@ The spread rules are partly covered because the new participant is reported once
 
 - Two lint runs; typed rules need the base's dependencies installed and run a second program check.
 - Renamed or moved files report all their findings again.
-- A message change, for example a larger measured depth or count, reports the finding again. This is intended for findings that get worse, but also happens when an aexlint upgrade rewords messages, so both runs should use the same version.
+- A message change, for example a larger measured depth, reports the finding again. This is intended for findings that get worse, but also happens when an aexlint upgrade rewords messages, so both runs should use the same version.
+- Messages must therefore describe the flagged code, not the rest of the program. Baselines ignore the `help:` text typed rules append, and the spread rules keep their project-wide file counts there: a file joining an over-limit spread is reported once, in that file, instead of resurfacing every untouched participant. Crossing the limit still reports every participant, since each one becomes a new finding.
 - Identity is per file: the same message twice in one file is counted, not located, so swapping which of two identical findings exists goes unnoticed.

@@ -93,6 +93,11 @@ export function f(kind: Kind) { const copy = kind; return copy === "a" || copy !
 				"b.ts", `export class Holder { constructor(readonly kind: "c" | "b" | "a") {} }`),
 				"c.ts", `import { Holder } from "./b.js"; export const g = (holder: Holder) => holder.kind === "c";`),
 				Errors: spread(2, 59, 63)},
+			// The message names the linted file's own declaration, not the one other files read most.
+			{Code: `import { Holder } from "./b.js"; export const f = (holder: Holder) => holder.kind === "c";`, Options: limit(1),
+				Files: with(consumers(2, "Kind", `export const g = (kind: Kind) => kind === "a" || kind === "b";`),
+					"b.ts", `export class Holder { constructor(readonly kind: "c" | "b" | "a") {} }`),
+				Errors: spread(1, 71, 82)},
 			// Discriminated unions, calls, generic constraints, enums, as-const objects, and numbers.
 			{Code: `import type { Entity } from "./kinds.js"; export const f = (s: Entity) => s.type === "file";`, Options: limit(1),
 				Files: consumers(1, "Entity", `export const g = (s: Entity) => s.type !== "alias";`), Errors: spread(1, 75, 81)},

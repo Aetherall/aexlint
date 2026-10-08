@@ -51,7 +51,7 @@ The callers then use `site.toResponse()` rather than rebuilding the object.
 
 ## Reporting scope
 
-Above `max`, reports `spreadProjection` once per projection, on the key of its first over-limit derivation. The message names repeated derivations and their file counts; help lists other files.
+Above `max`, reports `spreadProjection` once per projection, on the key of its first over-limit derivation. The message names repeated derivations, ordered by output key, and the limit. It describes only this projection, so another file restating it does not change it. Help gives each derivation's file count and lists other files.
 
 Copies such as `id: site.id`, shorthand properties, roots at `this`, calls to standalone helpers, and calls with nonliteral arguments do not count. Projections within the limit are accepted.
 

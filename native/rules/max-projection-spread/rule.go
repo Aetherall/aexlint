@@ -264,24 +264,35 @@ func (m *measure) report(spreads []spread, limit int) {
 		}
 		return strings.Compare(a.d.key, b.d.key)
 	})
-	described := []string{}
+	counted := []string{}
 	files := map[*ast.SourceFile]bool{}
 	for _, s := range spreads {
-		described = append(described, fmt.Sprintf("`%s` (`%s`) in %d files", s.d.key, m.chainText(s.d), len(s.files)))
+		counted = append(counted, fmt.Sprintf("`%s` in %d files", s.d.key, len(s.files)))
 		for file := range s.files {
 			files[file] = true
 		}
+	}
+	slices.SortStableFunc(spreads, func(a, b spread) int {
+		return strings.Compare(a.d.key, b.d.key)
+	})
+	described := []string{}
+	for _, s := range spreads {
+		described = append(described, fmt.Sprintf("`%s` (`%s`)", s.d.key, m.chainText(s.d)))
 	}
 	count := "1 derivation"
 	if len(spreads) > 1 {
 		count = fmt.Sprintf("%d derivations", len(spreads))
 	}
+	limited := fmt.Sprintf("%d files", limit)
+	if limit == 1 {
+		limited = "1 file"
+	}
 	m.ctx.ReportNode(first.property.Name(), rule.RuleMessage{
 		Id: "spreadProjection",
-		Description: fmt.Sprintf("This projection of `%s` restates %s that other files also restate (maximum %d files each): %s.",
-			first.owner.Name, count, limit, listed(described, 3)),
-		Help: fmt.Sprintf("Changing one of these derivations requires finding each file by hand. Other files, nearest first: %s.",
-			listed(m.nearest(files), 3)),
+		Description: fmt.Sprintf("This projection of `%s` restates %s, each found in more than %s: %s.",
+			first.owner.Name, count, limited, listed(described, 3)),
+		Help: fmt.Sprintf("Changing one of these derivations requires finding each file by hand. Restated in: %s. Other files, nearest first: %s.",
+			listed(counted, 3), listed(m.nearest(files), 3)),
 	})
 }
 

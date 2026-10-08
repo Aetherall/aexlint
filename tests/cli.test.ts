@@ -300,6 +300,53 @@ test("CLI skips baseline typed diagnostics", (t) => {
   ]);
 });
 
+test("CLI baselines report only the file joining an over-limit spread", (t) => {
+  const { write, check, record, baseline } = consumer(t);
+  const flags = ["--typed", "--experimental"];
+  write(
+    "tsconfig.json",
+    JSON.stringify({
+      compilerOptions: { strict: true, target: "ESNext", module: "NodeNext", types: [] },
+      include: ["*.ts"],
+    }),
+  );
+  write("kinds.ts", 'export type Kind = "a" | "b" | "c";\n');
+  write(
+    "site.ts",
+    'export class Site {\n  id = { serialize: () => "site" };\n  getVisibility() {\n    return { is: (value: string) => value === "private" };\n  }\n}\n',
+  );
+  const participant = (name: string) =>
+    write(
+      `${name}.ts`,
+      [
+        'import type { Kind } from "./kinds.js";',
+        'import type { Site } from "./site.js";',
+        'export const kind = (value: Kind) => value === "a";',
+        "export const project = (site: Site) => ({",
+        "  id: site.id.serialize(),",
+        '  private: site.getVisibility().is("private"),',
+        "});",
+        "",
+      ].join("\n"),
+    );
+  for (const name of ["first", "second", "third", "fourth", "fifth"]) participant(name);
+  assert.deepEqual(codes(check(flags, 1)), [
+    ...Array(5).fill("aexlint-typed(max-interpretation-spread)"),
+    ...Array(5).fill("aexlint-typed(max-projection-spread)"),
+  ]);
+  assert.equal(record(flags).length, 10);
+  participant("sixth");
+  assert.deepEqual(
+    check([...flags, "--baseline", baseline], 1)
+      .map(({ code, filename }) => [code, filename])
+      .toSorted(),
+    [
+      ["aexlint-typed(max-interpretation-spread)", "sixth.ts"],
+      ["aexlint-typed(max-projection-spread)", "sixth.ts"],
+    ],
+  );
+});
+
 test("CLI preserves visible failures for missing typed projects and malformed source", (t) => {
   const { write, run } = consumer(t);
   write("input.ts", "export const value = 1;\n");
