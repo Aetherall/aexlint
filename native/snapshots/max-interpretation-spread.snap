@@ -1,8 +1,8 @@
 
 [TestRule/invalid-0 - 1]
 Diagnostic 1: spreadInterpretation (2:34 - 2:42)
-Message: `Kind` ("a" | "b" | "c") is checked for particular values in 5 files (maximum 4). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/consumer0.ts, ../../fixtures/consumer1.ts, ../../fixtures/consumer2.ts, and 1 more. Declared as: Kind (../../fixtures/kinds.ts).
+Message: `Kind` ("a" | "b" | "c") is checked for particular values in more than 4 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 5 files. Other files, nearest first: ../../fixtures/consumer0.ts, ../../fixtures/consumer1.ts, ../../fixtures/consumer2.ts, and 1 more. Declared as: Kind (../../fixtures/kinds.ts).
    1 | import type { Item } from "./kinds.js";
    2 | export const f = (item: Item) => item.kind === "a";
      |                                  ~~~~~~~~~
@@ -10,8 +10,8 @@ Help: Other files, nearest first: ../../fixtures/consumer0.ts, ../../fixtures/co
 
 [TestRule/invalid-1 - 1]
 Diagnostic 1: spreadInterpretation (2:34 - 2:42)
-Message: `Kind` ("a" | "b" | "c") is checked for particular values in 3 files (maximum 2). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/consumer0.ts, ../../fixtures/consumer1.ts. Declared as: Kind (../../fixtures/kinds.ts).
+Message: `Kind` ("a" | "b" | "c") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 3 files. Other files, nearest first: ../../fixtures/consumer0.ts, ../../fixtures/consumer1.ts. Declared as: Kind (../../fixtures/kinds.ts).
    1 | import type { Item } from "./kinds.js";
    2 | export const f = (item: Item) => item.kind === "a";
      |                                  ~~~~~~~~~
@@ -19,8 +19,8 @@ Help: Other files, nearest first: ../../fixtures/consumer0.ts, ../../fixtures/co
 
 [TestRule/invalid-2 - 1]
 Diagnostic 1: spreadInterpretation (2:34 - 2:42)
-Message: `Kind` ("a" | "b" | "c") is checked for particular values in 6 files (maximum 5). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts, ../../fixtures/c.ts, and 2 more. Declared as: Kind (../../fixtures/kinds.ts).
+Message: `Kind` ("a" | "b" | "c") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 6 files. Other files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts, ../../fixtures/c.ts, and 2 more. Declared as: Kind (../../fixtures/kinds.ts).
    1 | import type { Item } from "./kinds.js";
    2 | export const f = (item: Item) => item.kind === "a";
      |                                  ~~~~~~~~~
@@ -28,82 +28,90 @@ Help: Other files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts, ../.
 
 [TestRule/invalid-3 - 1]
 Diagnostic 1: spreadInterpretation (2:59 - 2:62)
-Message: `Kind` ("a" | "b" | "c") is checked for particular values in 3 files (maximum 2). The compiler points to none of these checks when a value is added. This file has 2 such checks.
-Help: Other files, nearest first: ../../fixtures/a.ts, ../../fixtures/c.ts. Declared as: Kind (../../fixtures/kinds.ts), Holder.kind (../../fixtures/b.ts), kind (../../fixtures/a.ts).
+Message: `Kind` ("a" | "b" | "c") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 2 such checks.
+Help: Checked in 3 files. Other files, nearest first: ../../fixtures/a.ts, ../../fixtures/c.ts. Declared as: Kind (../../fixtures/kinds.ts), Holder.kind (../../fixtures/b.ts), kind (../../fixtures/a.ts).
    1 | import type { Kind } from "./kinds.js";
    2 | export function f(kind: Kind) { const copy = kind; return copy === "a" || copy !== "b"; }
      |                                                           ~~~~
 ---
 
 [TestRule/invalid-4 - 1]
+Diagnostic 1: spreadInterpretation (1:71 - 1:81)
+Message: `Holder.kind` ("a" | "b" | "c") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 3 files. Other files, nearest first: ../../fixtures/consumer0.ts, ../../fixtures/consumer1.ts. Declared as: Kind (../../fixtures/kinds.ts), Holder.kind (../../fixtures/b.ts).
+   1 | import { Holder } from "./b.js"; export const f = (holder: Holder) => holder.kind === "c";
+     |                                                                       ~~~~~~~~~~~
+---
+
+[TestRule/invalid-5 - 1]
 Diagnostic 1: spreadInterpretation (1:75 - 1:80)
-Message: `File.type` ("alias" | "file" | "folder") is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: File.type (../../fixtures/kinds.ts), Folder.type (../../fixtures/kinds.ts).
+Message: `File.type` ("alias" | "file" | "folder") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: File.type (../../fixtures/kinds.ts), Folder.type (../../fixtures/kinds.ts).
    1 | import type { Entity } from "./kinds.js"; export const f = (s: Entity) => s.type === "file";
      |                                                                           ~~~~~~
 ---
 
-[TestRule/invalid-5 - 1]
+[TestRule/invalid-6 - 1]
 Diagnostic 1: spreadInterpretation (1:80 - 1:85)
-Message: `Kind` ("a" | "b" | "c") is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: Kind (../../fixtures/kinds.ts), kind (../../fixtures/consumer0.ts).
+Message: `Kind` ("a" | "b" | "c") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: Kind (../../fixtures/kinds.ts), kind (../../fixtures/consumer0.ts).
    1 | import type { Kind } from "./kinds.js"; export const f = (mode: () => Kind) => mode() === "a";
      |                                                                                ~~~~~~
 ---
 
-[TestRule/invalid-6 - 1]
+[TestRule/invalid-7 - 1]
 Diagnostic 1: spreadInterpretation (1:68 - 1:68)
-Message: `Level` (Level.High | Level.Low) is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/a.ts. Declared as: Level (../../fixtures/level.ts).
+Message: `Level` (Level.High | Level.Low) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/a.ts. Declared as: Level (../../fixtures/level.ts).
    1 | import { Level } from "./level.js"; export const f = (l: Level) => l === Level.High;
      |                                                                    ~
 ---
 
-[TestRule/invalid-7 - 1]
+[TestRule/invalid-8 - 1]
 Diagnostic 1: spreadInterpretation (2:33 - 2:33)
-Message: `Status` ("done" | "ready") is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/a.ts. Declared as: Status (../../fixtures/file.ts).
+Message: `Status` ("done" | "ready") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/a.ts. Declared as: Status (../../fixtures/file.ts).
    1 | export const Status = { Ready: "ready", Done: "done" } as const; export type Status = (typeof Status)[keyof typeof Status];
    2 | export const f = (s: Status) => s === "ready";
      |                                 ~
 ---
 
-[TestRule/invalid-8 - 1]
+[TestRule/invalid-9 - 1]
 Diagnostic 1: spreadInterpretation (1:41 - 1:46)
-Message: `status` (1 | 2 | 3) is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: status (../../fixtures/consumer0.ts), status (../../fixtures/file.ts).
+Message: `status` (1 | 2 | 3) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: status (../../fixtures/consumer0.ts), status (../../fixtures/file.ts).
    1 | export const f = (status: 1 | 2 | 3) => status === 1;
      |                                         ~~~~~~
 ---
 
-[TestRule/invalid-9 - 1]
+[TestRule/invalid-10 - 1]
 Diagnostic 1: spreadInterpretation (2:45 - 2:53)
-Message: `Kind` ("a" | "b" | "c") is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 2 such checks.
-Help: Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: Kind (../../fixtures/kinds.ts).
+Message: `Kind` ("a" | "b" | "c") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 2 such checks.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: Kind (../../fixtures/kinds.ts).
    1 | import type { Item, Entity } from "./kinds.js";
    2 | export const f = (item: Item, s: Entity) => item.kind === "a" || item.kind === "b" || s.type === "file";
      |                                             ~~~~~~~~~
 
 Diagnostic 2: spreadInterpretation (2:87 - 2:92)
-Message: `File.type` ("alias" | "file" | "folder") is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: File.type (../../fixtures/kinds.ts), Folder.type (../../fixtures/kinds.ts).
+Message: `File.type` ("alias" | "file" | "folder") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/consumer0.ts. Declared as: File.type (../../fixtures/kinds.ts), Folder.type (../../fixtures/kinds.ts).
    1 | import type { Item, Entity } from "./kinds.js";
    2 | export const f = (item: Item, s: Entity) => item.kind === "a" || item.kind === "b" || s.type === "file";
      |                                                                                       ~~~~~~
 ---
 
-[TestRule/invalid-10 - 1]
+[TestRule/invalid-11 - 1]
 Diagnostic 1: spreadInterpretation (1:85 - 1:87)
-Message: `Big` ("a" | "b" | "c" | "d" | … (6 values)) is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/a.ts. Declared as: Big (../../fixtures/file.ts). Values: "a" | "b" | "c" | "d" | "e" | "f".
+Message: `Big` ("a" | "b" | "c" | "d" | … (6 values)) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/a.ts. Declared as: Big (../../fixtures/file.ts). Values: "a" | "b" | "c" | "d" | "e" | "f".
    1 | export type Big = "a" | "b" | "c" | "d" | "e" | "f"; export const f = (big: Big) => big === "f";
      |                                                                                     ~~~
 ---
 
-[TestRule/invalid-11 - 1]
+[TestRule/invalid-12 - 1]
 Diagnostic 1: spreadInterpretation (1:75 - 1:78)
-Message: `Kind` ("a" | "b") is checked for particular values in 2 files (maximum 1). The compiler points to none of these checks when a value is added. This file has 1 such check.
-Help: Other files, nearest first: ../../fixtures/a.ts. Declared as: Kind (../../fixtures/kinds2.ts).
+Message: `Kind` ("a" | "b") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+Help: Checked in 2 files. Other files, nearest first: ../../fixtures/a.ts. Declared as: Kind (../../fixtures/kinds2.ts).
    1 | import type { Kind } from "./kinds2.js"; export const f = (kind: Kind) => kind === "a";
      |                                                                           ~~~~
 ---

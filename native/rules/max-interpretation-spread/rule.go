@@ -382,22 +382,33 @@ func (m *measure) origins(sites []Site) ([]string, string) {
 }
 
 func (m *measure) report(g *group, limit int) {
-	origins, name := m.origins(g.sites)
+	origins, _ := m.origins(g.sites)
+	local := []Site{}
+	for _, s := range g.sites {
+		if ast.GetSourceFileOfNode(s.Node) == m.ctx.SourceFile {
+			local = append(local, s)
+		}
+	}
+	_, name := m.origins(local)
 	checks := "1 such check"
 	if g.local > 1 {
 		checks = fmt.Sprintf("%d such checks", g.local)
 	}
 	values := m.values(g.first.Union)
 	shown := strings.Join(values, " | ")
-	help := fmt.Sprintf("Other files, nearest first: %s. Declared as: %s.", listed(m.nearest(g.files), 3), listed(origins, 4))
+	help := fmt.Sprintf("Checked in %d files. Other files, nearest first: %s. Declared as: %s.", len(g.files), listed(m.nearest(g.files), 3), listed(origins, 4))
 	if len(values) > 5 {
 		shown = fmt.Sprintf("%s | … (%d values)", strings.Join(values[:4], " | "), len(values))
 		help += " Values: " + strings.Join(values, " | ") + "."
 	}
+	limited := fmt.Sprintf("%d files", limit)
+	if limit == 1 {
+		limited = "1 file"
+	}
 	m.ctx.ReportNode(g.first.Node, rule.RuleMessage{
 		Id: "spreadInterpretation",
-		Description: fmt.Sprintf("`%s` (%s) is checked for particular values in %d files (maximum %d). The compiler points to none of these checks when a value is added. This file has %s.",
-			name, shown, len(g.files), limit, checks),
+		Description: fmt.Sprintf("`%s` (%s) is checked for particular values in more than %s. The compiler points to none of these checks when a value is added. This file has %s.",
+			name, shown, limited, checks),
 		Help: help,
 	})
 }
