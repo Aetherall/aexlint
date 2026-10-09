@@ -1,5 +1,10 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
-import { isLogicalDecision, isSignedExpression, unwrap } from "../../expression.ts";
+import {
+  computedProperty,
+  isLogicalDecision,
+  isSignedExpression,
+  unwrap,
+} from "../../expression.ts";
 
 function isBoundary(node: ESTree.Node): boolean {
   return [
@@ -34,6 +39,21 @@ function isTransparentUnary(node: ESTree.UnaryExpression): boolean {
   return node.operator === "!" || node.operator === "typeof";
 }
 
+function logicalCost(node: ESTree.LogicalExpression): number {
+  return node.operator === "??" ? 0 : 1;
+}
+
+function assignmentCost(node: ESTree.AssignmentExpression): number {
+  return isPlainOrDefaultingAssignment(node) ? 0 : 1;
+}
+
+function unaryCost(node: ESTree.UnaryExpression): number {
+  if (isTransparentUnary(node)) return 0;
+  if (!isSignedExpression(node)) return 1;
+  if (node.argument.type !== "Literal") return 1;
+  return typeof node.argument.value === "number" || "bigint" in node.argument ? 0 : 1;
+}
+
 function ownCost(node: ESTree.Node): number {
   switch (node.type) {
     case "CallExpression":
@@ -46,14 +66,11 @@ function ownCost(node: ESTree.Node): number {
     case "YieldExpression":
       return 1;
     case "LogicalExpression":
-      return node.operator === "??" ? 0 : 1;
+      return logicalCost(node);
     case "AssignmentExpression":
-      return isPlainOrDefaultingAssignment(node) ? 0 : 1;
+      return assignmentCost(node);
     case "UnaryExpression":
-      if (isTransparentUnary(node)) return 0;
-      if (!isSignedExpression(node)) return 1;
-      if (node.argument.type !== "Literal") return 1;
-      return typeof node.argument.value === "number" || "bigint" in node.argument ? 0 : 1;
+      return unaryCost(node);
     default:
       return 0;
   }
@@ -98,6 +115,17 @@ export default defineRule({
     const add = (node: ESTree.Node | null | undefined) => {
       if (node != null) regions.add(node);
     };
+    const addKey = (node: { computed: boolean; key: ESTree.Node }) => {
+      if (node.computed) add(node.key);
+    };
+    const addExpressionBody = (node: ESTree.ArrowFunctionExpression) => {
+      if (node.body.type !== "BlockStatement") add(node.body);
+    };
+    const addLoopHeader = (node: ESTree.ForStatement) => {
+      if (node.init?.type !== "VariableDeclaration") add(node.init);
+      add(node.test);
+      add(node.update);
+    };
     const childrenOf = (node: ESTree.Node): ESTree.Node[] => {
       const fields = node as unknown as Record<string, ESTree.Node | ESTree.Node[] | null>;
       const children: ESTree.Node[] = [];
@@ -124,7 +152,7 @@ export default defineRule({
             add(node.argument);
             break;
           case "ArrowFunctionExpression":
-            if (node.body.type !== "BlockStatement") add(node.body);
+            addExpressionBody(node);
             break;
           case "IfStatement":
           case "WhileStatement":
@@ -132,9 +160,7 @@ export default defineRule({
             add(node.test);
             break;
           case "ForStatement":
-            if (node.init?.type !== "VariableDeclaration") add(node.init);
-            add(node.test);
-            add(node.update);
+            addLoopHeader(node);
             break;
           case "ForInStatement":
           case "ForOfStatement":
@@ -152,10 +178,10 @@ export default defineRule({
           case "PropertyDefinition":
           case "AccessorProperty":
             add(node.value);
-            if (node.computed) add(node.key);
+            addKey(node);
             break;
           case "MethodDefinition":
-            if (node.computed) add(node.key);
+            addKey(node);
             break;
           case "ClassDeclaration":
           case "ClassExpression":
@@ -192,7 +218,7 @@ export default defineRule({
           if (callee.type === "MemberExpression") {
             const inputs: ESTree.Node[] =
               node.type === "CallExpression" ? [...node.arguments] : [node.quasi];
-            if (callee.computed) inputs.push(callee.property);
+            inputs.push(...computedProperty(callee));
             const stageScore = 1 + sum(inputs);
             scores.set(node, Math.max(scoreOf(callee.object), stageScore));
             return;

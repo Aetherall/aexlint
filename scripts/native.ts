@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { backendExecutable } from "../src/typed/backend.ts";
 
 export const root = fileURLToPath(new URL("../", import.meta.url));
 const cache = join(root, ".native");
@@ -165,7 +166,7 @@ function build(target: string, names: string[], directory: string): void {
       "-trimpath",
       "-ldflags=-s -w",
       "-o",
-      join(output, `aexlint-typed${platform === "win32" ? ".exe" : ""}`),
+      join(output, backendExecutable(platform)),
       "./cmd/tsgolint",
     ],
     source,

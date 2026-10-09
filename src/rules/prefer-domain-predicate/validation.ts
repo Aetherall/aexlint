@@ -7,9 +7,13 @@ function isReadOnlyUnary(node: ESTree.UnaryExpression): boolean {
   return readOnlyUnaryOperators.includes(node.operator);
 }
 
+export function soleStatement(node: ESTree.Statement): ESTree.Statement | undefined {
+  if (node.type !== "BlockStatement") return node;
+  if (node.body.length === 1) return node.body[0];
+}
+
 function guardExit(node: ESTree.Statement): "throw" | "return" | undefined {
-  const statement = node.type === "BlockStatement" ? node.body[0] : node;
-  if (node.type === "BlockStatement" && node.body.length !== 1) return;
+  const statement = soleStatement(node);
   if (statement?.type === "ThrowStatement") return "throw";
   if (statement?.type === "ReturnStatement" && statement.argument === null) return "return";
 }
@@ -26,8 +30,7 @@ export function isValidationBody(
       case "Literal":
         return true;
       case "MemberExpression":
-        if (!isRead(value.object)) return false;
-        return !value.computed || isRead(value.property);
+        return isRead(value.object) && (!value.computed || isRead(value.property));
       case "UnaryExpression":
         return isReadOnlyUnary(value) && isRead(value.argument);
       case "BinaryExpression":
@@ -39,39 +42,40 @@ export function isValidationBody(
         return value.elements.every((element) => element === null || isRead(element));
       case "TemplateLiteral":
         return value.expressions.every(isRead);
-      case "CallExpression": {
-        if (!isMembership(value)) return false;
-        const callee = unwrap(value.callee);
-        if (callee.type !== "MemberExpression" || !isRead(callee.object)) return false;
-        return value.arguments.every(isRead);
-      }
+      case "CallExpression":
+        return isMembershipRead(value);
       default:
         return false;
     }
+  };
+  const isMembershipRead = (call: ESTree.CallExpression): boolean => {
+    if (!isMembership(call)) return false;
+    const callee = unwrap(call.callee);
+    if (callee.type !== "MemberExpression" || !isRead(callee.object)) return false;
+    return call.arguments.every(isRead);
   };
   const isLocal = (declaration: ESTree.VariableDeclarator): boolean => {
     if (declaration.id.type !== "Identifier" || !declaration.init) return false;
     return isRead(declaration.init);
   };
-  let rejectsInvalidInput = false;
-  for (const statement of body.body) {
+  const guardOf = (statement: ESTree.IfStatement): "throw" | "return" | undefined => {
+    if (statement.alternate || !isRead(statement.test)) return;
+    return guardExit(statement.consequent);
+  };
+  const isValidationStep = (statement: ESTree.Statement): boolean => {
     switch (statement.type) {
       case "VariableDeclaration":
-        if (statement.kind !== "const" || !statement.declarations.every(isLocal)) return false;
-        break;
-      case "IfStatement": {
-        if (statement.alternate || !isRead(statement.test)) return false;
-        const exit = guardExit(statement.consequent);
-        if (!exit) return false;
-        if (exit === "throw") rejectsInvalidInput = true;
-        break;
-      }
+        return statement.kind === "const" && statement.declarations.every(isLocal);
+      case "IfStatement":
+        return guardOf(statement) !== undefined;
       case "ReturnStatement":
-        if (statement.argument !== null || statement !== body.body.at(-1)) return false;
-        break;
+        return statement.argument === null && statement === body.body.at(-1);
       default:
         return false;
     }
-  }
-  return rejectsInvalidInput;
+  };
+  if (!body.body.every(isValidationStep)) return false;
+  return body.body.some(
+    (statement) => statement.type === "IfStatement" && guardOf(statement) === "throw",
+  );
 }

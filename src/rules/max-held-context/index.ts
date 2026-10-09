@@ -139,23 +139,9 @@ class HeldContextMeasure {
       case "IfStatement":
         return this.ifStatement(node, depth, region);
       case "SwitchStatement":
-        this.decide(node, depth, region);
-        this.walk(node.discriminant, depth, region);
-        for (const branch of node.cases) {
-          if (branch.test) this.walk(branch.test, depth, region);
-          const inside = HeldContextMeasure.inside(region);
-          for (const statement of branch.consequent) this.walk(statement, depth + 1, inside);
-        }
-        return;
+        return this.switchStatement(node, depth, region);
       case "TryStatement":
-        this.walk(node.block, depth, region);
-        if (node.handler) {
-          this.decide(node.handler, depth, region);
-          if (node.handler.param) this.walk(node.handler.param, depth, region);
-          this.opened(node.handler.body, depth, region);
-        }
-        if (node.finalizer) this.walk(node.finalizer, depth, region);
-        return;
+        return this.tryStatement(node, depth, region);
       case "ConditionalExpression":
         this.decide(node, depth, region);
         this.walk(node.test, depth, region);
@@ -177,6 +163,26 @@ class HeldContextMeasure {
     this.opened(node.consequent, depth, region);
     if (node.alternate?.type === "IfStatement") this.walk(node.alternate, depth, region);
     else if (node.alternate) this.opened(node.alternate, depth, region);
+  }
+
+  private switchStatement(node: ESTree.SwitchStatement, depth: number, region: Region): void {
+    this.decide(node, depth, region);
+    this.walk(node.discriminant, depth, region);
+    for (const branch of node.cases) {
+      if (branch.test) this.walk(branch.test, depth, region);
+      const inside = HeldContextMeasure.inside(region);
+      for (const statement of branch.consequent) this.walk(statement, depth + 1, inside);
+    }
+  }
+
+  private tryStatement(node: ESTree.TryStatement, depth: number, region: Region): void {
+    this.walk(node.block, depth, region);
+    if (node.handler) {
+      this.decide(node.handler, depth, region);
+      if (node.handler.param) this.walk(node.handler.param, depth, region);
+      this.opened(node.handler.body, depth, region);
+    }
+    if (node.finalizer) this.walk(node.finalizer, depth, region);
   }
 
   private loop(node: Loop, depth: number, region: Region): void {
@@ -207,18 +213,21 @@ class HeldContextMeasure {
     if (node.type === "ConditionalExpression" || node.type === "DoWhileStatement") {
       return { start: at(node.test.range[0]), end: at(node.test.range[1]) };
     }
-    if (node.type === "CatchClause") {
-      const end = node.param
-        ? source.text.indexOf(")", node.param.range[1]) + 1
-        : node.range[0] + "catch".length;
-      return { start: at(node.range[0]), end: at(end) };
-    }
+    if (node.type === "CatchClause") return this.catchHead(node);
     const fields = node as unknown as Record<string, ESTree.Node | null | undefined>;
     const last = ["test", "update", "right", "discriminant"]
       .map((key) => fields[key])
       .filter((part): part is ESTree.Node => Boolean(part))
       .reduce<number>((end, part) => Math.max(end, part.range[1]), node.range[0]);
     return { start: at(node.range[0]), end: at(source.text.indexOf(")", last) + 1) };
+  }
+
+  private catchHead(node: ESTree.CatchClause): { start: LineColumn; end: LineColumn } {
+    const source = this.context.sourceCode;
+    const end = node.param
+      ? source.text.indexOf(")", node.param.range[1]) + 1
+      : node.range[0] + "catch".length;
+    return { start: source.getLocFromIndex(node.range[0]), end: source.getLocFromIndex(end) };
   }
 
   toString(): string {

@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import { rules } from "../src/rules/index.ts";
+import { backendExecutable } from "../src/typed/backend.ts";
 
 const repository = new URL("../", import.meta.url);
 const syntaxConfig = JSON.parse(readFileSync(new URL(".oxlintrc.json", repository), "utf8"));
@@ -94,8 +95,9 @@ test("mandatory and experimental lint configurations cover every rule and TS dir
   }
 
   const target = `${process.platform}-${process.arch}`;
-  const executable = process.platform === "win32" ? "aexlint-typed.exe" : "aexlint-typed";
-  const backend = fileURLToPath(new URL(`dist/native/${target}/${executable}`, repository));
+  const backend = fileURLToPath(
+    new URL(`dist/native/${target}/${backendExecutable()}`, repository),
+  );
   const typedPlugin = fileURLToPath(new URL(typedConfig.jsPlugins[0], repository));
   writeFileSync(
     join(root, ".oxlintrc.json"),

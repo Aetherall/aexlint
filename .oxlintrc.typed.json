@@ -3,7 +3,10 @@
   "categories": { "correctness": "off" },
   "jsPlugins": ["./src/typed/plugin.ts"],
   "rules": {
-    "aexlint-typed/prefer-truthy-presence-check": "error"
+    "aexlint-typed/prefer-truthy-presence-check": "error",
+    "aexlint-typed/no-repeated-value-group": "error",
+    "aexlint-typed/no-repeated-value-policy": "error",
+    "aexlint-typed/no-procedural-value-dispatch": "error"
   },
   "ignorePatterns": ["dist", "node_modules"]
 }

@@ -6,7 +6,7 @@ import {
   isSignedExpression,
   unwrap,
 } from "../../expression.ts";
-import { isValidationBody } from "./validation.ts";
+import { isValidationBody, soleStatement } from "./validation.ts";
 
 type Facts = Map<string, Set<string>>;
 
@@ -105,8 +105,7 @@ function hasName(node: ESTree.Node): boolean {
 }
 
 function isBooleanExit(node: ESTree.Statement): boolean {
-  const statement = node.type === "BlockStatement" ? node.body[0] : node;
-  if (node.type === "BlockStatement" && node.body.length !== 1) return false;
+  const statement = soleStatement(node);
   if (statement?.type !== "ReturnStatement" || !statement.argument) return false;
   const value = unwrap(statement.argument);
   return value.type === "Literal" && typeof value.value === "boolean";
@@ -174,6 +173,17 @@ const reversed: Record<string, string> = {
   ge: "le",
 };
 
+function arrayEvidence(node: ESTree.ArrayExpression): string[] | undefined {
+  const values: string[] = [];
+  for (const element of node.elements) {
+    if (!element) return;
+    const key = literal(element);
+    if (key === undefined) return;
+    values.push(`eq:${key}`);
+  }
+  return values;
+}
+
 function comparisonFacts(node: ESTree.BinaryExpression | ESTree.PrivateInExpression): Facts {
   const operation = comparisons[node.operator];
   if (!operation) return new Map();
@@ -218,21 +228,14 @@ export default defineRule({
       const value = unwrap(node);
       const name = pathOf(value);
       if (name) return [`category:${JSON.stringify(name)}`];
-      if (value.type === "ArrayExpression") {
-        const values: string[] = [];
-        for (const element of value.elements) {
-          if (!element) return;
-          const key = literal(element);
-          if (key === undefined) return;
-          values.push(`eq:${key}`);
-        }
-        return values;
-      }
-      if (value.type !== "NewExpression") return;
-      if (!isSetIdentifier(value.callee)) return;
-      if (definitionOf(value.callee, "Set")) return;
-      if (value.arguments.length !== 1) return;
-      return categoryEvidence(value.arguments[0]!);
+      if (value.type === "ArrayExpression") return arrayEvidence(value);
+      if (value.type === "NewExpression") return setEvidence(value);
+    };
+    const setEvidence = (node: ESTree.NewExpression): string[] | undefined => {
+      if (!isSetIdentifier(node.callee)) return;
+      if (definitionOf(node.callee, "Set")) return;
+      if (node.arguments.length !== 1) return;
+      return categoryEvidence(node.arguments[0]!);
     };
     const membershipFacts = (node: ESTree.CallExpression): Facts => {
       const callee = unwrap(node.callee);
@@ -263,23 +266,26 @@ export default defineRule({
       while (isNegation(value)) value = unwrap(value.argument);
       return facts.get(value) ?? new Map();
     };
+    const logicalFacts = (node: ESTree.LogicalExpression): Facts | undefined => {
+      if (node.operator === "??") return;
+      return merge(factsOf(node.left), factsOf(node.right));
+    };
+    const evidenceOf = (node: ESTree.Node): Facts | undefined => {
+      switch (node.type) {
+        case "BinaryExpression":
+          return comparisonFacts(node);
+        case "CallExpression":
+          return membershipFacts(node);
+        case "LogicalExpression":
+          return logicalFacts(node);
+        default:
+          return undefined;
+      }
+    };
     return {
       "*:exit"(node) {
-        let evidence: Facts;
-        switch (node.type) {
-          case "BinaryExpression":
-            evidence = comparisonFacts(node);
-            break;
-          case "CallExpression":
-            evidence = membershipFacts(node);
-            break;
-          case "LogicalExpression":
-            if (node.operator === "??") return;
-            evidence = merge(factsOf(node.left), factsOf(node.right));
-            break;
-          default:
-            return;
-        }
+        const evidence = evidenceOf(node);
+        if (!evidence) return;
         facts.set(node, evidence);
         if (hasName(compositionRoot(node))) return;
         if (isPredicateResult(node) || isValidationCheck(node)) return;

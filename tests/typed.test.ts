@@ -5,16 +5,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { availableRules, decodeFrames } from "../src/typed/backend.ts";
+import { availableRules, backendExecutable, decodeFrames } from "../src/typed/backend.ts";
 
 const oxlint = fileURLToPath(new URL("../node_modules/oxlint/bin/oxlint", import.meta.url));
 const plugin = fileURLToPath(new URL("../src/typed/plugin.ts", import.meta.url));
 const target = `${process.platform}-${process.arch}`;
 const backend = fileURLToPath(
-  new URL(
-    `../.native/probe/${target}/aexlint-typed${process.platform === "win32" ? ".exe" : ""}`,
-    import.meta.url,
-  ),
+  new URL(`../.native/probe/${target}/${backendExecutable()}`, import.meta.url),
 );
 
 interface OxlintDiagnostic {

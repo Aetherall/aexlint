@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { backendExecutable } from "../src/typed/backend.ts";
 import { native } from "./native.ts";
 
 const root = new URL("../", import.meta.url);
@@ -20,8 +21,7 @@ try {
   const syntax = lint([]);
   await native("build");
   const target = `${process.platform}-${process.arch}`;
-  const executable = process.platform === "win32" ? "aexlint-typed.exe" : "aexlint-typed";
-  const backend = fileURLToPath(new URL(`dist/native/${target}/${executable}`, root));
+  const backend = fileURLToPath(new URL(`dist/native/${target}/${backendExecutable()}`, root));
   const typed = lint(["-c", ".oxlintrc.typed.json"], {
     ...process.env,
     AEXLINT_TYPED_BACKEND: backend,
