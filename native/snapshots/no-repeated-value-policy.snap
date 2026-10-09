@@ -1,0 +1,48 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: repeatedValuePolicy (3:57 - 3:71)
+Message: Testing `plan` for "free" leads to the same outcome in other files.
+Help: The same test and outcome appear in 2 files. Others, nearest first: ../../fixtures/other.ts:3. When this rule changes, every copy has to be found and changed the same way.
+   2 | export function rows(accounts: Account[]) {
+   3 |   return accounts.map(({ id, plan }) => ({ id, allowed: plan === "free" ? ["basic"] : undefined }));
+     |                                                         ~~~~~~~~~~~~~~~
+   4 | }
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: repeatedValuePolicy (4:7 - 4:29)
+Message: Testing `account.plan` for anything but "free" leads to the same outcome in other files.
+Help: The same test and outcome appear in 2 files. Others, nearest first: ../../fixtures/a.ts:4. When this rule changes, every copy has to be found and changed the same way.
+   3 | export function select(account: Account) {
+   4 |   if (account.plan !== "free") {
+     |       ~~~~~~~~~~~~~~~~~~~~~~~
+   5 |     track("select", account.id);
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: repeatedValuePolicy (5:5 - 5:19)
+Message: Testing `account.plan` for "personal" leads to the same outcome in other files.
+Help: The same test and outcome appear in 2 files. Others, nearest first: ../../fixtures/a.ts:3. When this rule changes, every copy has to be found and changed the same way.
+   4 |   switch (account.plan) {
+   5 |     case "personal":
+     |     ~~~~~~~~~~~~~~~
+   6 |       track("select", account.id);
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: repeatedValuePolicy (2:55 - 2:77)
+Message: Testing `props.r.plan` for "free" leads to the same outcome in other files.
+Help: The same test and outcome appear in 2 files. Others, nearest first: ../../fixtures/other.tsx:2. When this rule changes, every copy has to be found and changed the same way.
+   1 | import type { Account } from "./account.js";
+   2 | export const Badge = (props: { r: Account }) => <div>{props.r.plan === "free" && <span>free</span>}</div>;
+     |                                                       ~~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: repeatedValuePolicy (2:37 - 2:45)
+Message: Testing `k` for "a" leads to the same outcome in other files.
+Help: The same test and outcome appear in 2 files. Others, nearest first: ../../fixtures/a.ts:2. When this rule changes, every copy has to be found and changed the same way.
+   1 | import type { Kind } from "./kind.js";
+   2 | export function f(k: Kind) { return k === "a" ? ["first"] : []; }
+     |                                     ~~~~~~~~~
+---

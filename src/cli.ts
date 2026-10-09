@@ -114,6 +114,9 @@ function check(): number {
         "aexlint-typed/require-interface-implementations": "error",
         "aexlint-typed/no-forgeable-validated-result": "error",
         "aexlint-typed/no-caller-enforced-invariant": "error",
+        "aexlint-typed/no-repeated-value-group": "error",
+        "aexlint-typed/no-repeated-value-policy": "error",
+        "aexlint-typed/no-procedural-value-dispatch": "error",
       });
     }
   }

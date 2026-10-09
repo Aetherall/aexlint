@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-repeated-value-group",
+  "description": "Report a group of several values from a literal union that is written out in more than one place without a named definition.",
+  "requiresTypeChecking": true
+}

@@ -1,0 +1,107 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: repeatedValueGroup (2:43 - 2:85)
+Message: `n.channel` is tested against the value group "push" | "sms", which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. When the group changes, every copy has to be found and changed the same way.
+   1 | import type { Notice } from "./channel.js";
+   2 | export function route(n: Notice) { return n.channel === "sms" || n.channel === "push" ? n.to : ""; }
+     |                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: repeatedValueGroup (5:7 - 5:35)
+Message: `t` is tested against the value group "push" | "sms", which is also written elsewhere.
+Help: Written in 4 places. Others, nearest first: ../../fixtures/file.ts:7, ../../fixtures/file.ts:14, ../../fixtures/file.ts:15. When the group changes, every copy has to be found and changed the same way.
+   4 | export function f(n: Notice, t: Channel) {
+   5 |   if (t !== "email" && t !== "mail") load([]);
+     |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 |   switch (n.channel) {
+
+Diagnostic 2: repeatedValueGroup (7:5 - 8:15)
+Message: These cases group the values "push" | "sms" of `n.channel`, a group also written elsewhere.
+Help: Written in 4 places. Others, nearest first: ../../fixtures/file.ts:5, ../../fixtures/file.ts:14, ../../fixtures/file.ts:15. When the group changes, every copy has to be found and changed the same way.
+   6 |   switch (n.channel) {
+   7 |     case "sms":
+     |     ~~~~~~~~~~~
+   8 |     case "push":
+     | ~~~~~~~~~~~~~~~
+   9 |       return 1;
+
+Diagnostic 3: repeatedValueGroup (14:6 - 14:20)
+Message: This list spells out the value group "push" | "sms", which is also written elsewhere.
+Help: Written in 4 places. Others, nearest first: ../../fixtures/file.ts:5, ../../fixtures/file.ts:7, ../../fixtures/file.ts:15. When the group changes, every copy has to be found and changed the same way.
+  13 | }
+  14 | load(["push", "sms"]);
+     |      ~~~~~~~~~~~~~~~
+  15 | pick(["sms", "push"]);
+
+Diagnostic 4: repeatedValueGroup (15:6 - 15:20)
+Message: This list spells out the value group "push" | "sms", which is also written elsewhere.
+Help: Written in 4 places. Others, nearest first: ../../fixtures/file.ts:5, ../../fixtures/file.ts:7, ../../fixtures/file.ts:14. When the group changes, every copy has to be found and changed the same way.
+  14 | load(["push", "sms"]);
+  15 | pick(["sms", "push"]);
+     |      ~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: repeatedValueGroup (2:37 - 2:94)
+Message: `n?.channel` is tested against the value group "push" | "sms", which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. Already named by isInstant (../../fixtures/named.ts:2). When the group changes, every copy has to be found and changed the same way.
+   1 | import type { Notice, Channel } from "./channel.js";
+   2 | export function f(n?: Notice) { if (n?.channel === "sms" || (n?.channel as Channel) === "push") return 1; return 0; }
+     |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: repeatedValueGroup (4:7 - 4:45)
+Message: `l` is tested against the value group Level.High | Level.Max, which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:5. When the group changes, every copy has to be found and changed the same way.
+   3 | export function f(l: Level) {
+   4 |   if (HIGH.includes(l as typeof HIGH[number])) return 1;
+     |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   5 |   if (l === Level.Max || l === Level.High) return 2;
+
+Diagnostic 2: repeatedValueGroup (5:7 - 5:41)
+Message: `l` is tested against the value group Level.High | Level.Max, which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:4. When the group changes, every copy has to be found and changed the same way.
+   4 |   if (HIGH.includes(l as typeof HIGH[number])) return 1;
+   5 |   if (l === Level.Max || l === Level.High) return 2;
+     |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 |   return 0;
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: repeatedValueGroup (2:51 - 2:105)
+Message: `props.n.channel` is tested against the value group "push" | "sms", which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. When the group changes, every copy has to be found and changed the same way.
+   1 | import type { Notice } from "./channel.js";
+   2 | export const F = (props: { n: Notice }) => <div>{(props.n.channel === "sms" || props.n.channel === "push") && <img />}</div>;
+     |                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-5 - 1]
+Diagnostic 1: repeatedValueGroup (4:7 - 4:54)
+Message: `shape.kind` is tested against the value group "line" | "square", which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:5. When the group changes, every copy has to be found and changed the same way.
+   3 |   if (shape.kind === "circle") return 0;
+   4 |   if (shape.kind === "square" || shape.kind === "line") return 1;
+     |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   5 |   return [shape.kind === "line" || shape.kind === "square" ? 2 : 3];
+
+Diagnostic 2: repeatedValueGroup (5:11 - 5:58)
+Message: `shape.kind` is tested against the value group "line" | "square", which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:4. When the group changes, every copy has to be found and changed the same way.
+   4 |   if (shape.kind === "square" || shape.kind === "line") return 1;
+   5 |   return [shape.kind === "line" || shape.kind === "square" ? 2 : 3];
+     |           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 | }
+---
+
+[TestRule/invalid-6 - 1]
+Diagnostic 1: repeatedValueGroup (2:37 - 2:58)
+Message: `k` is tested against the value group "a" | "b", which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/a.ts:2. When the group changes, every copy has to be found and changed the same way.
+   1 | import type { Kind } from "./kind.js";
+   2 | export function f(k: Kind) { return k === "a" || k === "b" ? 1 : 0; }
+     |                                     ~~~~~~~~~~~~~~~~~~~~~~
+---
