@@ -2,10 +2,14 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+export function backendExecutable(platform: string = process.platform): string {
+  return platform === "win32" ? "aexlint-typed.exe" : "aexlint-typed";
+}
+
 export function defaultBackend(): string {
   return fileURLToPath(
     new URL(
-      `../native/${process.platform}-${process.arch}/aexlint-typed${process.platform === "win32" ? ".exe" : ""}`,
+      `../native/${process.platform}-${process.arch}/${backendExecutable()}`,
       import.meta.url,
     ),
   );

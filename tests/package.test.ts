@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 import plugin from "../src/index.ts";
+import { backendExecutable } from "../src/typed/backend.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const oxlint = fileURLToPath(new URL("../node_modules/oxlint/bin/oxlint", import.meta.url));
@@ -35,8 +36,7 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
   assert.ok(files.some((file) => file.path === "dist/index.js"));
   assert.ok(files.some((file) => file.path === "dist/index.d.ts"));
   const target = `${process.platform}-${process.arch}`;
-  const executable = `aexlint-typed${process.platform === "win32" ? ".exe" : ""}`;
-  assert.ok(files.some((file) => file.path === `dist/native/${target}/${executable}`));
+  assert.ok(files.some((file) => file.path === `dist/native/${target}/${backendExecutable()}`));
   assert.ok(files.some((file) => file.path === "dist/native/THIRD_PARTY_NOTICES.txt"));
   assert.ok(files.every((file) => !/probe|\.go$/.test(file.path)));
   assert.ok(

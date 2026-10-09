@@ -1,5 +1,5 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
-import { unwrap } from "../../expression.ts";
+import { computedProperty, unwrap } from "../../expression.ts";
 
 function isBoundary(node: ESTree.Node): boolean {
   return [
@@ -90,7 +90,7 @@ export default defineRule({
         }
         if (callee?.type === "MemberExpression") {
           receiverDepth = depthOf(callee.object);
-          if (callee.computed) inputs.push(callee.property);
+          inputs.push(...computedProperty(callee));
         } else if (callee !== undefined) inputs.push(callee);
         const depth = 1 + greatestDepth(inputs);
         depths.set(node, Math.max(depth, receiverDepth));

@@ -40,6 +40,10 @@ export function isSignedExpression(
   return node.type === "UnaryExpression" && ["+", "-"].includes(node.operator);
 }
 
+export function computedProperty(node: ESTree.MemberExpression): ESTree.Node[] {
+  return node.computed ? [node.property] : [];
+}
+
 export function unwrap(node: ESTree.Node): ESTree.Node {
   while (isExpressionWrapper(node)) node = node.expression;
   return node;
