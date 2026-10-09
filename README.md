@@ -92,14 +92,17 @@ Normal Oxlint severities, overrides, ignore patterns, and disable comments apply
 
 ### Type-aware — `aexlint-typed/`
 
-| Rule                                                                                       | Checks                                                        | Status       |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------- | ------------ |
-| [prefer-truthy-presence-check](docs/typed-rules/prefer-truthy-presence-check.md)           | Nullish comparisons equivalent to truthiness checks           | Stable       |
-| [max-interpretation-spread](docs/typed-rules/max-interpretation-spread.md)                 | Literal unions interpreted across too many files              | Experimental |
-| [require-interface-implementations](docs/typed-rules/require-interface-implementations.md) | Interfaces with fewer than two explicit class implementations | Experimental |
-| [no-forgeable-validated-result](docs/typed-rules/no-forgeable-validated-result.md)         | Validated results callers can construct without validation    | Experimental |
-| [max-projection-spread](docs/typed-rules/max-projection-spread.md)                         | Repeated object projections across files                      | Experimental |
-| [no-caller-enforced-invariant](docs/typed-rules/no-caller-enforced-invariant.md)           | Caller-side checks that a receiving class does not enforce    | Experimental |
+| Rule                                                                                       | Checks                                                         | Status       |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | ------------ |
+| [prefer-truthy-presence-check](docs/typed-rules/prefer-truthy-presence-check.md)           | Nullish comparisons equivalent to truthiness checks            | Stable       |
+| [max-interpretation-spread](docs/typed-rules/max-interpretation-spread.md)                 | Literal unions interpreted across too many files               | Experimental |
+| [require-interface-implementations](docs/typed-rules/require-interface-implementations.md) | Interfaces with fewer than two explicit class implementations  | Experimental |
+| [no-forgeable-validated-result](docs/typed-rules/no-forgeable-validated-result.md)         | Validated results callers can construct without validation     | Experimental |
+| [max-projection-spread](docs/typed-rules/max-projection-spread.md)                         | Repeated object projections across files                       | Experimental |
+| [no-caller-enforced-invariant](docs/typed-rules/no-caller-enforced-invariant.md)           | Caller-side checks that a receiving class does not enforce     | Experimental |
+| [no-repeated-value-group](docs/typed-rules/no-repeated-value-group.md)                     | Groups of literal values written out in several places         | Experimental |
+| [no-repeated-value-policy](docs/typed-rules/no-repeated-value-policy.md)                   | The same literal test and outcome in several files             | Experimental |
+| [no-procedural-value-dispatch](docs/typed-rules/no-procedural-value-dispatch.md)           | Branches on literal values that contain their own control flow | Experimental |
 
 Rule pages describe options and limits. Experimental rules have narrower coverage; review their findings before adopting them.
 

@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-repeated-value-policy",
+  "description": "Report a test of a literal union whose non-trivial outcome is repeated in other files.",
+  "requiresTypeChecking": true
+}
