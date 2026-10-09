@@ -20,9 +20,72 @@ jobs:
         with:
           go-version: "1.26.5"
           cache: false
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-check-${{ hashFiles('native/**', 'scripts/native.ts') }}
+          restore-keys: go-check-
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm pack --pack-destination package
+      - run: rm -rf dist/native/*/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          if-no-files-found: error
+  native:
+    name: native (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [linux-x64, linux-arm64, darwin-x64, darwin-arm64, win32-x64, win32-arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.5"
+          cache: false
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-${{ matrix.target }}-${{ hashFiles('native/**', 'scripts/native.ts') }}
+          restore-keys: go-${{ matrix.target }}-
+      - run: node scripts/native.ts release ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.target }}
+          path: dist/native/${{ matrix.target }}
+          if-no-files-found: error
+  pack:
+    needs: [check, native]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: dist/native
+      - run: for target in dist/native/native-*; do mv "$target" "dist/native/${target#dist/native/native-}"; done
+      - run: chmod +x dist/native/*/aexlint-typed*
+      - run: test "$(ls -d dist/native/*/ | wc -l)" = 6
+      - run: pnpm --config.ignore-scripts=true pack --pack-destination package
       - uses: actions/upload-artifact@v4
         with:
           name: package
@@ -30,7 +93,7 @@ jobs:
           if-no-files-found: error
   package:
     name: package (${{ matrix.target }})
-    needs: check
+    needs: pack
     strategy:
       fail-fast: false
       matrix:

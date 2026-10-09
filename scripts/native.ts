@@ -271,7 +271,12 @@ export async function native(action: string, args: string[] = []): Promise<void>
     build(`${process.platform}-${process.arch}`, names, join(cache, "probe"));
   } else {
     const directory = join(root, "dist/native");
-    const targets = action === "release" ? releaseTargets : [`${process.platform}-${process.arch}`];
+    const targets =
+      action === "release"
+        ? args.length
+          ? args
+          : releaseTargets
+        : [`${process.platform}-${process.arch}`];
     for (const target of targets) build(target, names, directory);
     notices(directory);
   }
