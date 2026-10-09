@@ -51,4 +51,4 @@ To upgrade:
 3. Rebuild from a fresh `.native/` cache; run native tests, package integration, and release builds.
 4. Review snapshot changes against the rule contracts, not just test output.
 
-`pnpm build` produces the host binary. `pnpm pack` builds all six targets with `CGO_ENABLED=0` and includes source pins and third-party notices. CI smoke-tests each target; full rule tests run on Linux x64. See [development.md](development.md#releasing) for publication.
+`pnpm build` produces the host binary. `pnpm pack` builds all six targets with `CGO_ENABLED=0` and includes source pins and third-party notices. CI smoke-tests each target; full rule tests run on Linux x64. See [development.md](development.md#releasing) for publication. `node scripts/native.ts release <target>...` builds only the given targets. CI builds each target in its own job with a cached Go build, then packs those binaries with lifecycle scripts disabled instead of rebuilding them.
