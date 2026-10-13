@@ -91,7 +91,7 @@ export default defineRule({
         if (callee?.type === "MemberExpression") {
           receiverDepth = depthOf(callee.object);
           inputs.push(...computedProperty(callee));
-        } else if (callee !== undefined) inputs.push(callee);
+        } else if (callee) inputs.push(callee);
         const depth = 1 + greatestDepth(inputs);
         depths.set(node, Math.max(depth, receiverDepth));
         if (depth > max) candidates.set(node, depth);

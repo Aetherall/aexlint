@@ -276,6 +276,7 @@ export default {
     ),
   );
   assert.ok(typedRules.includes("prefer-truthy-presence-check"));
+  assert.ok(typedRules.includes("no-overbroad-type-predicate"));
   assert.ok(typedRules.every((name: string) => !name.includes("probe")));
   writeFileSync(
     join(consumer, "tsconfig.json"),

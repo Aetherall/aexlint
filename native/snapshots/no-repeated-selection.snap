@@ -1,0 +1,119 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: repeatedSelection (4:22 - 4:42)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   3 |   matches: (item) => item.kind === "stock" && item.sku === "alpha",
+   4 |   render: (item) => (item.kind === "stock" ? item.sku : undefined),
+     |                      ~~~~~~~~~~~~~~~~~~~~~
+   5 | });
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: repeatedSelection (5:9 - 5:29)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   4 |   render(item) {
+   5 |     if (item.kind !== "stock") return undefined;
+     |         ~~~~~~~~~~~~~~~~~~~~~
+   6 |     return item.sku;
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: repeatedSelection (5:23 - 5:44)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   4 |     matches: (item) => item.kind === "stock" && item.sku === "beta",
+   5 |     render: (item) => this.renderStock(item),
+     |                       ~~~~~~~~~~~~~~~~~~~~~~
+   6 |   };
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: repeatedSelection (4:31 - 4:51)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value into `render`, or reuse a shared selection helper instead of repeating its test. Use a type predicate only when false excludes every value of its target too.
+   3 |   matches(item: Item) { return item.kind === "stock"; }
+   4 |   render(item: Item) { return item.kind === "stock" ? item.sku : undefined; }
+     |                               ~~~~~~~~~~~~~~~~~~~~~
+   5 | }
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: repeatedSelection (5:36 - 5:56)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value into `render`, or reuse a shared selection helper instead of repeating its test. Use a type predicate only when false excludes every value of its target too.
+   4 |   matches: (item: CatalogEntry) => item.kind === "stock",
+   5 |   render: (item: CatalogEntry) => (item.kind === "stock" ? item.sku : undefined),
+     |                                    ~~~~~~~~~~~~~~~~~~~~~
+   6 | };
+---
+
+[TestRule/invalid-5 - 1]
+Diagnostic 1: repeatedSelection (3:44 - 3:64)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   2 | const matches = (item: Item): boolean => item.kind === "stock" && item.sku === "alpha";
+   3 | registerView({ matches, render: (item) => (item.kind === "stock" ? item.sku : undefined) });
+     |                                            ~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-6 - 1]
+Diagnostic 1: repeatedSelection (5:22 - 5:42)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   4 |   matches: (item) => isStock(item) && item.sku === "alpha",
+   5 |   render: (item) => (item.kind === "stock" ? item.sku : undefined),
+     |                      ~~~~~~~~~~~~~~~~~~~~~
+   6 | });
+---
+
+[TestRule/invalid-7 - 1]
+Diagnostic 1: repeatedSelection (4:22 - 4:42)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Use a local selected-value adapter, or reuse a shared selection helper in `render`. Use a type predicate only when false excludes every value of its target too.
+   3 |   matches: (item) => item.kind === "stock" && item.sku === "alpha",
+   4 |   render: (item) => (item.kind === "stock" ? item.sku : undefined),
+     |                      ~~~~~~~~~~~~~~~~~~~~~
+   5 | });
+---
+
+[TestRule/invalid-8 - 1]
+Diagnostic 1: repeatedSelection (7:21 - 7:41)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   6 |   matches: (item) => item.kind === "stock" && item.sku === "alpha",
+   7 |   render: (item) => renderers.stock(item),
+     |                     ~~~~~~~~~~~~~~~~~~~~~
+   8 | });
+---
+
+[TestRule/invalid-9 - 1]
+Diagnostic 1: repeatedSelection (4:30 - 4:50)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `label` receives the whole type and decides again. Carry the narrowed selected value into `label`, or reuse a shared selection helper instead of repeating its test. Use a type predicate only when false excludes every value of its target too.
+   3 |   matches(item: Item) { return item.kind === "stock"; }
+   4 |   label(item: Item) { return item.kind === "stock" && item.sku; }
+     |                              ~~~~~~~~~~~~~~~~~~~~~
+   5 | }
+---
+
+[TestRule/invalid-10 - 1]
+Diagnostic 1: repeatedSelection (5:22 - 5:42)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   4 |   matches: (item) => isStock(item) && item.sku === "alpha",
+   5 |   render: (item) => (item.kind === "stock" ? item.sku : undefined),
+     |                      ~~~~~~~~~~~~~~~~~~~~~
+   6 | });
+---
+
+[TestRule/invalid-11 - 1]
+Diagnostic 1: repeatedSelection (5:21 - 5:37)
+Message: This repeats a decision already made by `matches`.
+Help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
+   4 |   matches: (item) => item.kind === "stock" && item.sku === "beta",
+   5 |   render: (item) => renderStock(item),
+     |                     ~~~~~~~~~~~~~~~~~
+   6 | });
+---

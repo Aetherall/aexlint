@@ -195,6 +195,19 @@ export function tier(input: string): Summary { if (input !== "a") throw new Erro
 export function walk(input: Node): Node { return input.next ? walk(input.next) : { ...input }; }`},
 			// An empty options object is accepted.
 			{Code: `export const value = 1;`, Options: rule_tester.OptionsFromJSON[any](`{}`)},
+			// Truthiness of a value that cannot be falsy when present only establishes presence, also for intersections and
+			// constrained type parameters.
+			{Code: `type Named = { name: string } & { id: string };
+export function pick(input: { items: Named[]; name: string }): { item: Named } {
+  const item = input.items.find((entry) => entry.name === input.name);
+  if (!item) throw new Error("missing");
+  return { item };
+}
+export function first<T extends { id: string }>(input: { items: T[] }): { item: T } {
+  const item = input.items[0] as T | undefined;
+  if (!item) throw new Error("empty");
+  return { item };
+}`},
 		},
 		[]rule_tester.InvalidTestCase{
 			// The documented example: an interface, a derived local, and a throw on input.
@@ -308,6 +321,11 @@ export async function estimate(input: { channel: string; max: number }, simulate
 			{Code: `type Payload = { model: string };
 const cache = new Map<string, Payload>();
 export function get(key: string): Payload { const found = cache.get(key); if (!found || !found.model) throw new Error("x"); return found; }`, Errors: []rule_tester.InvalidTestCaseError{forgeable(3, 17, 20)}},
+			{Code: `type Id = string & { brand: "id" };
+export function named(input: { id: Id }): { id: Id } {
+  if (!input.id) throw new Error("empty id");
+  return { id: input.id };
+}`, Errors: []rule_tester.InvalidTestCaseError{{MessageId: "forgeableValidatedResult"}}},
 		},
 	)
 }

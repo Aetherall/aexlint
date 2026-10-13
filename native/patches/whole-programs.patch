@@ -105,7 +105,7 @@
 +		if wholePrograms {
 +			var candidates []string
 +			for _, sf := range program.SourceFiles() {
-+				if !sf.IsDeclarationFile && !program.IsSourceFileFromExternalLibrary(sf) &&
++				if !sf.IsDeclarationFile && !strings.Contains(sf.FileName(), "/node_modules/") &&
 +					(tspath.HasTSFileExtension(sf.FileName()) || tspath.HasJSFileExtension(sf.FileName())) {
 +					candidates = append(candidates, sf.FileName())
 +				}

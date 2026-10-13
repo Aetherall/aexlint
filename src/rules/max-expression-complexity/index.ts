@@ -39,12 +39,25 @@ function isTransparentUnary(node: ESTree.UnaryExpression): boolean {
   return node.operator === "!" || node.operator === "typeof";
 }
 
-function logicalCost(node: ESTree.LogicalExpression): number {
-  return node.operator === "??" ? 0 : 1;
+type NodeOfType<T extends ESTree.Node["type"], N = ESTree.Node> = N extends { type: infer K }
+  ? T extends K
+    ? N
+    : never
+  : never;
+
+type ByNodeType<Result> = {
+  [T in ESTree.Node["type"]]?: (node: NodeOfType<T>) => Result;
+};
+
+function handlerFor<Result>(
+  table: ByNodeType<Result>,
+  node: ESTree.Node,
+): ((node: ESTree.Node) => Result) | undefined {
+  return table[node.type] as ((node: ESTree.Node) => Result) | undefined;
 }
 
-function assignmentCost(node: ESTree.AssignmentExpression): number {
-  return isPlainOrDefaultingAssignment(node) ? 0 : 1;
+function computedKey(node: { computed: boolean; key: ESTree.Node }): ESTree.Node[] {
+  return node.computed ? [node.key] : [];
 }
 
 function unaryCost(node: ESTree.UnaryExpression): number {
@@ -54,27 +67,60 @@ function unaryCost(node: ESTree.UnaryExpression): number {
   return typeof node.argument.value === "number" || "bigint" in node.argument ? 0 : 1;
 }
 
+const operationCosts: ByNodeType<number> = {
+  CallExpression: () => 1,
+  NewExpression: () => 1,
+  TaggedTemplateExpression: () => 1,
+  ImportExpression: () => 1,
+  BinaryExpression: () => 1,
+  ConditionalExpression: () => 1,
+  UpdateExpression: () => 1,
+  YieldExpression: () => 1,
+  LogicalExpression: (node) => (node.operator === "??" ? 0 : 1),
+  AssignmentExpression: (node) => (isPlainOrDefaultingAssignment(node) ? 0 : 1),
+  UnaryExpression: unaryCost,
+};
+
 function ownCost(node: ESTree.Node): number {
-  switch (node.type) {
-    case "CallExpression":
-    case "NewExpression":
-    case "TaggedTemplateExpression":
-    case "ImportExpression":
-    case "BinaryExpression":
-    case "ConditionalExpression":
-    case "UpdateExpression":
-    case "YieldExpression":
-      return 1;
-    case "LogicalExpression":
-      return logicalCost(node);
-    case "AssignmentExpression":
-      return assignmentCost(node);
-    case "UnaryExpression":
-      return unaryCost(node);
-    default:
-      return 0;
-  }
+  return handlerFor(operationCosts, node)?.(node) ?? 0;
 }
+
+type Region = ESTree.Node | null | undefined;
+
+const measuredRegions: ByNodeType<Region[]> = {
+  VariableDeclarator: (node) => [node.init],
+  ExpressionStatement: (node) => [node.expression],
+  ReturnStatement: (node) => [node.argument],
+  ThrowStatement: (node) => [node.argument],
+  ArrowFunctionExpression: (node) => (node.body.type === "BlockStatement" ? [] : [node.body]),
+  IfStatement: (node) => [node.test],
+  WhileStatement: (node) => [node.test],
+  DoWhileStatement: (node) => [node.test],
+  ForStatement: (node) => [
+    node.init?.type === "VariableDeclaration" ? null : node.init,
+    node.test,
+    node.update,
+  ],
+  ForInStatement: (node) => [node.right],
+  ForOfStatement: (node) => [node.right],
+  SwitchStatement: (node) => [node.discriminant],
+  SwitchCase: (node) => [node.test],
+  AssignmentPattern: (node) => [node.right],
+  PropertyDefinition: (node) => [node.value, ...computedKey(node)],
+  AccessorProperty: (node) => [node.value, ...computedKey(node)],
+  MethodDefinition: (node) => computedKey(node),
+  ClassDeclaration: (node) => [node.superClass],
+  ClassExpression: (node) => [node.superClass],
+  Decorator: (node) => [node.expression],
+  ExportDefaultDeclaration: (node) => [node.declaration],
+  TSExportAssignment: (node) => [node.expression],
+  TSEnumMember: (node) => [node.initializer],
+  WithStatement: (node) => [node.object],
+  ObjectExpression: (node) =>
+    node.properties.map((property) =>
+      property.type === "Property" && !property.computed ? property.value : property,
+    ),
+};
 
 export default defineRule({
   meta: {
@@ -112,20 +158,6 @@ export default defineRule({
     const stringValues = new WeakSet<ESTree.Node>();
     const regions = new Set<ESTree.Node>();
     const scoreOf = (node: ESTree.Node) => scores.get(node) ?? 0;
-    const add = (node: ESTree.Node | null | undefined) => {
-      if (node != null) regions.add(node);
-    };
-    const addKey = (node: { computed: boolean; key: ESTree.Node }) => {
-      if (node.computed) add(node.key);
-    };
-    const addExpressionBody = (node: ESTree.ArrowFunctionExpression) => {
-      if (node.body.type !== "BlockStatement") add(node.body);
-    };
-    const addLoopHeader = (node: ESTree.ForStatement) => {
-      if (node.init?.type !== "VariableDeclaration") add(node.init);
-      add(node.test);
-      add(node.update);
-    };
     const childrenOf = (node: ESTree.Node): ESTree.Node[] => {
       const fields = node as unknown as Record<string, ESTree.Node | ESTree.Node[] | null>;
       const children: ESTree.Node[] = [];
@@ -140,74 +172,8 @@ export default defineRule({
     const sum = (nodes: ESTree.Node[]) => nodes.reduce((total, node) => total + scoreOf(node), 0);
     return {
       "*:exit"(node) {
-        switch (node.type) {
-          case "VariableDeclarator":
-            add(node.init);
-            break;
-          case "ExpressionStatement":
-            add(node.expression);
-            break;
-          case "ReturnStatement":
-          case "ThrowStatement":
-            add(node.argument);
-            break;
-          case "ArrowFunctionExpression":
-            addExpressionBody(node);
-            break;
-          case "IfStatement":
-          case "WhileStatement":
-          case "DoWhileStatement":
-            add(node.test);
-            break;
-          case "ForStatement":
-            addLoopHeader(node);
-            break;
-          case "ForInStatement":
-          case "ForOfStatement":
-            add(node.right);
-            break;
-          case "SwitchStatement":
-            add(node.discriminant);
-            break;
-          case "SwitchCase":
-            add(node.test);
-            break;
-          case "AssignmentPattern":
-            add(node.right);
-            break;
-          case "PropertyDefinition":
-          case "AccessorProperty":
-            add(node.value);
-            addKey(node);
-            break;
-          case "MethodDefinition":
-            addKey(node);
-            break;
-          case "ClassDeclaration":
-          case "ClassExpression":
-            add(node.superClass);
-            break;
-          case "Decorator":
-            add(node.expression);
-            break;
-          case "ExportDefaultDeclaration":
-            add(node.declaration);
-            break;
-          case "TSExportAssignment":
-            add(node.expression);
-            break;
-          case "TSEnumMember":
-            add(node.initializer);
-            break;
-          case "WithStatement":
-            add(node.object);
-            break;
-        }
-        if (node.type === "ObjectExpression") {
-          for (const property of node.properties) {
-            if (property.type === "Property" && !property.computed) add(property.value);
-            else add(property);
-          }
+        for (const region of handlerFor(measuredRegions, node)?.(node) ?? []) {
+          if (region != null) regions.add(region);
         }
         if (isBoundary(node)) {
           scores.set(node, 0);

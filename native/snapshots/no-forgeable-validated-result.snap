@@ -182,3 +182,13 @@ Help: Code that receives a value of type `Payload` cannot tell whether it passed
    3 | export function get(key: string): Payload { const found = cache.get(key); if (!found || !found.model) throw new Error("x"); return found; }
      |                 ~~~
 ---
+
+[TestRule/invalid-11 - 1]
+Diagnostic 1: forgeableValidatedResult (2:17 - 2:21)
+Message: `named` rejects some inputs, then returns `{ id: Id; }`, which other code can produce without that check.
+Help: Code that receives a value of type `{ id: Id; }` cannot tell whether it passed `named`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 3.
+   1 | type Id = string & { brand: "id" };
+   2 | export function named(input: { id: Id }): { id: Id } {
+     |                 ~~~~~
+   3 |   if (!input.id) throw new Error("empty id");
+---

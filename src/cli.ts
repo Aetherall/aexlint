@@ -111,12 +111,17 @@ function check(): number {
       Object.assign(rules, {
         "aexlint-typed/max-interpretation-spread": ["error", { max: 4 }],
         "aexlint-typed/max-projection-spread": ["error", { max: 2 }],
-        "aexlint-typed/require-interface-implementations": "error",
         "aexlint-typed/no-forgeable-validated-result": "error",
         "aexlint-typed/no-caller-enforced-invariant": "error",
         "aexlint-typed/no-repeated-value-group": "error",
         "aexlint-typed/no-repeated-value-policy": "error",
         "aexlint-typed/no-procedural-value-dispatch": "error",
+        "aexlint-typed/no-external-variant-behavior": "error",
+        "aexlint-typed/no-repeated-selection": "error",
+        "aexlint-typed/no-repeated-conversion": "error",
+        "aexlint-typed/no-repeated-presence-check": "error",
+        "aexlint-typed/no-fact-outside-owner": "error",
+        "aexlint-typed/no-overbroad-type-predicate": "error",
       });
     }
   }

@@ -153,6 +153,13 @@ export function probe(input: { raw: string }) {
 }`},
 			// An empty options object is accepted.
 			{Code: `export const value = 1;`, Options: rule_tester.OptionsFromJSON[any](`{}`)},
+			// The call runs only where the check cannot reject: the check needs existing, the call its absence.
+			{Code: `export class Item { private constructor(readonly owner: string) {} static create(owner: string): Item { return new Item(owner); } }
+export function ensure(existing: { owner: string } | undefined, owner: string) {
+  if (existing && existing.owner !== owner) throw new Error("other owner");
+  if (!existing) return Item.create(owner);
+  return undefined;
+}`},
 		},
 		[]rule_tester.InvalidTestCase{
 			// The documented example: the factory accepts what its caller checked.
@@ -225,6 +232,13 @@ export function open(input: { email: string; name: string }) {
   account.rename(input.name);
   return account;
 }`, Errors: []rule_tester.InvalidTestCaseError{enforced(8, 31, 42), enforced(10, 18, 28)}},
+			// Guards that can both hold keep the check before the call.
+			{Code: `export class Item { private constructor(readonly owner: string) {} static create(owner: string): Item { return new Item(owner); } }
+export function ensure(existing: { owner: string } | undefined, owner: string) {
+  if (existing && existing.owner !== owner) throw new Error("other owner");
+  if (existing) return Item.create(owner);
+  return undefined;
+}`, Errors: []rule_tester.InvalidTestCaseError{{MessageId: "checkedBeforeHandOff"}}},
 		},
 	)
 }

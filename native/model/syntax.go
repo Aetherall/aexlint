@@ -1,4 +1,4 @@
-package no_repeated_value_group
+package model
 
 import (
 	"strings"
@@ -14,7 +14,10 @@ func source(n *ast.Node) string {
 	return text[scanner.SkipTrivia(text, n.Pos()):n.End()]
 }
 
-// Text returns n's source text with whitespace collapsed, shortened to limit bytes.
+// written returns n's whole source text with whitespace collapsed: the text code is compared by.
+func written(n *ast.Node) string { return Squash(source(n)) }
+
+// Text returns n's source text with whitespace collapsed, shortened to limit bytes for display.
 func Text(n *ast.Node, limit int) string {
 	s := Squash(source(n))
 	if len(s) > limit {
@@ -137,6 +140,8 @@ func Root(n *ast.Node) bool {
 	return ast.IsExpression(n) && question(n) && !partOfQuestion(n)
 }
 
+// trivialValue reports whether n produces nothing new: null, undefined, a boolean, "", 0, -1, or an empty array or
+// object.
 func trivialValue(n *ast.Node) bool {
 	switch n = Unwrap(n); n.Kind {
 	case ast.KindNullKeyword, ast.KindTrueKeyword, ast.KindFalseKeyword, ast.KindVoidExpression:
@@ -190,7 +195,7 @@ func expressionOutcome(n *ast.Node) string {
 
 // Outcome returns the normalized text of what a root's question leads to, or "" when it leads to nothing or to a trivial value.
 // Blocks are unwrapped and a final unlabeled break is dropped, so an if statement and a case clause doing the same work agree.
-func Outcome(root *ast.Node) string {
+func OutcomeText(root *ast.Node) string {
 	if root.Kind == ast.KindCaseClause {
 		clauses := root.Parent.AsCaseBlock().Clauses.Nodes
 		for _, clause := range clauses[indexOf(clauses, root):] {

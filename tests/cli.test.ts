@@ -165,16 +165,48 @@ test("CLI resolves imported types and gates experimental typed rules on both fla
   );
   write("dependency.ts", "export declare const value: { id: string } | undefined;\n");
   write("input.ts", 'import { value } from "./dependency.js";\nif (value !== undefined) {}\n');
-  write("contract.ts", "export interface Clock { now(): number; }\n");
+  write(
+    "clock.ts",
+    "export class Clock {\n  note?: string;\n  hasNote() {\n    return this.note !== undefined;\n  }\n}\n",
+  );
+  write(
+    "contract.ts",
+    'import type { Clock } from "./clock.js";\nexport const label = (clock: Clock) => (clock.note !== undefined ? "noted" : "");\n',
+  );
   assert.deepEqual(check(), []);
   assert.deepEqual(check(["--experimental"]), []);
   assert.deepEqual(codes(check(["--typed"], 1)), ["aexlint-typed(prefer-truthy-presence-check)"]);
   assert.deepEqual(codes(check(["--typed", "--experimental"], 1)), [
+    "aexlint-typed(no-fact-outside-owner)",
     "aexlint-typed(prefer-truthy-presence-check)",
-    "aexlint-typed(require-interface-implementations)",
   ]);
   write("dependency.ts", "export declare const value: string | undefined;\n");
   assert.deepEqual(check(["--typed"]), []);
+});
+
+test("CLI gates predicate-contract diagnostics and observes dependency-only changes", (t) => {
+  const { write, check } = consumer(t);
+  write(
+    "tsconfig.json",
+    JSON.stringify({
+      compilerOptions: { strict: true, target: "ESNext", module: "NodeNext", types: [] },
+      include: ["*.ts"],
+    }),
+  );
+  write("product.ts", "export interface Product { category: string; id: string }\n");
+  write(
+    "guard.ts",
+    'import type { Product } from "./product.js";\nexport const isPhysical = (value: Product | undefined): value is Product => !!value && value.category === "physical";\n',
+  );
+  assert.deepEqual(check(), []);
+  assert.deepEqual(check(["--experimental"]), []);
+  assert.deepEqual(check(["--typed"]), []);
+  const diagnostics = check(["--typed", "--experimental"], 1);
+  assert.deepEqual(codes(diagnostics), ["aexlint-typed(no-overbroad-type-predicate)"]);
+  assert.match(diagnostics[0]!.message, /false|reject/i);
+  assert.doesNotMatch(diagnostics[0]!.message, /"restrictions"|"observedHarm"/);
+  write("product.ts", 'export interface Product { category: "physical"; id: string }\n');
+  assert.deepEqual(check(["--typed", "--experimental"]), []);
 });
 
 test("CLI respects ignore files, repeated ignore patterns, and disable comments", (t) => {
@@ -312,19 +344,19 @@ test("CLI baselines report only the file joining an over-limit spread", (t) => {
   );
   write("kinds.ts", 'export type Kind = "a" | "b" | "c";\n');
   write(
-    "site.ts",
-    'export class Site {\n  id = { serialize: () => "site" };\n  getBrightness() {\n    return { is: (value: string) => value === "shining" };\n  }\n}\n',
+    "inventory.ts",
+    'export class InventoryItem {\n  sku = { serialize: () => "alpha" };\n  getPackaging() {\n    return { is: (value: string) => value === "boxed" };\n  }\n}\n',
   );
   const participant = (name: string) =>
     write(
       `${name}.ts`,
       [
         'import type { Kind } from "./kinds.js";',
-        'import type { Site } from "./site.js";',
+        'import type { InventoryItem } from "./inventory.js";',
         'export const kind = (value: Kind) => value === "a";',
-        "export const project = (site: Site) => ({",
-        "  id: site.id.serialize(),",
-        '  shining: site.getBrightness().is("shining"),',
+        "export const project = (item: InventoryItem) => ({",
+        "  sku: item.sku.serialize(),",
+        '  boxed: item.getPackaging().is("boxed"),',
         "});",
         "",
       ].join("\n"),

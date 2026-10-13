@@ -127,6 +127,7 @@ function overlay(probe: boolean): string[] {
   const destination = join(source, "internal/aexlint");
   rmSync(destination, { recursive: true, force: true });
   cpSync(join(root, "native/rules"), join(destination, "rules"), { recursive: true });
+  cpSync(join(root, "native/model"), join(destination, "model"), { recursive: true });
   cpSync(join(root, "native/fixtures"), join(destination, "fixtures"), { recursive: true });
   if (probe) cpSync(join(root, "native/probe"), join(destination, "rules"), { recursive: true });
   const names = ruleNames(join(destination, "rules"));
@@ -252,7 +253,7 @@ export async function native(action: string, args: string[] = []): Promise<void>
           if (!names.includes(name)) throw new Error(`Unknown native rule: ${name}`);
           return `./internal/aexlint/rules/${name}`;
         })
-      : ["./internal/aexlint/rules/..."];
+      : ["./internal/aexlint/model/...", "./internal/aexlint/rules/..."];
     process.stdout.write(
       run("go", ["test", "-mod=readonly", "-count=1", ...packages], source, {
         ...goEnv,

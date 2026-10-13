@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-repeated-conversion",
+  "description": "Report a conversion written identically in several places.",
+  "requiresTypeChecking": true
+}

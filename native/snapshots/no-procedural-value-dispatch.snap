@@ -20,6 +20,16 @@ Help: Branches with nested decisions, loops or error handling: "parcel". Each is
 ---
 
 [TestRule/invalid-2 - 1]
+Diagnostic 1: proceduralBranch (5:7 - 5:20)
+Message: Branches on `order.delivery` contain their own control flow.
+Help: Branches with nested decisions, loops or error handling: "parcel". Each is a procedure for its values, written inline instead of standing on its own.
+   4 | export function describe(order: Order, verbose: boolean) {
+   5 |   if (order.delivery === Delivery.PARCEL) {
+     |       ~~~~~~~~~~~~~~
+   6 |     if (verbose) log(order.ref);
+---
+
+[TestRule/invalid-3 - 1]
 Diagnostic 1: proceduralBranch (4:7 - 4:20)
 Message: Branches on `order.delivery` contain their own control flow.
 Help: Branches with nested decisions, loops or error handling: "email". Each is a procedure for its values, written inline instead of standing on its own.
@@ -29,7 +39,7 @@ Help: Branches with nested decisions, loops or error handling: "email". Each is 
    5 |     for (const path of paths) log(path);
 ---
 
-[TestRule/invalid-3 - 1]
+[TestRule/invalid-4 - 1]
 Diagnostic 1: proceduralBranch (3:3 - 3:16)
 Message: Branches on `order.delivery` contain their own control flow.
 Help: Branches with nested decisions, loops or error handling: "parcel". Each is a procedure for its values, written inline instead of standing on its own.
@@ -38,7 +48,7 @@ Help: Branches with nested decisions, loops or error handling: "parcel". Each is
      |   ~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-4 - 1]
+[TestRule/invalid-5 - 1]
 Diagnostic 1: proceduralBranch (5:11 - 5:24)
 Message: Branches on `order.delivery` contain their own control flow.
 Help: Branches with nested decisions, loops or error handling: "parcel". Each is a procedure for its values, written inline instead of standing on its own.
@@ -48,7 +58,7 @@ Help: Branches with nested decisions, loops or error handling: "parcel". Each is
    6 |     case "parcel":
 ---
 
-[TestRule/invalid-5 - 1]
+[TestRule/invalid-6 - 1]
 Diagnostic 1: proceduralBranch (4:7 - 4:16)
 Message: Branches on `shape.kind` contain their own control flow.
 Help: Branches with nested decisions, loops or error handling: "square". Each is a procedure for its values, written inline instead of standing on its own.
@@ -58,7 +68,7 @@ Help: Branches with nested decisions, loops or error handling: "square". Each is
    5 |   if (shape.kind === "square") {
 ---
 
-[TestRule/invalid-6 - 1]
+[TestRule/invalid-7 - 1]
 Diagnostic 1: proceduralBranch (4:11 - 4:14)
 Message: Branches on `kind` contain their own control flow.
 Help: Branches with nested decisions, loops or error handling: "a". Each is a procedure for its values, written inline instead of standing on its own.

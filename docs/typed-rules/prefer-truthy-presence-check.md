@@ -50,8 +50,10 @@ Every present member must be provably truthy:
 
 - Nonempty string literals, nonzero finite number literals, nonzero bigint literals, `true`, and symbols qualify.
 - Object types qualify only if they exclude falsy primitives. Broad structural types such as `{}`, `Object`, and `{ toString(): string }` are not enough.
+- Intersections of object types qualify like object types. An intersection with a primitive member, such as a branded `string & { brand: "id" }`, qualifies only when that primitive does.
+- Types whose members are all keyed by unique symbols do not qualify: such brands describe no runtime shape, and opaque types use them to stand for strings or numbers, which can be falsy.
 - In DOM projects, types admitting `HTMLAllCollection` are excluded because `document.all` is falsy. This includes broad `object` and some callable types.
-- Broad primitives, `any`, `unknown`, `never`, enums, intersections, unresolved types, and unevaluated template or conditional types do not prove truthiness.
+- Broad primitives, `any`, `unknown`, `never`, enums, unresolved types, and unevaluated template or conditional types do not prove truthiness.
 
 Strict comparisons with a nullable value are accepted: `null !== undefined` is true, but `null` is falsy. Loose comparisons can qualify because they already treat `null` and `undefined` alike.
 

@@ -2,7 +2,7 @@
 
 Limit how many files repeat how a project-owned value becomes an output object. Repeated member calls can leave several places to update when the meaning of an output field changes.
 
-**Status:** experimental research candidate; not ready for promotion. Diagnostic-only, with no fixes or suggestions. Evaluation found mostly deliberate copies or unrelated projections sharing getters, not useful design problems.
+**Status:** experimental research candidate; not ready for promotion. Diagnostic-only, with no fixes or suggestions. Deliberate copies and unrelated projections sharing getters can report without implying a useful design change.
 
 ## Enable
 
@@ -43,11 +43,11 @@ The callers then use `site.toResponse()` rather than rebuilding the object.
 
 ## What counts
 
-- A derivation is an object-literal property with a static key, built from an identifier through member accesses and at least one method call. Call arguments must be literals (string, number, boolean or `null`) or absent.
+- A derivation is an object-literal property with a static key, built from an identifier through member accesses and at least one method call. Call arguments must be literals (string, number, boolean or `null`) or absent. The identifier must be a variable or parameter holding the projected value: a static call on a class, enum or namespace, such as `Id.generate()`, makes a new value rather than project one.
 - The root's non-nullable object type must have an alias or symbol declared entirely in project source files. Library types and types without that identity are excluded.
 - A projection needs at least two derivations from the same variable and owner type. A single method call in an object is not enough.
-- Derivations match when the output key, owner, resolved member declarations and literal arguments match. Variable spelling alone does not determine identity.
-- Each derivation counts distinct files, not whole-object copies. The search covers the TypeScript program, including unlinted source files and tests, but not declaration files or external libraries.
+- Derivations match when the output key, the owner type, including its type arguments, and the [form](../design/decision-model.md#value) of the value relative to its root match: member names and literal argument values. Variable spelling alone does not determine identity.
+- Each derivation counts distinct files, not whole-object copies. The search covers the TypeScript program, including unlinted source files and tests, but not declaration files or files inside `node_modules`.
 
 ## Reporting scope
 
@@ -61,4 +61,4 @@ Copies such as `id: site.id`, shorthand properties, roots at `this`, calls to st
 - Common getters can exceed the limit even when the surrounding objects differ substantially. The rule does not measure similarity of whole objects.
 - Intermediate variables, helper functions, computed arguments, assignments into fresh objects and constructor-built projections are not compared.
 - Other tsconfig programs are not searched. Program-wide indexing and per-file type resolution add cost on large projects.
-- Earlier evaluation found only about 14% of reports useful. The measurement needs further research before promotion; raising the limit or suppressing deliberate copies may be appropriate.
+- Usefulness and generality remain unestablished. Raising the limit or suppressing deliberate copies may be appropriate; the rule is not ready for promotion.

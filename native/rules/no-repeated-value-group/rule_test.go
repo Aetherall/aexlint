@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"github.com/typescript-eslint/tsgolint/internal/rule_tester"
 )
 
@@ -149,7 +150,7 @@ export function isInstant(n: Notice) { return n.channel === "sms" || n.channel =
 
 func TestOptions(t *testing.T) {
 	for _, options := range []any{nil, map[string]any{}} {
-		ParseOptions("no-repeated-value-group", options)
+		model.ParseOptions("no-repeated-value-group", options)
 	}
 	for _, options := range []any{[]any{}, true, map[string]any{"max": float64(2)}} {
 		func() {
@@ -158,7 +159,7 @@ func TestOptions(t *testing.T) {
 					t.Errorf("ParseOptions(%v) accepted invalid options", options)
 				}
 			}()
-			ParseOptions("no-repeated-value-group", options)
+			model.ParseOptions("no-repeated-value-group", options)
 		}()
 	}
 }

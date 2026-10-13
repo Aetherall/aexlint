@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-overbroad-type-predicate",
+  "description": "Reject type predicates whose necessary comparison excludes values permitted by their declared target.",
+  "requiresTypeChecking": true
+}

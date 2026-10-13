@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-fact-outside-owner",
+  "description": "Report facts about a type's values established outside its owner: tests rewriting a predicate the type provides, and tests that many files repeat when the type provides none.",
+  "requiresTypeChecking": true
+}

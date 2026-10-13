@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-repeated-selection",
+  "description": "Report a handler that repeats a test its sibling selector already made.",
+  "requiresTypeChecking": true
+}

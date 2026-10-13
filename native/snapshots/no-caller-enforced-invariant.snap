@@ -94,3 +94,13 @@ Help: The rule this check enforces lives with this caller rather than with the d
      |                  ~~~~~~~~~~
   11 |   return account;
 ---
+
+[TestRule/invalid-8 - 1]
+Diagnostic 1: checkedBeforeHandOff (4:36 - 4:40)
+Message: `owner` is checked at line 3, then handed to `Item.create`, which stores it without that check.
+Help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Item` is not held to it. The check also reads `existing.owner`, which `Item.create` does not receive. This often means `Item`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+   3 |   if (existing && existing.owner !== owner) throw new Error("other owner");
+   4 |   if (existing) return Item.create(owner);
+     |                                    ~~~~~
+   5 |   return undefined;
+---

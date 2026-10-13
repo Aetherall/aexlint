@@ -1,4 +1,4 @@
-package no_forgeable_validated_result
+package model
 
 import (
 	"github.com/microsoft/typescript-go/shim/ast"
@@ -10,8 +10,9 @@ type storedKey struct {
 	index  int
 }
 
-// owner returns the class declaring a hand-off's callee: a constructor or method with a body, in a project source file.
-func (m *measure) owner(call *ast.Node) (*ast.Node, *ast.Node) {
+// Member returns the class and declaration of a call's callee when it is a constructor or method with a body, declared
+// in a project source file.
+func (m *Analyzer) Member(call *ast.Node) (*ast.Node, *ast.Node) {
 	signature := m.ctx.TypeChecker.GetResolvedSignature(call)
 	if signature == nil || signature.Declaration() == nil {
 		return nil, nil
@@ -21,14 +22,14 @@ func (m *measure) owner(call *ast.Node) (*ast.Node, *ast.Node) {
 		return nil, nil
 	}
 	class := declaration.Parent
-	if declaration.Body() == nil || class == nil || !ast.IsClassLike(class) || !m.projectFile(ast.GetSourceFileOfNode(declaration)) {
+	if declaration.Body() == nil || class == nil || !ast.IsClassLike(class) || !ProjectFile(ast.GetSourceFileOfNode(declaration)) {
 		return nil, nil
 	}
 	return class, declaration
 }
 
 // references reports whether an expression mentions one of symbols.
-func (m *measure) references(n *ast.Node, symbols map[*ast.Symbol]bool) bool {
+func (m *Analyzer) references(n *ast.Node, symbols map[*ast.Symbol]bool) bool {
 	found := false
 	var walk func(*ast.Node) bool
 	walk = func(child *ast.Node) bool {
@@ -48,7 +49,7 @@ func (m *measure) references(n *ast.Node, symbols map[*ast.Symbol]bool) bool {
 	return found
 }
 
-// thisProperty reports whether an assignment target is a property of `this`, at any depth.
+// thisProperty reports whether an assignment target is a property of this, at any depth.
 func thisProperty(n *ast.Node) bool {
 	for n.Kind == ast.KindPropertyAccessExpression || n.Kind == ast.KindElementAccessExpression {
 		n = n.Expression()
@@ -58,7 +59,7 @@ func thisProperty(n *ast.Node) bool {
 
 // factory reports whether a static method returns an instance of its class, directly or as a property of the
 // returned object, through a promise or not.
-func (m *measure) factory(member *ast.Node) bool {
+func (m *Analyzer) factory(member *ast.Node) bool {
 	class := member.Parent
 	if !ast.HasSyntacticModifier(member, ast.ModifierFlagsStatic) || class.Name() == nil {
 		return false
@@ -84,8 +85,11 @@ func (m *measure) factory(member *ast.Node) bool {
 	return false
 }
 
-// ownReceiver reports whether a call's receiver is `this` or `super`: a member of the class or of a base class.
-func ownReceiver(call *ast.Node) bool {
+// OwnReceiver reports whether a call invokes a member of the calling object itself, through this or super.
+func OwnReceiver(call *ast.Node) bool {
+	if call.Kind != ast.KindCallExpression {
+		return false
+	}
 	callee := call.Expression()
 	if callee.Kind != ast.KindPropertyAccessExpression && callee.Kind != ast.KindElementAccessExpression {
 		return false
@@ -94,12 +98,12 @@ func ownReceiver(call *ast.Node) bool {
 	return receiver.Kind == ast.KindThisKeyword || receiver.Kind == ast.KindSuperKeyword
 }
 
-// stores reports whether a constructor or method takes its parameter at index into its class's state: as a
-// constructor parameter property; by assigning it to a property of `this`; by passing it to a method of a property of
-// `this` whose result is discarded (`this.events.push(value);`, called for its effect rather than as a query); by passing it to a member called on `this` or `super`, or to a constructor or
-// member of the same class, that stores it; or, for a static factory returning an instance of the class, by reading it
-// at all. Nested functions are not searched.
-func (m *measure) stores(member *ast.Node, index int) bool {
+// Stores reports whether a constructor or method takes its parameter at index into its class's state, a boundary from
+// a value into a field: as a constructor parameter property; by assigning it to a property of this; by passing it to a
+// method of a property of this whose result is discarded; by passing it to a member called on this or super, or to a
+// constructor or member of the same class, that stores it; or, for a static factory returning an instance of the
+// class, by reading it at all. Nested functions are not searched.
+func (m *Analyzer) Stores(member *ast.Node, index int) bool {
 	key := storedKey{member, index}
 	if result, ok := m.stored[key]; ok {
 		return result
@@ -135,7 +139,7 @@ func (m *measure) stores(member *ast.Node, index int) bool {
 			stateMethod := n.Kind == ast.KindCallExpression && callee.Kind == ast.KindPropertyAccessExpression &&
 				callee.Expression().Kind != ast.KindThisKeyword && thisProperty(callee.Expression()) &&
 				n.Parent != nil && n.Parent.Kind == ast.KindExpressionStatement
-			owner, declaration := m.owner(n)
+			owner, declaration := m.Member(n)
 			for j, argument := range n.Arguments() {
 				if !m.references(argument, symbols) {
 					continue
@@ -143,7 +147,7 @@ func (m *measure) stores(member *ast.Node, index int) bool {
 				switch {
 				case stateMethod:
 					result = true
-				case declaration != nil && (owner == class || ownReceiver(n)) && m.stores(declaration, j):
+				case declaration != nil && (owner == class || OwnReceiver(n)) && m.Stores(declaration, j):
 					result = true
 				}
 			}

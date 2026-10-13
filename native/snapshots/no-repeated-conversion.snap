@@ -1,0 +1,82 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: repeatedConversion (3:3 - 3:16)
+Message: This conversion of `dragged.target` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/copy.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | export const element = (dragged: Insert) =>
+   3 |   dragged.target === "cell" ? { template: dragged.template, type: "cell" } : { type: "row" };
+     |   ~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: repeatedConversion (4:10 - 4:20)
+Message: This conversion of `item.target` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/copy.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   3 |   if (item.kind !== "insert") return undefined;
+   4 |   return item.target === "cell" ? { type: "cell", template: item.template } : { type: "row" };
+     |          ~~~~~~~~~~~
+   5 | }
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: repeatedConversion (3:11 - 3:22)
+Message: This conversion of `value.format` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:10. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | export function first(value: Value) {
+   3 |   switch (value.format) {
+     |           ~~~~~~~~~~~~
+   4 |     case "boolean": return { format: "boolean", value: value.value };
+
+Diagnostic 2: repeatedConversion (10:11 - 10:22)
+Message: This conversion of `value.format` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   9 | export function second(value: Value) {
+  10 |   switch (value.format) {
+     |           ~~~~~~~~~~~~
+  11 |     case "date": return { format: "date", value: value.value };
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: repeatedConversion (5:7 - 5:19)
+Message: This conversion of `reminder.type` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:9. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   4 | export function paste(reminder: Reminder) {
+   5 |   if (reminder.type === "crew") createForCrew({ color: reminder.color, crewId: reminder.crewId });
+     |       ~~~~~~~~~~~~~
+   6 |   else createPersonal({ color: reminder.color });
+
+Diagnostic 2: repeatedConversion (9:7 - 9:18)
+Message: This conversion of `details.type` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:5. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   8 | export function assign(details: Reminder) {
+   9 |   if (details.type === "crew") createForCrew({ color: details.color, crewId: details.crewId });
+     |       ~~~~~~~~~~~~
+  10 |   else createPersonal({ color: details.color });
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: repeatedConversion (3:3 - 3:13)
+Message: This conversion of `item.target` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/copy.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | export const element = (item: Insert) =>
+   3 |   item.target === "cell" ? { type: "cell", label: `item ${item.template}` } : { type: "row" };
+     |   ~~~~~~~~~~~
+---
+
+[TestRule/invalid-5 - 1]
+Diagnostic 1: repeatedConversion (3:10 - 3:18)
+Message: This conversion of `item.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:6. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | export function a(item: Group) {
+   3 |   return item.kind === "list" ? { ids: item.items.map((item) => item.id) } : { kind: "one" };
+     |          ~~~~~~~~~
+   4 | }
+
+Diagnostic 2: repeatedConversion (6:10 - 6:19)
+Message: This conversion of `group.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   5 | export function b(group: Group) {
+   6 |   return group.kind === "list" ? { ids: group.items.map((item) => item.id) } : { kind: "one" };
+     |          ~~~~~~~~~~
+   7 | }
+---

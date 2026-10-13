@@ -19,7 +19,7 @@ func TestRule(t *testing.T) {
 		"0 | undefined", "-0 | undefined", "false | undefined", "'' | undefined", "0n | undefined",
 		"{ id: string } | null | undefined", "{ id: string } | false | undefined", "null | undefined",
 		"{} | undefined", "Object | undefined", "{ toString(): string } | undefined",
-		"(number & { brand: true }) | undefined", "({ a: string } & { b: string }) | undefined",
+		"(number & { brand: true }) | undefined", "(string & { brand: true }) | undefined",
 		"`prefix${string}` | undefined", "HTMLAllCollection | undefined", "object | undefined",
 	} {
 		valid = append(valid, rule_tester.ValidTestCase{Code: "declare const value: " + valueType + "; if (value !== undefined) {}"})
@@ -80,7 +80,14 @@ func TestRule(t *testing.T) {
 		rule_tester.InvalidTestCase{Code: "import { value } from './dependency.js'; if (value !== undefined) {}", Files: map[string]string{"dependency.ts": "export declare const value: { id: string } | undefined;"}, Errors: []rule_tester.InvalidTestCaseError{{MessageId: "preferTruthyCheck"}}},
 		rule_tester.InvalidTestCase{Code: "declare const value: { id: string } | undefined; const jsx = <div>{value !== undefined ? <span /> : null}</div>;", Tsx: true, Errors: []rule_tester.InvalidTestCaseError{{MessageId: "preferTruthyCheck"}}},
 		rule_tester.InvalidTestCase{Code: "declare const value: { id: string } | undefined; if (value !== undefined) {}", Options: map[string]any{}, Errors: []rule_tester.InvalidTestCaseError{{MessageId: "preferTruthyCheck"}}},
+		rule_tester.InvalidTestCase{Code: "declare const entries: Record<string, { id: string } | undefined>; declare const key: string; if (entries[key] !== undefined) {}", Errors: []rule_tester.InvalidTestCaseError{{MessageId: "preferTruthyCheck"}}},
+		rule_tester.InvalidTestCase{Code: "declare function find(): { id: string } | undefined; if (find() === undefined) {}", Errors: []rule_tester.InvalidTestCaseError{{MessageId: "preferFalsyCheck"}}},
 		rule_tester.InvalidTestCase{Code: "declare const value: { id: string } | undefined; if (value !== undefined) {}", TSConfig: "loose.json", Files: map[string]string{"loose.json": `{"compilerOptions":{"strictNullChecks":false,"types":[]},"include":["*.ts"]}`}, Errors: []rule_tester.InvalidTestCaseError{{MessageId: "strictNullChecksRequired", Line: 1, Column: 1}}},
+		rule_tester.InvalidTestCase{Code: "declare const value: ({ a: string } & { b: string }) | undefined; if (value !== undefined) {}", Errors: []rule_tester.InvalidTestCaseError{{MessageId: "preferTruthyCheck"}}},
+		rule_tester.InvalidTestCase{Code: "declare const value: ('a' & { brand: true }) | undefined; if (value === undefined) {}", Errors: []rule_tester.InvalidTestCaseError{{MessageId: "preferFalsyCheck"}}})
+	valid = append(valid,
+		rule_tester.ValidTestCase{Code: "declare const tag: unique symbol; declare const value: { readonly [tag]: 'path' } | undefined; if (value !== undefined) {}"},
+		rule_tester.ValidTestCase{Code: "declare const tag: unique symbol; declare const kind: unique symbol; type Path = { readonly [tag]: 'path' } & { readonly [kind]: string }; declare const value: Path | undefined; if (value !== undefined) {}"},
 	)
 	rule_tester.RunRuleTester(root, "tsconfig.json", t, &Rule, valid, invalid)
 }

@@ -1,48 +1,26 @@
-package no_repeated_value_group
+package model
 
 import (
-	"runtime"
+	"slices"
 	"strconv"
-	"sync"
-	"weak"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/compiler"
 )
 
 // Index lists the roots of a program's project source files by file, by the literal values they mention and by the outcome text they lead to.
-// Roots mentioning no literal token are listed in other. It is built once per program from syntax alone and never mutated afterwards.
+// Roots comparing a value with anything but a literal token, such as a constant or an enum member, are listed in other. It is built once per program from syntax alone and never mutated afterwards.
 type Index struct {
-	once      sync.Once
 	byFile    map[*ast.SourceFile][]*ast.Node
 	byKey     map[string][]*ast.Node
 	byOutcome map[string][]*ast.Node
 	other     []*ast.Node
 }
 
-var (
-	indexesMu sync.Mutex
-	indexes   = map[weak.Pointer[compiler.Program]]*Index{}
-)
+var indexes = NewShared(buildIndex)
 
-// IndexFor returns the program's shared index. Entries are keyed weakly and removed when the program is collected.
-func IndexFor(program *compiler.Program) *Index {
-	key := weak.Make(program)
-	indexesMu.Lock()
-	index, ok := indexes[key]
-	if !ok {
-		index = &Index{}
-		indexes[key] = index
-		runtime.AddCleanup(program, func(key weak.Pointer[compiler.Program]) {
-			indexesMu.Lock()
-			delete(indexes, key)
-			indexesMu.Unlock()
-		}, key)
-	}
-	indexesMu.Unlock()
-	index.once.Do(func() { index.build(program) })
-	return index
-}
+// IndexFor returns the program's shared index.
+func IndexFor(program *compiler.Program) *Index { return indexes.For(program) }
 
 func tokenKey(n *ast.Node) (string, bool) {
 	switch n.Kind {
@@ -62,8 +40,15 @@ func tokenKey(n *ast.Node) (string, bool) {
 	return "", false
 }
 
-func keys(root *ast.Node) []string {
+// keys returns the literal tokens a root mentions, and whether it compares a value with something other than a
+// literal token, such as a constant or an enum member, whose value only a checker knows.
+func keys(root *ast.Node) ([]string, bool) {
 	scope := []*ast.Node{root}
+	opaque := false
+	literal := func(n *ast.Node) bool {
+		_, ok := tokenKey(ast.SkipParentheses(n))
+		return ok
+	}
 	if root.Kind == ast.KindCaseClause {
 		scope = nil
 		clauses := root.Parent.AsCaseBlock().Clauses.Nodes
@@ -72,10 +57,14 @@ func keys(root *ast.Node) []string {
 				break
 			}
 			scope = append(scope, clause.Expression())
+			opaque = opaque || !literal(clause.Expression())
 			if len(clause.Statements()) > 0 {
 				break
 			}
 		}
+	}
+	if root.Kind == ast.KindArrayLiteralExpression {
+		opaque = slices.ContainsFunc(root.Elements(), func(e *ast.Node) bool { return !literal(e) })
 	}
 	found := map[string]bool{}
 	result := []string{}
@@ -88,61 +77,48 @@ func keys(root *ast.Node) []string {
 			}
 			return false
 		}
+		switch n.Kind {
+		case ast.KindBinaryExpression:
+			if comparison, _ := equality(n.AsBinaryExpression().OperatorToken.Kind); comparison && !literal(n.AsBinaryExpression().Left) && !literal(n.AsBinaryExpression().Right) {
+				opaque = true
+			}
+		case ast.KindCallExpression:
+			if receiver, ok := includes(n); ok {
+				receiver = ast.SkipParentheses(receiver)
+				opaque = opaque || receiver.Kind != ast.KindArrayLiteralExpression || slices.ContainsFunc(receiver.Elements(), func(e *ast.Node) bool { return !literal(e) })
+			}
+		}
 		n.ForEachChild(walk)
 		return false
 	}
 	for _, n := range scope {
 		walk(n)
 	}
-	return result
+	return result, opaque
 }
 
-func (index *Index) build(program *compiler.Program) {
-	files := []*ast.SourceFile{}
-	for _, file := range program.SourceFiles() {
-		if !file.IsDeclarationFile && !program.IsSourceFileFromExternalLibrary(file) {
-			files = append(files, file)
-		}
-	}
-	partial := make([][]*ast.Node, len(files))
-	workers := min(runtime.GOMAXPROCS(0), max(len(files), 1))
-	var group sync.WaitGroup
-	for worker := range workers {
-		group.Go(func() {
-			for i := worker; i < len(files); i += workers {
-				roots := []*ast.Node{}
-				var walk func(*ast.Node) bool
-				walk = func(n *ast.Node) bool {
-					if Root(n) {
-						roots = append(roots, n)
-					}
-					n.ForEachChild(walk)
-					return false
-				}
-				walk(files[i].AsNode())
-				partial[i] = roots
-			}
-		})
-	}
-	group.Wait()
+func buildIndex(program *compiler.Program) *Index {
+	files, partial := Collect(program, Root)
+	index := &Index{}
 	index.byFile = map[*ast.SourceFile][]*ast.Node{}
 	index.byKey = map[string][]*ast.Node{}
 	index.byOutcome = map[string][]*ast.Node{}
 	for i, file := range files {
 		index.byFile[file] = partial[i]
 		for _, root := range partial[i] {
-			found := keys(root)
-			if len(found) == 0 {
+			found, opaque := keys(root)
+			if len(found) == 0 || opaque {
 				index.other = append(index.other, root)
 			}
 			for _, key := range found {
 				index.byKey[key] = append(index.byKey[key], root)
 			}
-			if outcome := Outcome(root); outcome != "" {
+			if outcome := OutcomeText(root); outcome != "" {
 				index.byOutcome[outcome] = append(index.byOutcome[outcome], root)
 			}
 		}
 	}
+	return index
 }
 
 // File returns the roots of file. Callers must not modify the result.

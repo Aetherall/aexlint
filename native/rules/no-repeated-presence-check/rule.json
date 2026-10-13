@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-repeated-presence-check",
+  "description": "Report a caller that checks a value is present before calling a function that already handles the missing value the same way.",
+  "requiresTypeChecking": true
+}

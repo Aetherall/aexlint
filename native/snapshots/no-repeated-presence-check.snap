@@ -1,0 +1,181 @@
+
+[TestRule/invalid-0 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:50 - 2:57)
+Message: `property` is checked here and again by `values`.
+Help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { values, label, create, logged, nonEmpty, pair, only, upper, withDefault, many, show, external, wrap, now, stamped, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => property ? values(property) : [];
+     |                                                  ~~~~~~~~
+---
+
+[TestRule/invalid-1 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:50 - 2:71)
+Message: `property` is checked here and again by `values`.
+Help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { values, label, create, logged, nonEmpty, pair, only, upper, withDefault, many, show, external, wrap, now, stamped, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => property === undefined ? [] : values(property);
+     |                                                  ~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-2 - 1]
+Diagnostic 1: repeatedPresenceCheck (3:51 - 3:72)
+Message: `property` is checked here and again by `read`.
+Help: `read` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   2 | import type { Item as Entry } from "./items.js";
+   3 | export const f = (property: Entry | undefined) => property !== undefined ? read(property) : [];
+     |                                                   ~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-3 - 1]
+Diagnostic 1: repeatedPresenceCheck (11:12 - 11:25)
+Message: `section.filter` is checked here and again by `this.parseFilter`.
+Help: `this.parseFilter` already returns `undefined` when `c` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+  10 |   section(section: Section) {
+  11 |     return section.filter ? this.parseFilter(section.filter) : undefined;
+     |            ~~~~~~~~~~~~~~
+  12 |   }
+---
+
+[TestRule/invalid-4 - 1]
+Diagnostic 1: repeatedPresenceCheck (6:50 - 6:55)
+Message: `coords` is checked here and again by `toShape`.
+Help: `toShape` already returns `undefined` when `c` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   5 | }
+   6 | export const f = (coords: Coords | undefined) => coords && toShape(coords);
+     |                                                  ~~~~~~
+---
+
+[TestRule/invalid-5 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:40 - 2:43)
+Message: `list` is checked here and again by `first`.
+Help: `first` already returns `undefined` when `list` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | export const first = <T,>(list: T[] | undefined) => (list ? list[0] : undefined);
+   2 | export const f = (list?: string[]) => (list ? first(list) : undefined);
+     |                                        ~~~~
+---
+
+[TestRule/invalid-6 - 1]
+Diagnostic 1: repeatedPresenceCheck (7:47 - 7:61)
+Message: `m` is checked here and again by `isText`.
+Help: `isText` already returns `false` when `m` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   6 | }
+   7 | export const f = (m: Leaflet | undefined) => (m !== undefined ? isText(m) : false);
+     |                                               ~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-7 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:50 - 2:57)
+Message: `property` is checked here and again by `nonEmpty`.
+Help: `nonEmpty` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { values, label, create, logged, nonEmpty, pair, only, upper, withDefault, many, show, external, wrap, now, stamped, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => property ? nonEmpty(property) : [];
+     |                                                  ~~~~~~~~
+---
+
+[TestRule/invalid-8 - 1]
+Diagnostic 1: repeatedPresenceCheck (6:47 - 6:58)
+Message: `user` is checked here and again by `name`.
+Help: `name` already returns `undefined` when `u` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   5 | }
+   6 | export const f = (user: User | undefined) => (user != null ? name(user) : undefined);
+     |                                               ~~~~~~~~~~~~
+---
+
+[TestRule/invalid-9 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:39 - 2:43)
+Message: `value` is checked here and again by `show`.
+Help: `show` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { values, label, create, logged, nonEmpty, pair, only, upper, withDefault, many, show, external, wrap, now, stamped, type Item } from "./items.js";
+   2 | export const f = (value: unknown) => (value ? show(value) : undefined);
+     |                                       ~~~~~
+---
+
+[TestRule/invalid-10 - 1]
+Diagnostic 1: repeatedPresenceCheck (3:34 - 3:40)
+Message: `h.value` is checked here and again by `only`.
+Help: `only` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   2 | import type { Holder } from "./holder.js";
+   3 | export const f = (h: Holder) => (h.value ? only(h.value) : []);
+     |                                  ~~~~~~~
+---
+
+[TestRule/invalid-11 - 1]
+Diagnostic 1: repeatedPresenceCheck (3:82 - 3:89)
+Message: `property` is checked here and again by `values`.
+Help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   2 | declare function List(props: { ids: string[] }): null;
+   3 | export const View = ({ property }: { property: Item | undefined }) => <List ids={property ? values(property) : []} />;
+     |                                                                                  ~~~~~~~~
+---
+
+[TestRule/invalid-12 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:50 - 2:57)
+Message: `property` is checked here and again by `values`.
+Help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { values, label, create, logged, nonEmpty, pair, only, upper, withDefault, many, show, external, wrap, now, stamped, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => property ? values(property) : [];
+     |                                                  ~~~~~~~~
+---
+
+[TestRule/invalid-13 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:64 - 2:71)
+Message: `property` is checked here and again by `guarded`.
+Help: `guarded` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { guarded, visit, ready, bound, load, each, fixed, required, firstItem, touch, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined, on: boolean) => (property ? guarded(property, on) : []);
+     |                                                                ~~~~~~~~
+---
+
+[TestRule/invalid-14 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:51 - 2:58)
+Message: `property` is checked here and again by `visit`.
+Help: `visit` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { guarded, visit, ready, bound, load, each, fixed, required, firstItem, touch, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => (property ? visit(property) : undefined);
+     |                                                   ~~~~~~~~
+---
+
+[TestRule/invalid-15 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:64 - 2:85)
+Message: `property` is checked here and again by `ready`.
+Help: `ready` already returns `false` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { guarded, visit, ready, bound, load, each, fixed, required, firstItem, touch, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined, on: boolean) => (property !== undefined ? ready(property, on) : false);
+     |                                                                ~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-16 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:51 - 2:58)
+Message: `property` is checked here and again by `bound`.
+Help: `bound` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { guarded, visit, ready, bound, load, each, fixed, required, firstItem, touch, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => (property ? bound(property) : []);
+     |                                                   ~~~~~~~~
+---
+
+[TestRule/invalid-17 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:51 - 2:58)
+Message: `property` is checked here and again by `firstItem`.
+Help: `firstItem` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { guarded, visit, ready, bound, load, each, fixed, required, firstItem, touch, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => (property ? firstItem(property) : undefined);
+     |                                                   ~~~~~~~~
+---
+
+[TestRule/invalid-18 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:51 - 2:58)
+Message: `property` is checked here and again by `touch`.
+Help: `touch` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { guarded, visit, ready, bound, load, each, fixed, required, firstItem, touch, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => (property ? touch(property) : undefined);
+     |                                                   ~~~~~~~~
+---
+
+[TestRule/invalid-19 - 1]
+Diagnostic 1: repeatedPresenceCheck (2:51 - 2:58)
+Message: `property` is checked here and again by `required`.
+Help: `required` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
+   1 | import { guarded, visit, ready, bound, load, each, fixed, required, firstItem, touch, type Item } from "./items.js";
+   2 | export const f = (property: Item | undefined) => (property ? required(property as any) : []);
+     |                                                   ~~~~~~~~
+---

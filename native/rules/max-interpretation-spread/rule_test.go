@@ -72,10 +72,19 @@ export function g(item: Item, other: Item, text: string) {
 				"kinds2.ts": `export type Kind = string;`,
 				"a.ts":      `import type { Kind } from "./kinds2.js"; export const g = (kind: Kind) => kind === "a";`,
 			}},
+			// A typed list defines a group of values; it does not check one.
+			{Code: item, Options: limit(1), Files: consumers(3, "Kind", `export const allowed: Kind[] = ["a", "b"];`)},
 		},
 		[]rule_tester.InvalidTestCase{
 			// Without options, five files exceed the default limit of 4.
 			{Code: item, Files: consumers(4, "Item", equality), Errors: spread(2, 34, 43)},
+			// A property of an object literal is named without the compiler's internal name for the literal.
+			{Code: `import { entry } from "./entry.js";
+export const f = () => entry.type === "file";`, Options: limit(1), Files: map[string]string{
+				"entry.ts": `export const entry = { type: "file" as "file" | "folder" };`,
+				"other.ts": `import { entry } from "./entry.js";
+export const g = () => entry.type !== "folder";`,
+			}, Errors: spread(2, 24, 34)},
 			// Reported on the value of the linted file's first subset selection.
 			{Code: item, Options: limit(2), Files: consumers(2, "Item", equality), Errors: spread(2, 34, 43)},
 			// Forms: inequality, loose equality, a constant, a non-exhaustive switch, a switch with default, nullable and asserted values, TSX.
@@ -113,6 +122,10 @@ export const f = (s: Status) => s === "ready";`, Options: limit(1), Files: map[s
 			}, Errors: spread(2, 33, 34)},
 			{Code: `export const f = (status: 1 | 2 | 3) => status === 1;`, Options: limit(1),
 				Files: consumers(1, "", `export const g = (status: 3 | 2 | 1) => status !== 2;`), Errors: spread(1, 41, 47)},
+			// Narrowing a discriminated union does not split its vocabulary: both checks count for the declared one.
+			{Code: `import type { Entity } from "./kinds.js";
+export function f(s: Entity) { if (s.type === "file") return 0; return s.type === "alias" ? 1 : 2; }`, Options: limit(1),
+				Files: consumers(1, "Entity", `export const g = (s: Entity) => s.type !== "alias";`), Errors: spread(2, 36, 42)},
 			// Each vocabulary with subset selections in the file is reported once.
 			{Code: `import type { Item, Entity } from "./kinds.js";
 export const f = (item: Item, s: Entity) => item.kind === "a" || item.kind === "b" || s.type === "file";`, Options: limit(1),
@@ -129,6 +142,10 @@ export const f = (item: Item, s: Entity) => item.kind === "a" || item.kind === "
 				"kinds2.ts": `export type Kind = "a" | "b";`,
 				"a.ts":      `import type { Kind } from "./kinds2.js"; export const g = (kind: Kind) => kind === "a";`,
 			}, Errors: spread(1, 75, 79)},
+			// includes, and comparisons on one value joined with ||, check particular values too.
+			{Code: item, Options: limit(2), Files: with(with(consumers(0, "", ""), "a.ts", `import type { Item } from "./kinds.js";
+export const g = (item: Item) => ["a", "b"].includes(item.kind);`), "b.ts", `import type { Item } from "./kinds.js";
+export const h = (item: Item) => item.kind === "a" || item.kind === "b";`), Errors: spread(2, 34, 43)},
 		},
 	)
 }

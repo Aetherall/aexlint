@@ -2,7 +2,7 @@
 
 Report branching on a literal union where a branch contains its own control flow. Such a branch is a procedure for its values, written inline in a function with another job. It is easier to name, test and change when it stands on its own.
 
-**Status:** experimental. Diagnostic-only; no fixes or suggestions. See [Evidence](no-repeated-value-group.md#evidence).
+**Status:** experimental. Diagnostic-only; no fixes or suggestions. Usefulness and generality remain unestablished; review findings before adopting it.
 
 ## Enable
 

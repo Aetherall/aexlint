@@ -46,6 +46,18 @@ export async function ship(orders: Order[]) {
     return order;
   }));
 }`
+	constants := `import type { Order } from "./order.js";
+declare function log(message: string): void;
+const Delivery = { PARCEL: "parcel", LETTER: "letter" } as const;
+export function describe(order: Order, verbose: boolean) {
+  if (order.delivery === Delivery.PARCEL) {
+    if (verbose) log(order.ref);
+    return 1;
+  } else if (order.delivery === Delivery.LETTER) {
+    return 2;
+  }
+  return 0;
+}`
 	switched := `import type { Order } from "./order.js";
 declare function log(message: string): void;
 export function describe(order: Order, verbose: boolean) {
@@ -152,6 +164,7 @@ export function f(a: Order, b: Order, name: string, paths: string[]) {
 			{Code: upload, Files: files(), Errors: []rule_tester.InvalidTestCaseError{procedural(upload, "order.delivery", 1)}},
 			// A switch branch containing a decision.
 			{Code: switched, Files: files(), Errors: []rule_tester.InvalidTestCaseError{procedural(switched, "order.delivery", 1)}},
+			{Code: constants, Files: files(), Errors: []rule_tester.InvalidTestCaseError{procedural(constants, "order.delivery", 1)}},
 			// An if/else on one value whose branch loops.
 			{Code: elsed, Files: files(), Errors: []rule_tester.InvalidTestCaseError{procedural(elsed, "order.delivery", 1)}},
 			// A ternary chain with a nested ternary.

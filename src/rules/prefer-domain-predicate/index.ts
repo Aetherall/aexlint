@@ -266,32 +266,20 @@ export default defineRule({
       while (isNegation(value)) value = unwrap(value.argument);
       return facts.get(value) ?? new Map();
     };
-    const logicalFacts = (node: ESTree.LogicalExpression): Facts | undefined => {
-      if (node.operator === "??") return;
-      return merge(factsOf(node.left), factsOf(node.right));
-    };
-    const evidenceOf = (node: ESTree.Node): Facts | undefined => {
-      switch (node.type) {
-        case "BinaryExpression":
-          return comparisonFacts(node);
-        case "CallExpression":
-          return membershipFacts(node);
-        case "LogicalExpression":
-          return logicalFacts(node);
-        default:
-          return undefined;
-      }
+    const record = (node: ESTree.Node, evidence: Facts) => {
+      facts.set(node, evidence);
+      if (hasName(compositionRoot(node))) return;
+      if (isPredicateResult(node) || isValidationCheck(node)) return;
+      const subjects = new Set<string>();
+      for (const [subject, checks] of evidence) if (checks.size >= 2) subjects.add(subject);
+      if (subjects.size) candidates.set(node, subjects);
     };
     return {
-      "*:exit"(node) {
-        const evidence = evidenceOf(node);
-        if (!evidence) return;
-        facts.set(node, evidence);
-        if (hasName(compositionRoot(node))) return;
-        if (isPredicateResult(node) || isValidationCheck(node)) return;
-        const subjects = new Set<string>();
-        for (const [subject, checks] of evidence) if (checks.size >= 2) subjects.add(subject);
-        if (subjects.size) candidates.set(node, subjects);
+      "BinaryExpression:exit": (node) => record(node, comparisonFacts(node)),
+      "CallExpression:exit": (node) => record(node, membershipFacts(node)),
+      "LogicalExpression:exit"(node) {
+        if (node.operator === "??") return;
+        record(node, merge(factsOf(node.left), factsOf(node.right)));
       },
       "Program:exit"() {
         for (const [node, subjects] of candidates) {

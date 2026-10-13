@@ -301,6 +301,48 @@ test("TypeScript's own errors are left to the compiler", (t) => {
   assert.deepEqual(run.diagnostics, []);
 });
 
+test("variant behavior reports external reconstruction through the typed plugin", (t) => {
+  const { root, write, configure, lint } = project(t);
+  configure({ "aexlint-typed/no-external-variant-behavior": "error" });
+  write(
+    "dependency.ts",
+    `export class Figure {
+  kind: "line" | "circle" = "line";
+  start = 0;
+  center = 0;
+}`,
+  );
+  const consumer = `import { Figure } from "./dependency.js";
+export function transform(value: Figure) {
+  switch (value.kind) {
+    case "line": return { value: value.start };
+    case "circle": return { value: value.center };
+  }
+}`;
+  write("input.ts", consumer);
+  const reported = lint(["input.ts"]);
+  assert.equal(reported.status, 1, reported.output);
+  assert.deepEqual(codes(reported), ["input.ts aexlint-typed(no-external-variant-behavior)"]);
+  assert.equal(
+    reported.diagnostics[0]?.message,
+    "This code reconstructs behavior for `Figure` outside its owner.\n" +
+      "help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.",
+  );
+  assert.equal(reported.diagnostics[0]?.labels[0]?.span.offset, consumer.indexOf("value.kind"));
+  write(
+    "dependency.ts",
+    `export class Figure {
+  kind: string = "line";
+  start = 0;
+  center = 0;
+}`,
+  );
+  const widened = lint(["input.ts"]);
+  assert.equal(widened.status, 0, widened.output);
+  assert.deepEqual(widened.diagnostics, []);
+  assert.equal(readFileSync(join(root, "input.ts"), "utf8"), consumer);
+});
+
 test("native framing rejects truncated messages", () => {
   assert.deepEqual(decodeFrames(Buffer.alloc(0)), { diagnostics: [], programFiles: [] });
   assert.throws(() => decodeFrames(Buffer.alloc(3)), /Truncated native message header/);

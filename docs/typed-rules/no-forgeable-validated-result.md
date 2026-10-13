@@ -2,7 +2,7 @@
 
 Report an operation that checks data, then returns it as a plain object type that other code can produce without the check. Consumers cannot tell whether a value passed validation.
 
-**Status:** experimental research candidate; not ready for promotion. Earlier evaluation found only about 7% of reports useful. Diagnostic-only; no fixes or suggestions.
+**Status:** experimental research candidate; not ready for promotion. Usefulness and generality remain unestablished; legitimate plain-object results can report. Diagnostic-only; no fixes or suggestions.
 
 ## Enable
 
@@ -43,7 +43,7 @@ The rule checks functions, methods, and function expressions or arrows initializ
 
 A rejection is a `throw` under an input-reading `if` or `switch`, or a call to a project function that rejects passed input. Nested functions, classes and `try` blocks are skipped. Project calls are followed across files; library/declaration-file bodies are not. Recursive cycles add no rejection by themselves. Calls returning an owned, non-forgeable value do not propagate rejection: that value already has an owner.
 
-Presence and type-narrowing tests are excluded: nullish checks, object-only truthiness, `typeof`, `instanceof`, `in`, type guards and assertion functions. String or number truthiness can be a content check. Mixed conditions may still check content.
+Presence and type-narrowing tests are excluded: nullish checks, truthiness of values that cannot be falsy when present (objects, including intersections and constrained type parameters, and non-empty literals), `typeof`, `instanceof`, `in`, type guards and assertion functions. String or number truthiness, including branded strings, can be a content check. Mixed conditions may still check content.
 
 **Data must overlap.** Input includes parameters and locals initialized from input, including destructuring and loop bindings. The analysis follows property paths, aliases, returned expressions and data stored into local properties. Checking `input.allowed` does not overlap returning only `input.id`; returning all of `input` does overlap.
 

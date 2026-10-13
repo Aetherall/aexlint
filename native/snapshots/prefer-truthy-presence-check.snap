@@ -239,6 +239,34 @@ Message: Use a truthiness check instead of comparing with undefined; every prese
 ---
 
 [TestRule/invalid-34 - 1]
+Diagnostic 1: preferTruthyCheck (1:99 - 1:124)
+Message: Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
+   1 | declare const entries: Record<string, { id: string } | undefined>; declare const key: string; if (entries[key] !== undefined) {}
+     |                                                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-35 - 1]
+Diagnostic 1: preferFalsyCheck (1:58 - 1:77)
+Message: Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
+   1 | declare function find(): { id: string } | undefined; if (find() === undefined) {}
+     |                                                          ~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-36 - 1]
 Diagnostic 1: strictNullChecksRequired
 Message: prefer-truthy-presence-check requires strictNullChecks to be enabled.
+---
+
+[TestRule/invalid-37 - 1]
+Diagnostic 1: preferTruthyCheck (1:71 - 1:89)
+Message: Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
+   1 | declare const value: ({ a: string } & { b: string }) | undefined; if (value !== undefined) {}
+     |                                                                       ~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-38 - 1]
+Diagnostic 1: preferFalsyCheck (1:63 - 1:81)
+Message: Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
+   1 | declare const value: ('a' & { brand: true }) | undefined; if (value === undefined) {}
+     |                                                               ~~~~~~~~~~~~~~~~~~~
 ---

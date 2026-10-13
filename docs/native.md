@@ -8,6 +8,7 @@ Oxlint's JS API has no type checker, and its built-in typed backend accepts only
 | ---------------------- | ---------------------------------------------------------- |
 | `native/upstream.json` | Pinned tsgolint/typescript-go revisions and archive hashes |
 | `native/rules/<name>/` | Go rule, tests, and `rule.json` metadata                   |
+| `native/model/`        | Shared decision model used by rules                        |
 | `native/patches/`      | Changes to the pinned upstream backend                     |
 | `native/snapshots/`    | Reviewed diagnostic snapshots                              |
 | `native/probe/`        | Test-only checker probe; never shipped                     |
@@ -23,12 +24,19 @@ Our patches require a configured TypeScript project, add a persistent server, an
 - Each file's wrappers collect enabled rules and options. The first visitor requests whole-program results; later files reuse them for the same rule set.
 - On Unix, the plugin starts a backend at import time and communicates through FIFOs. Starting it later can fail because Oxlint's large memory mapping prevents `fork()`. Startup is checked with a timeout. On Windows, each request runs the headless backend directly.
 - Responses use upstream headless V2 framing. The server adds a length frame around each request and response. Invalid frames and backend failures fail the lint run.
+- The upstream backend drops a diagnostic without notice when its message is not valid UTF-8. Compiler-internal symbol names start with `ast.InternalSymbolNamePrefix` (`\xFE`), so never put them in messages.
 - Diagnostics convert UTF-8 byte ranges to JS offsets. Oxlint handles severities and disable comments. Fixes are not forwarded.
 - TypeScript diagnostics are left to `tsc`. Program-diagnostic suppression lets the backend check projects with config errors; unresolved types may still make rules skip cases.
 - Invalid options can stop the backend. The first error gives the reason; later files fail rather than silently pass.
 - Results are reused only when the current file matches disk. A changed file is sent as an override, but other cached files are not invalidated. Editor integration and multiple Oxlint workspaces are unsupported or unverified.
 
 The executable lives at `dist/native/<platform>-<arch>/aexlint-typed` (`.exe` on Windows). `AEXLINT_TYPED_BACKEND` overrides it for self-lint and tests.
+
+## Shared decision model
+
+`native/model/` is a Go package, not a rule. It is copied next to the rules and imported as `internal/aexlint/model`. It holds the classifier that recognizes tests on finite literal values, syntax helpers, the per-program index of decision sites, ownership resolution, result construction, and the per-file decision model described in [decision model](design/decision-model.md). Rules build on it instead of copying its logic.
+
+The test-only `native/probe/decision-model` rule reports model facts as diagnostics, so the model is tested on real programs with the standard rule tester. Run `pnpm native:test decision-model`.
 
 ## Shared program indexes
 
@@ -38,7 +46,7 @@ Cross-file rules may share an index when it is:
 - Built once under synchronization from syntax and file metadata, never a checker.
 - Immutable after construction, with checker queries kept in each invocation.
 
-See `native/rules/max-interpretation-spread/index.go`. Race-detector coverage and cleanup-after-collection behavior have not been verified.
+`model.Shared` gives an index this lifecycle, and `model.Collect` walks a program's project files in parallel to build one; see `native/model/index.go`. Race-detector coverage and cleanup-after-collection behavior have not been verified.
 
 ## Tests and upgrades
 

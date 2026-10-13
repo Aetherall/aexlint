@@ -2,43 +2,20 @@ package max_projection_spread
 
 import (
 	"fmt"
-	"os"
+	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"slices"
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
-	"github.com/microsoft/typescript-go/shim/tspath"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
 
-const maxSafeInteger = 1<<53 - 1
-
 const defaultMax = 2
 
 func parseOptions(options any) int {
-	if options == nil {
-		return defaultMax
-	}
-	object, ok := options.(map[string]any)
-	if !ok {
-		panic(`aexlint/max-projection-spread accepts an optional options object: { "max"?: <positive integer> }`)
-	}
-	for key := range object {
-		if key != "max" {
-			panic(fmt.Sprintf("aexlint/max-projection-spread: unknown option %q; only \"max\" is accepted", key))
-		}
-	}
-	raw, present := object["max"]
-	if !present {
-		return defaultMax
-	}
-	value, ok := raw.(float64)
-	if !ok || value < 1 || value > maxSafeInteger || value != float64(int64(value)) {
-		panic(`aexlint/max-projection-spread: "max" must be a positive safe integer`)
-	}
-	return int(value)
+	return model.ParseMax("max-projection-spread", options, defaultMax)
 }
 
 // derivation is a property of an object literal that derives its value from a member chain of an owned value.
@@ -47,49 +24,36 @@ type derivation struct {
 	key      string
 	root     *ast.Symbol
 	owner    *ast.Symbol
-	// identity is equal for derivations that restate the same derivation: same key, owner, member declarations, and
-	// literal arguments.
+	// identity is equal for derivations that restate the same derivation: same key, owner type, and form.
 	identity string
 }
 
 type measure struct {
 	ctx         rule.RuleContext
+	analyzer    *model.Analyzer
 	derivations map[*ast.Node]*derivation
 	projections map[*ast.Node]bool
 }
 
-func (m *measure) owned(symbol *ast.Symbol) bool {
-	if symbol == nil || len(symbol.Declarations) == 0 {
-		return false
-	}
-	for _, declaration := range symbol.Declarations {
-		file := ast.GetSourceFileOfNode(declaration)
-		if file.IsDeclarationFile || m.ctx.Program.IsSourceFileFromExternalLibrary(file) {
-			return false
-		}
-	}
-	return true
-}
-
-// ownerOf returns the owner of a chain's root: the alias, otherwise the symbol, of its non-nullable declared type,
-// when the project declares it.
-func (m *measure) ownerOf(root *ast.Node) *ast.Symbol {
+// ownerOf returns the owner of a chain's root: the alias, otherwise the symbol, of its non-nullable type, when the
+// project declares it, with that type.
+func (m *measure) ownerOf(root *ast.Node) (*ast.Symbol, *checker.Type) {
 	t := m.ctx.TypeChecker.GetTypeAtLocation(root)
 	if t == nil {
-		return nil
+		return nil, nil
 	}
 	t = m.ctx.TypeChecker.GetNonNullableType(t)
 	if t.Flags()&checker.TypeFlagsObject == 0 {
-		return nil
+		return nil, nil
 	}
 	symbol := t.Symbol()
 	if alias := t.Alias(); alias != nil {
 		symbol = alias.Symbol()
 	}
-	if !m.owned(symbol) {
-		return nil
+	if !model.ProjectSymbol(symbol) {
+		return nil, nil
 	}
-	return symbol
+	return symbol, t
 }
 
 // derive returns the derivation a property assignment makes, or nil.
@@ -107,23 +71,12 @@ func (m *measure) derive(property *ast.Node) *derivation {
 		return nil
 	}
 	root := m.ctx.TypeChecker.GetSymbolAtLocation(chain.Root)
-	owner := m.ownerOf(chain.Root)
-	if root == nil || owner == nil {
+	owner, t := m.ownerOf(chain.Root)
+	if root == nil || owner == nil || checker.SkipAlias(root, m.ctx.TypeChecker).Flags&ast.SymbolFlagsVariable == 0 {
 		return nil
 	}
-	parts := []string{key, fmt.Sprintf("%p", owner.Declarations[0])}
-	for _, step := range chain.Steps {
-		if step.Kind != ast.KindPropertyAccessExpression {
-			continue
-		}
-		member := m.ctx.TypeChecker.GetSymbolAtLocation(step.Name())
-		if member == nil || len(member.Declarations) == 0 {
-			return nil
-		}
-		parts = append(parts, fmt.Sprintf("%p", member.Declarations[0]))
-	}
-	parts = append(parts, Fingerprint(chain))
-	d := &derivation{property: property, key: key, root: root, owner: owner, identity: strings.Join(parts, "|")}
+	identity := fmt.Sprintf("%s|%p|%s", key, t, m.analyzer.Form(property.Initializer(), m.analyzer.ValueOf(chain.Root)))
+	d := &derivation{property: property, key: key, root: root, owner: owner, identity: identity}
 	m.derivations[property] = d
 	return d
 }
@@ -143,57 +96,6 @@ func (m *measure) projected(d *derivation) bool {
 	}
 	m.projections[d.property] = count >= 2
 	return count >= 2
-}
-
-// relative returns fileName relative to the process's working directory, the configuration directory under aexlint-typed, falling back to the program's directory.
-func (m *measure) relative(fileName string) string {
-	directory, err := os.Getwd()
-	if err != nil {
-		directory = m.ctx.Program.GetCurrentDirectory()
-	}
-	directory = tspath.NormalizePath(directory)
-	return tspath.GetRelativePathFromDirectory(directory, fileName, tspath.ComparePathsOptions{
-		UseCaseSensitiveFileNames: m.ctx.Program.UseCaseSensitiveFileNames(),
-		CurrentDirectory:          directory,
-	})
-}
-
-// nearest orders files other than the linted one by how many leading directories they share with it, then by path.
-func (m *measure) nearest(files map[*ast.SourceFile]bool) []string {
-	own := strings.Split(tspath.GetDirectoryPath(m.ctx.SourceFile.FileName()), "/")
-	shared := func(file *ast.SourceFile) int {
-		directories := strings.Split(tspath.GetDirectoryPath(file.FileName()), "/")
-		count := 0
-		for count < len(own) && count < len(directories) && own[count] == directories[count] {
-			count++
-		}
-		return count
-	}
-	others := []*ast.SourceFile{}
-	for file := range files {
-		if file != m.ctx.SourceFile {
-			others = append(others, file)
-		}
-	}
-	slices.SortFunc(others, func(a, b *ast.SourceFile) int {
-		if byShared := shared(b) - shared(a); byShared != 0 {
-			return byShared
-		}
-		return strings.Compare(a.FileName(), b.FileName())
-	})
-	result := []string{}
-	for _, file := range others {
-		result = append(result, m.relative(file.FileName()))
-	}
-	return result
-}
-
-// listed joins items, showing at most shown of them.
-func listed(items []string, shown int) string {
-	if len(items) <= shown {
-		return strings.Join(items, ", ")
-	}
-	return fmt.Sprintf("%s, and %d more", strings.Join(items[:shown], ", "), len(items)-shown)
 }
 
 // chainText returns a derivation's value as written, without its root.
@@ -290,9 +192,9 @@ func (m *measure) report(spreads []spread, limit int) {
 	m.ctx.ReportNode(first.property.Name(), rule.RuleMessage{
 		Id: "spreadProjection",
 		Description: fmt.Sprintf("This projection of `%s` restates %s, each found in more than %s: %s.",
-			first.owner.Name, count, limited, listed(described, 3)),
+			first.owner.Name, count, limited, model.Listed(described, 3)),
 		Help: fmt.Sprintf("Changing one of these derivations requires finding each file by hand. Restated in: %s. Other files, nearest first: %s.",
-			listed(counted, 3), listed(m.nearest(files), 3)),
+			model.Listed(counted, 3), model.Listed(model.NewPlaces(m.ctx).Nearest(files), 3)),
 	})
 }
 
@@ -300,7 +202,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/max-projection-spread",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		limit := parseOptions(options)
-		(&measure{ctx: ctx, derivations: map[*ast.Node]*derivation{}, projections: map[*ast.Node]bool{}}).run(limit)
+		(&measure{ctx: ctx, analyzer: model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker)), derivations: map[*ast.Node]*derivation{}, projections: map[*ast.Node]bool{}}).run(limit)
 		return rule.RuleListeners{}
 	},
 }

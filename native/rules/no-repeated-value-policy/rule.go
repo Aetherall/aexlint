@@ -5,21 +5,21 @@ import (
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/core"
-	"github.com/typescript-eslint/tsgolint/internal/aexlint/rules/no-repeated-value-group"
+	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
 type measure struct {
 	ctx        rule.RuleContext
-	classifier *no_repeated_value_group.Classifier
-	index      *no_repeated_value_group.Index
-	places     no_repeated_value_group.Places
+	classifier *model.Classifier
+	index      *model.Index
+	places     model.Places
 }
 
-func key(s *no_repeated_value_group.Site) string { return s.Canon + "\x00" + s.Outcome }
+func key(s *model.Site) string { return s.Canon + "\x00" + s.Outcome }
 
 // others returns one site per other file asking s's question with s's outcome.
-func (m *measure) others(s *no_repeated_value_group.Site) []*ast.Node {
+func (m *measure) others(s *model.Site) []*ast.Node {
 	byFile := map[*ast.SourceFile]*ast.Node{}
 	for _, root := range m.index.Outcome(s.Outcome) {
 		file := ast.GetSourceFileOfNode(root)
@@ -37,7 +37,7 @@ func (m *measure) others(s *no_repeated_value_group.Site) []*ast.Node {
 	return result
 }
 
-func values(leaf *no_repeated_value_group.Leaf) string {
+func values(leaf *model.Leaf) string {
 	if len(leaf.Accepted) <= len(leaf.Vocabulary.Values)-len(leaf.Accepted) {
 		return leaf.Vocabulary.Display(leaf.Accepted)
 	}
@@ -54,7 +54,7 @@ func values(leaf *no_repeated_value_group.Leaf) string {
 	return "anything but " + leaf.Vocabulary.Display(rejected)
 }
 
-func (m *measure) report(s *no_repeated_value_group.Site, others []*ast.Node) {
+func (m *measure) report(s *model.Site, others []*ast.Node) {
 	leaf := s.Leaves[0]
 	m.places.Sort(others)
 	locations := []string{}
@@ -63,9 +63,9 @@ func (m *measure) report(s *no_repeated_value_group.Site, others []*ast.Node) {
 	}
 	m.ctx.ReportRange(core.NewTextRange(s.Pos, s.End), rule.RuleMessage{
 		Id:          "repeatedValuePolicy",
-		Description: fmt.Sprintf("Testing `%s` for %s leads to the same outcome in other files.", no_repeated_value_group.Text(leaf.Subject, 40), values(leaf)),
+		Description: fmt.Sprintf("Testing `%s` for %s leads to the same outcome in other files.", model.Text(leaf.Subject, 40), values(leaf)),
 		Help: fmt.Sprintf("The same test and outcome appear in %d files. Others, nearest first: %s. When this rule changes, every copy has to be found and changed the same way.",
-			len(others)+1, no_repeated_value_group.Listed(locations, 3)),
+			len(others)+1, model.Listed(locations, 3)),
 	})
 }
 
@@ -84,12 +84,12 @@ func (m *measure) run() {
 var Rule = rule.Rule{
 	Name: "aexlint/no-repeated-value-policy",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
-		no_repeated_value_group.ParseOptions("no-repeated-value-policy", options)
+		model.ParseOptions("no-repeated-value-policy", options)
 		(&measure{
 			ctx:        ctx,
-			classifier: no_repeated_value_group.NewClassifier(ctx.TypeChecker),
-			index:      no_repeated_value_group.IndexFor(ctx.Program),
-			places:     no_repeated_value_group.NewPlaces(ctx),
+			classifier: model.NewClassifier(ctx.TypeChecker),
+			index:      model.IndexFor(ctx.Program),
+			places:     model.NewPlaces(ctx),
 		}).run()
 		return rule.RuleListeners{}
 	},

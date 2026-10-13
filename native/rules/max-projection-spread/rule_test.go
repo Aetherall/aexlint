@@ -74,6 +74,23 @@ export class Owner { private readonly name = ""; describe() { return { upper: th
 				})},
 			// An empty options object is accepted.
 			{Code: `export const value = 1;`, Options: rule_tester.OptionsFromJSON[any](`{}`)},
+			// Static calls on a class make new values; they project nothing.
+			{Code: `export class Token { static generate() { return new Token(); } value() { return 1; } }
+export const a = () => ({ id: Token.generate().value(), from: Token.generate().value() });`,
+				Files: map[string]string{
+					"b.ts": `import { Token } from "./file.js"; export const b = () => ({ id: Token.generate().value(), from: Token.generate().value() });`,
+					"c.ts": `import { Token } from "./file.js"; export const c = () => ({ id: Token.generate().value(), from: Token.generate().value() });`,
+				}},
+			// The same members of a generic owner with other type arguments read other data.
+			{Code: `export interface Box<T> { get(): T }
+export type A = { x(): string; y(): string };
+export type B = { x(): string; y(): string };
+export const a = (box: Box<A>) => ({ x: box.get().x(), y: box.get().y() });`,
+				Files: map[string]string{
+					"b.ts": `import type { Box, B } from "./file.js"; export const b = (box: Box<B>) => ({ x: box.get().x(), y: box.get().y() });`,
+					"c.ts": `import type { Box, B } from "./file.js"; export const c = (box: Box<B>) => ({ x: box.get().x(), y: box.get().y() });`,
+					"d.ts": `import type { Box, A } from "./file.js"; export const d = (box: Box<A>) => ({ x: box.get().x(), y: box.get().y() });`,
+				}},
 		},
 		[]rule_tester.InvalidTestCase{
 			// Three files restate id and private, through different variable names and property orders.

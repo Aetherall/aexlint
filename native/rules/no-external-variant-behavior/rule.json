@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-external-variant-behavior",
+  "description": "Report variant representations reconstructed outside a known type owner.",
+  "requiresTypeChecking": true
+}

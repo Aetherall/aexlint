@@ -2,7 +2,7 @@
 
 Report a test of a literal union whose outcome is repeated in other files. The same test leading to the same work is a business rule written in several places. When the rule changes, every copy has to be found and changed the same way.
 
-**Status:** experimental. Diagnostic-only; no fixes or suggestions. See [Evidence](no-repeated-value-group.md#evidence).
+**Status:** experimental. Diagnostic-only; no fixes or suggestions. Usefulness and generality remain unestablished; review findings before adopting it.
 
 ## Enable
 
@@ -39,7 +39,7 @@ if (account.plan === "free") return null;
 - A test's question is the vocabulary values, the values each subject accepts and the text of other operands. Subject spelling does not matter.
 - Its outcome is the `then` branch of an `if`, the true branch of a conditional expression, the right side of a `&&` guard, or the body of a `case` group. Blocks are unwrapped and a final unlabeled `break` is dropped, so an `if` and a `case` doing the same work agree. Outcomes are compared as source text with whitespace collapsed.
 - Trivial outcomes do not count: nothing, `return`, `break`, `continue`, `null`, `undefined`, booleans, `void`, `""`, `0`, `-1`, `[]` and `{}`.
-- Matches must be in different files. The search covers project source files of the TypeScript program, including unlinted files and tests, but not declaration files or external libraries.
+- Matches must be in different files. The search covers project source files of the TypeScript program, including unlinted files and tests, but not declaration files or files inside `node_modules`.
 
 ## Reporting scope
 

@@ -1,0 +1,99 @@
+
+[TestDecisionModel/invalid-0 - 1]
+Diagnostic 1: ownNarrowing (3:22 - 3:42)
+Message: `Item.kind` is narrowed to stock by its own guard.
+   2 | registerView({
+   3 |   matches: (item) => item.kind === "stock" && item.sku === "alpha",
+     |                      ~~~~~~~~~~~~~~~~~~~~~
+   4 |   render: (item) => (item.kind === "stock" ? item.sku : undefined),
+
+Diagnostic 2: selectorNarrowing (4:22 - 4:42)
+Message: `Item.kind` is narrowed to stock by sibling selector `matches`.
+   3 |   matches: (item) => item.kind === "stock" && item.sku === "alpha",
+   4 |   render: (item) => (item.kind === "stock" ? item.sku : undefined),
+     |                      ~~~~~~~~~~~~~~~~~~~~~
+   5 | });
+---
+
+[TestDecisionModel/invalid-1 - 1]
+Diagnostic 1: ownNarrowing (4:24 - 4:44)
+Message: `Item.kind` is narrowed to stock by its own guard.
+   3 |   view: CatalogView = {
+   4 |     matches: (item) => item.kind === "stock" && item.sku === "beta",
+     |                        ~~~~~~~~~~~~~~~~~~~~~
+   5 |     render: (item) => this.renderStock(item),
+
+Diagnostic 2: selectorNarrowing (5:23 - 5:44)
+Message: `Item.kind` is narrowed to stock by sibling selector `matches`.
+   4 |     matches: (item) => item.kind === "stock" && item.sku === "beta",
+   5 |     render: (item) => this.renderStock(item),
+     |                       ~~~~~~~~~~~~~~~~~~~~~~
+   6 |   };
+
+Diagnostic 3: ownNarrowing (8:9 - 8:29)
+Message: `Item.kind` is narrowed to stock by its own guard.
+   7 |   private renderStock(item: Item) {
+   8 |     if (item.kind !== "stock") return undefined;
+     |         ~~~~~~~~~~~~~~~~~~~~~
+   9 |     return item.sku;
+---
+
+[TestDecisionModel/invalid-2 - 1]
+Diagnostic 1: ownNarrowing (4:20 - 4:39)
+Message: `Item.kind` is narrowed to note by its own guard.
+   3 | declare function finish(text: string): void;
+   4 | on((item) => { if (item.kind === "note") finish(item.text); });
+     |                    ~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestDecisionModel/invalid-3 - 1]
+Diagnostic 1: conflict (4:17 - 4:27)
+Message: Conflicting choice: s:done: [dim] vs [success]; purpose argument paint(color).
+   3 | export function header(node: Node) {
+   4 |   const color = node.status === "failed" ? "error" : node.status === "running" ? "accent" : "dim";
+     |                 ~~~~~~~~~~~
+   5 |   return paint(color, "header");
+---
+
+[TestDecisionModel/invalid-4 - 1]
+Diagnostic 1: conflict (4:11 - 4:21)
+Message: Conflicting choice: s:done: [dim] vs [success]; purpose argument paint(color).
+   3 | function statusColor(node: Node) {
+   4 |   switch (node.status) {
+     |           ~~~~~~~~~~~
+   5 |     case "running": return "accent";
+---
+
+[TestDecisionModel/invalid-5 - 1]
+Diagnostic 1: selectorNarrowing (5:22 - 5:42)
+Message: `Item.kind` is narrowed to stock by sibling selector `matches`.
+   4 |   matches: (item) => isStock(item) && item.sku === "alpha",
+   5 |   render: (item) => (item.kind === "stock" ? item.sku : undefined),
+     |                      ~~~~~~~~~~~~~~~~~~~~~
+   6 | });
+---
+
+[TestDecisionModel/invalid-6 - 1]
+Diagnostic 1: ownNarrowing (6:7 - 6:28)
+Message: `Drop.kind` is narrowed to insert by its own guard.
+   5 | export function first(item: Drop) {
+   6 |   if (item.kind !== "insert") return "";
+     |       ~~~~~~~~~~~~~~~~~~~~~~
+   7 |   return paint(item.target === "cell" ? "accent" : "dim", item.template);
+
+Diagnostic 2: conflict (7:16 - 7:26)
+Message: Conflicting choice: s:cell: [accent] vs [dim]; purpose argument paint(color).
+   6 |   if (item.kind !== "insert") return "";
+   7 |   return paint(item.target === "cell" ? "accent" : "dim", item.template);
+     |                ~~~~~~~~~~~
+   8 | }
+---
+
+[TestDecisionModel/invalid-7 - 1]
+Diagnostic 1: selectorNarrowing (7:9 - 7:32)
+Message: `Event.name` is narrowed to created, deleted, seeded by sibling selector `accepts`.
+   6 |   apply(event: Event) {
+   7 |     if (event.name === "renamed") return undefined;
+     |         ~~~~~~~~~~~~~~~~~~~~~~~~
+   8 |     return describe(event);
+---

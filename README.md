@@ -92,17 +92,22 @@ Normal Oxlint severities, overrides, ignore patterns, and disable comments apply
 
 ### Type-aware — `aexlint-typed/`
 
-| Rule                                                                                       | Checks                                                         | Status       |
-| ------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | ------------ |
-| [prefer-truthy-presence-check](docs/typed-rules/prefer-truthy-presence-check.md)           | Nullish comparisons equivalent to truthiness checks            | Stable       |
-| [max-interpretation-spread](docs/typed-rules/max-interpretation-spread.md)                 | Literal unions interpreted across too many files               | Experimental |
-| [require-interface-implementations](docs/typed-rules/require-interface-implementations.md) | Interfaces with fewer than two explicit class implementations  | Experimental |
-| [no-forgeable-validated-result](docs/typed-rules/no-forgeable-validated-result.md)         | Validated results callers can construct without validation     | Experimental |
-| [max-projection-spread](docs/typed-rules/max-projection-spread.md)                         | Repeated object projections across files                       | Experimental |
-| [no-caller-enforced-invariant](docs/typed-rules/no-caller-enforced-invariant.md)           | Caller-side checks that a receiving class does not enforce     | Experimental |
-| [no-repeated-value-group](docs/typed-rules/no-repeated-value-group.md)                     | Groups of literal values written out in several places         | Experimental |
-| [no-repeated-value-policy](docs/typed-rules/no-repeated-value-policy.md)                   | The same literal test and outcome in several files             | Experimental |
-| [no-procedural-value-dispatch](docs/typed-rules/no-procedural-value-dispatch.md)           | Branches on literal values that contain their own control flow | Experimental |
+| Rule                                                                               | Checks                                                           | Status       |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------ |
+| [prefer-truthy-presence-check](docs/typed-rules/prefer-truthy-presence-check.md)   | Nullish comparisons equivalent to truthiness checks              | Stable       |
+| [max-interpretation-spread](docs/typed-rules/max-interpretation-spread.md)         | Literal unions interpreted across too many files                 | Experimental |
+| [no-forgeable-validated-result](docs/typed-rules/no-forgeable-validated-result.md) | Validated results callers can construct without validation       | Experimental |
+| [max-projection-spread](docs/typed-rules/max-projection-spread.md)                 | Repeated object projections across files                         | Experimental |
+| [no-caller-enforced-invariant](docs/typed-rules/no-caller-enforced-invariant.md)   | Caller-side checks that a receiving class does not enforce       | Experimental |
+| [no-repeated-value-group](docs/typed-rules/no-repeated-value-group.md)             | Groups of literal values written out in several places           | Experimental |
+| [no-repeated-value-policy](docs/typed-rules/no-repeated-value-policy.md)           | The same literal test and outcome in several files               | Experimental |
+| [no-procedural-value-dispatch](docs/typed-rules/no-procedural-value-dispatch.md)   | Branches on literal values that contain their own control flow   | Experimental |
+| [no-external-variant-behavior](docs/typed-rules/no-external-variant-behavior.md)   | Variant representations built outside a known owner              | Experimental |
+| [no-repeated-selection](docs/typed-rules/no-repeated-selection.md)                 | Handlers repeating a test their sibling selector already made    | Experimental |
+| [no-repeated-conversion](docs/typed-rules/no-repeated-conversion.md)               | Conversions written identically in several places                | Experimental |
+| [no-repeated-presence-check](docs/typed-rules/no-repeated-presence-check.md)       | Presence checks a called function already makes                  | Experimental |
+| [no-fact-outside-owner](docs/typed-rules/no-fact-outside-owner.md)                 | Facts about a type's values established outside its owner        | Experimental |
+| [no-overbroad-type-predicate](docs/typed-rules/no-overbroad-type-predicate.md)     | Type predicates that reject values their declared target permits | Experimental |
 
 Rule pages describe options and limits. Experimental rules have narrower coverage; review their findings before adopting them.
 
@@ -113,6 +118,7 @@ Rule pages describe options and limits. Experimental rules have narrower coverag
 - Run `tsc` too: type errors are not lint diagnostics, and unresolved types can cause rules to skip checks.
 - Use plain `oxlint`, not `--type-aware` or `OXLINT_TSGOLINT_PATH`. The plugin runs its own bundled backend; no Go installation is needed.
 - Some rules inspect the whole TypeScript program, including files outside the lint command. Results are reused within a run.
+- Project code is every file of the program that is not a declaration file and whose real path is outside `node_modules`. Workspace packages linked into `node_modules` count as project code. Files inside `node_modules` are dependencies.
 - Setup errors and backend failures fail the lint run. Editor integration (`oxlint --lsp`) is not supported.
 
 Linux, macOS, and Windows on x64 and arm64 are smoke-tested in CI. All six binaries ship in one package, so the download is larger than a JS-only plugin.

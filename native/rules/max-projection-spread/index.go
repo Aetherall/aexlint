@@ -1,10 +1,8 @@
 package max_projection_spread
 
 import (
-	"runtime"
+	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"strings"
-	"sync"
-	"weak"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/compiler"
@@ -13,34 +11,14 @@ import (
 // DerivationIndex lists every candidate derivation in a program's project source files, by file and by syntactic
 // fingerprint. It is built once per program from syntax alone and never mutated afterwards.
 type DerivationIndex struct {
-	once   sync.Once
 	byFile map[*ast.SourceFile][]*ast.Node
 	byKey  map[string][]*ast.Node
 }
 
-var (
-	indexesMu sync.Mutex
-	indexes   = map[weak.Pointer[compiler.Program]]*DerivationIndex{}
-)
+var indexes = model.NewShared(buildDerivationIndex)
 
-// IndexFor returns the program's shared index. Entries are keyed weakly and removed when the program is collected.
-func IndexFor(program *compiler.Program) *DerivationIndex {
-	key := weak.Make(program)
-	indexesMu.Lock()
-	index, ok := indexes[key]
-	if !ok {
-		index = &DerivationIndex{}
-		indexes[key] = index
-		runtime.AddCleanup(program, func(key weak.Pointer[compiler.Program]) {
-			indexesMu.Lock()
-			delete(indexes, key)
-			indexesMu.Unlock()
-		}, key)
-	}
-	indexesMu.Unlock()
-	index.once.Do(func() { index.build(program) })
-	return index
-}
+// IndexFor returns the program's shared index.
+func IndexFor(program *compiler.Program) *DerivationIndex { return indexes.For(program) }
 
 func skipOuter(n *ast.Node) *ast.Node {
 	for {
@@ -165,34 +143,9 @@ func keyOf(property *ast.Node) (string, bool) {
 	return key + "=" + Fingerprint(chain), true
 }
 
-func (index *DerivationIndex) build(program *compiler.Program) {
-	files := []*ast.SourceFile{}
-	for _, file := range program.SourceFiles() {
-		if !file.IsDeclarationFile && !program.IsSourceFileFromExternalLibrary(file) {
-			files = append(files, file)
-		}
-	}
-	partial := make([][]*ast.Node, len(files))
-	workers := min(runtime.GOMAXPROCS(0), max(len(files), 1))
-	var group sync.WaitGroup
-	for worker := range workers {
-		group.Go(func() {
-			for i := worker; i < len(files); i += workers {
-				nodes := []*ast.Node{}
-				var walk func(*ast.Node) bool
-				walk = func(n *ast.Node) bool {
-					if _, ok := keyOf(n); ok {
-						nodes = append(nodes, n)
-					}
-					n.ForEachChild(walk)
-					return false
-				}
-				walk(files[i].AsNode())
-				partial[i] = nodes
-			}
-		})
-	}
-	group.Wait()
+func buildDerivationIndex(program *compiler.Program) *DerivationIndex {
+	index := &DerivationIndex{}
+	files, partial := model.Collect(program, func(n *ast.Node) bool { _, ok := keyOf(n); return ok })
 	index.byFile = map[*ast.SourceFile][]*ast.Node{}
 	index.byKey = map[string][]*ast.Node{}
 	for i, file := range files {
@@ -202,6 +155,7 @@ func (index *DerivationIndex) build(program *compiler.Program) {
 			index.byKey[key] = append(index.byKey[key], n)
 		}
 	}
+	return index
 }
 
 // File returns the candidate derivations in file. Callers must not modify the result.

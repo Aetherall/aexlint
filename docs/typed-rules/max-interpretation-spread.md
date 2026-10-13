@@ -42,11 +42,12 @@ const LABELS: Record<Plan, string> = {
 ## What counts
 
 - A vocabulary is a union of at least two string or number literals, including enum members, after removing `null` and `undefined`. A generic's base constraint can qualify.
-- The rule uses the declared type of an identifier, property read or call, not its flow-narrowed type. Parentheses and type wrappers are looked through.
-- `===`, `!==`, `==` and `!=` count when one operand is a vocabulary and the other has a single literal type. Constants and enum members can be that operand.
-- A `switch` counts if it has a `default` or omits a value. An exhaustive switch without `default` does not count. Table lookups and `typeof` comparisons do not count.
-- Identity is the set of literal values, not the declaration. Copies with the same set are merged; enum members also retain their enum/member identity. Different sets are separate vocabularies.
-- Each file counts once, however many checks it contains. The search covers project source files throughout the TypeScript program, including unlinted files and tests, but not declaration files or external libraries.
+- The rule uses the declared type of an identifier, property read or call, not its flow-narrowed type. A property is read from its object's declared type, so narrowing a discriminated union does not split its vocabulary. Parentheses and type wrappers are looked through.
+- `===`, `!==`, `==` and `!=` count when one operand is a vocabulary and the other is a literal, a constant, an enum member, or a property declared with a single literal type, such as a member of an `as const` object.
+- `includes` counts when called on a literal array, or a typed tuple or array, of the vocabulary's values. Comparisons on one value joined with `||` or `&&` count as one check.
+- A `switch` counts once if it has a `default` or omits a value. An exhaustive switch without `default` does not count. Table lookups, typed lists of values, and `typeof` comparisons do not count.
+- Identity is the set of literal values, not the declaration. Copies with the same set are merged, including enum members and plain literals with the same values. Different sets are separate vocabularies.
+- Each file counts once, however many checks it contains. The search covers project source files throughout the TypeScript program, including unlinted files and tests, but not declaration files or files inside `node_modules`.
 
 ## Reporting scope
 
@@ -58,6 +59,6 @@ The message names the vocabulary by the declaration this file reads most, and gi
 
 - Unrelated unions with identical literals are merged. Conversely, narrower subsets split one concept into several counts.
 - Broad `string`, `boolean`, single literals and unions with nonliteral members do not qualify. Widened types hide checks.
-- `includes`, `in`, helper predicates and `instanceof` are not recognized. The count is a lower bound, not a complete dependency map.
+- `in`, helper predicates and `instanceof` are not recognized. The count is a lower bound, not a complete dependency map.
 - Other tsconfig programs are not searched. Large programs can be expensive despite the shared syntax index.
 - Stable vocabularies and deliberate per-layer translations may legitimately exceed the limit. A report does not establish that sharing a helper would improve the design.

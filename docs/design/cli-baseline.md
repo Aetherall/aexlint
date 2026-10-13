@@ -49,14 +49,14 @@ Wrapping only escapes `max-held-context` when lines are not reindented: without 
 
 **Cause in another file or in the program.**
 
-| Rule                                | Unchanged-line causes                                                                                                                                           |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `prefer-truthy-presence-check`      | A type changed elsewhere makes an existing comparison eligible. Disabling `strictNullChecks` reports `strictNullChecksRequired` on untouched first lines.       |
-| `require-interface-implementations` | Removing an implementing class or `implements` clause reports on the untouched interface name.                                                                  |
-| `no-caller-enforced-invariant`      | Removing a check from the callee reports on every untouched caller argument.                                                                                    |
-| `no-forgeable-validated-result`     | A project helper gaining a rejection, or a result class becoming a plain type, reports on untouched operation names.                                            |
-| `max-interpretation-spread`         | A file adding a check is reported, but the other files crossing the limit are not. Type changes that merge or qualify vocabularies report only untouched files. |
-| `max-projection-spread`             | As above: the new copy is reported, existing copies are not. Ownership type changes report only untouched files.                                                |
+| Rule                            | Unchanged-line causes                                                                                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prefer-truthy-presence-check`  | A type changed elsewhere makes an existing comparison eligible. Disabling `strictNullChecks` reports `strictNullChecksRequired` on untouched first lines.       |
+| `no-fact-outside-owner`         | A predicate added to a type reports every untouched test elsewhere. A file adding a test can push a fact past the limit, reported on the untouched property.    |
+| `no-caller-enforced-invariant`  | Removing a check from the callee reports on every untouched caller argument.                                                                                    |
+| `no-forgeable-validated-result` | A project helper gaining a rejection, or a result class becoming a plain type, reports on untouched operation names.                                            |
+| `max-interpretation-spread`     | A file adding a check is reported, but the other files crossing the limit are not. Type changes that merge or qualify vocabularies report only untouched files. |
+| `max-projection-spread`         | As above: the new copy is reported, existing copies are not. Ownership type changes report only untouched files.                                                |
 
 The spread rules are partly covered because the new participant is reported once. The other typed rules can miss the event entirely, including the case they exist for: weakening an owner's validation.
 
