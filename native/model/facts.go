@@ -52,7 +52,7 @@ func negations(n *ast.Node) *ast.Node {
 	}
 }
 
-// widest returns n widened through negations to the && and || chains the classifier reads as one test.
+// widest returns n widened through negations to the && and || chains read as one test.
 func (m *Analyzer) widest(n *ast.Node) *ast.Node {
 	for {
 		q := outer(n).Parent
@@ -67,7 +67,7 @@ func (m *Analyzer) widest(n *ast.Node) *ast.Node {
 }
 
 // WholeTest returns the test read is part of: read with its negations when it is a condition, otherwise its comparison
-// or its Boolean or includes call, widened to the && and || chains the classifier reads as one test. It returns nil
+// or its Boolean or includes call, widened to the && and || chains read as one test. It returns nil
 // when read is not where a test can use it.
 func (m *Analyzer) WholeTest(read *ast.Node) *ast.Node {
 	if Condition(read) {

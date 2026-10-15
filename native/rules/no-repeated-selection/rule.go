@@ -32,7 +32,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-repeated-selection",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-repeated-selection", options)
-		analyzer := model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))
+		analyzer := model.NewAnalyzer(ctx)
 		file := model.Build(analyzer)
 		for _, f := range file.Functions {
 			reported := map[*ast.Symbol]bool{}

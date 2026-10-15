@@ -10,10 +10,10 @@ import (
 )
 
 type measure struct {
-	ctx        rule.RuleContext
-	classifier *model.Classifier
-	index      *model.Index
-	places     model.Places
+	ctx      rule.RuleContext
+	analyzer *model.Analyzer
+	index    *model.Index
+	places   model.Places
 }
 
 func key(s *model.Site) string { return s.Canon + "\x00" + s.Outcome }
@@ -26,7 +26,7 @@ func (m *measure) others(s *model.Site) []*ast.Node {
 		if file == m.ctx.SourceFile || byFile[file] != nil {
 			continue
 		}
-		if other := m.classifier.Classify(root); other != nil && key(other) == key(s) {
+		if other := m.analyzer.Classify(root); other != nil && key(other) == key(s) {
 			byFile[file] = root
 		}
 	}
@@ -37,25 +37,15 @@ func (m *measure) others(s *model.Site) []*ast.Node {
 	return result
 }
 
-func values(leaf *model.Leaf) string {
-	if len(leaf.Accepted) <= len(leaf.Vocabulary.Values)-len(leaf.Accepted) {
-		return leaf.Vocabulary.Display(leaf.Accepted)
+func values(c model.Claim) string {
+	if len(c.Accepted) <= len(c.Rejected()) {
+		return c.Vocabulary.Display(c.Accepted)
 	}
-	rejected := []string{}
-	for _, value := range leaf.Vocabulary.Values {
-		found := false
-		for _, accepted := range leaf.Accepted {
-			found = found || accepted == value
-		}
-		if !found {
-			rejected = append(rejected, value)
-		}
-	}
-	return "anything but " + leaf.Vocabulary.Display(rejected)
+	return "anything but " + c.Vocabulary.Display(c.Rejected())
 }
 
 func (m *measure) report(s *model.Site, others []*ast.Node) {
-	leaf := s.Leaves[0]
+	t := s.Tests[0]
 	m.places.Sort(others)
 	locations := []string{}
 	for _, n := range others {
@@ -63,7 +53,7 @@ func (m *measure) report(s *model.Site, others []*ast.Node) {
 	}
 	m.ctx.ReportRange(core.NewTextRange(s.Pos, s.End), rule.RuleMessage{
 		Id:          "repeatedValuePolicy",
-		Description: fmt.Sprintf("Testing `%s` for %s leads to the same outcome in other files.", model.Text(leaf.Subject, 40), values(leaf)),
+		Description: fmt.Sprintf("Testing `%s` for %s leads to the same outcome in other files.", model.Text(t.Value.Node, 40), values(t.Claim)),
 		Help: fmt.Sprintf("The same test and outcome appear in %d files. Others, nearest first: %s. When this rule changes, every copy has to be found and changed the same way.",
 			len(others)+1, model.Listed(locations, 3)),
 	})
@@ -71,7 +61,7 @@ func (m *measure) report(s *model.Site, others []*ast.Node) {
 
 func (m *measure) run() {
 	for _, root := range m.index.File(m.ctx.SourceFile) {
-		s := m.classifier.Classify(root)
+		s := m.analyzer.Classify(root)
 		if s == nil || s.Outcome == "" {
 			continue
 		}
@@ -86,10 +76,10 @@ var Rule = rule.Rule{
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-repeated-value-policy", options)
 		(&measure{
-			ctx:        ctx,
-			classifier: model.NewClassifier(ctx.TypeChecker),
-			index:      model.IndexFor(ctx.Program),
-			places:     model.NewPlaces(ctx),
+			ctx:      ctx,
+			analyzer: model.NewAnalyzer(ctx),
+			index:    model.IndexFor(ctx.Program),
+			places:   model.NewPlaces(ctx),
 		}).run()
 		return rule.RuleListeners{}
 	},

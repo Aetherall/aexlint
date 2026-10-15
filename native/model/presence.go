@@ -288,7 +288,7 @@ func (m *Analyzer) WhenMissing(test *ast.Node, receiver *ast.Node) (bool, bool) 
 			equal := false
 			if absent, ok := missingLiteral(other); ok {
 				equal = absent == AbsentUndefined || b.OperatorToken.Kind == ast.KindEqualsEqualsToken || b.OperatorToken.Kind == ast.KindExclamationEqualsToken
-			} else if _, ok := m.classifier.Unit(other); !ok {
+			} else if _, ok := m.Unit(other); !ok {
 				if _, ok := Constant(other); !ok {
 					return false, false
 				}

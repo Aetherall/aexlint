@@ -7,20 +7,13 @@ import (
 	"github.com/microsoft/typescript-go/shim/checker"
 )
 
+// ReceiverType returns the declared type of a read, so narrowing does not change it, or its type where it is read when
+// it has no declared type.
 func (m *Analyzer) ReceiverType(n *ast.Node) *checker.Type {
-	n = Unwrap(n)
-	if n.Kind == ast.KindPropertyAccessExpression {
-		if object := m.ReceiverType(n.Expression()); object != nil {
-			object = m.ctx.TypeChecker.GetNonNullableType(object)
-			if property := m.ctx.TypeChecker.GetPropertyOfType(object, n.Name().Text()); property != nil {
-				return m.ctx.TypeChecker.GetTypeOfSymbol(property)
-			}
-		}
+	if t := m.Declared(n); t != nil {
+		return t
 	}
-	if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n); symbol != nil {
-		return m.ctx.TypeChecker.GetTypeOfSymbol(symbol)
-	}
-	return m.ctx.TypeChecker.GetTypeAtLocation(n)
+	return m.ctx.TypeChecker.GetTypeAtLocation(Unwrap(n))
 }
 
 func (m *Analyzer) ownerFromSymbol(symbol *ast.Symbol, seen map[*ast.Symbol]bool) *ast.Symbol {

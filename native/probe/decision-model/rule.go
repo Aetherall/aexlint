@@ -19,7 +19,7 @@ func values(vs []string) string {
 var Rule = rule.Rule{
 	Name: "aexlint/decision-model",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
-		file := model.Build(model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker)))
+		file := model.Build(model.NewAnalyzer(ctx))
 		for _, f := range file.Functions {
 			for _, d := range f.Domains {
 				id, owner := "ownNarrowing", "its own guard"
@@ -30,7 +30,7 @@ var Rule = rule.Rule{
 			}
 		}
 		for _, r := range file.Relations {
-			if r.Kind == "conflicts" {
+			if r.Kind == model.Conflicts {
 				ctx.ReportNode(file.Decisions[r.A].Node, rule.RuleMessage{Id: "conflict", Description: fmt.Sprintf("Conflicting choice: %s.", r.Detail)})
 			}
 		}

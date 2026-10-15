@@ -123,7 +123,7 @@ func groupStart(clause *ast.Node) bool {
 	return false
 }
 
-// Root reports whether n is a node the classifier may reduce to a site, from syntax alone.
+// Root reports whether n is a node that may ask a site question, from syntax alone.
 func Root(n *ast.Node) bool {
 	switch n.Kind {
 	case ast.KindCaseClause:

@@ -62,7 +62,7 @@ var Rule = rule.Rule{
 			})
 			return nil
 		}
-		a := model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))
+		a := model.NewAnalyzer(ctx)
 		return rule.RuleListeners{ast.KindBinaryExpression: func(node *ast.Node) { check(ctx, a, node) }}
 	},
 }

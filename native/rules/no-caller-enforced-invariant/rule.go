@@ -159,7 +159,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-caller-enforced-invariant",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-caller-enforced-invariant", options)
-		(&measure{ctx: ctx, a: model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))}).run()
+		(&measure{ctx: ctx, a: model.NewAnalyzer(ctx)}).run()
 		return rule.RuleListeners{}
 	},
 }

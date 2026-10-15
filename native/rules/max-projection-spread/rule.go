@@ -202,7 +202,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/max-projection-spread",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		limit := parseOptions(options)
-		(&measure{ctx: ctx, analyzer: model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker)), derivations: map[*ast.Node]*derivation{}, projections: map[*ast.Node]bool{}}).run(limit)
+		(&measure{ctx: ctx, analyzer: model.NewAnalyzer(ctx), derivations: map[*ast.Node]*derivation{}, projections: map[*ast.Node]bool{}}).run(limit)
 		return rule.RuleListeners{}
 	},
 }

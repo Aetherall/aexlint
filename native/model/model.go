@@ -14,7 +14,8 @@ import (
 
 type Analyzer struct {
 	ctx             rule.RuleContext
-	classifier      *Classifier
+	sites           map[*ast.Node]*Site
+	vocabs          map[*checker.Type]*Vocabulary
 	truthiness      map[*checker.Type]bool
 	htmlAll         *checker.Type
 	htmlAllResolved bool
@@ -22,15 +23,55 @@ type Analyzer struct {
 	stored          map[storedKey]bool
 }
 
-func NewAnalyzer(ctx rule.RuleContext, classifier *Classifier) *Analyzer {
-	return &Analyzer{ctx: ctx, classifier: classifier, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}}
+// NewAnalyzer reads one invocation's program with its checker.
+func NewAnalyzer(ctx rule.RuleContext) *Analyzer {
+	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}}
 }
+
+// OutcomeKind is what an arm produces when it runs.
+type OutcomeKind string
+
+const (
+	Delegate  OutcomeKind = "delegate"
+	Construct OutcomeKind = "construct"
+	Lookup    OutcomeKind = "lookup"
+	Identity  OutcomeKind = "identity"
+	Invoke    OutcomeKind = "call"
+	Effect    OutcomeKind = "effect"
+	Stepwise  OutcomeKind = "stepwise"
+	Fallback  OutcomeKind = "fallback"
+	Other     OutcomeKind = "other"
+)
 
 // Outcome is what an arm produces when it runs. Values are the literals a lookup picks.
 type Outcome struct {
-	Kind   string
+	Kind   OutcomeKind
 	Values []string
 }
+
+// DecisionForm is how many arms of a decision do work: at most one for a guard, several for a dispatch.
+type DecisionForm string
+
+const (
+	GuardForm    DecisionForm = "guard"
+	DispatchForm DecisionForm = "dispatch"
+)
+
+// FunctionKind is what a function answers: a selector or a declared type predicate answers a question about its
+// parameters.
+type FunctionKind string
+
+const (
+	PlainFunction     FunctionKind = "function"
+	SelectorFunction  FunctionKind = "selector"
+	PredicateFunction FunctionKind = "predicate"
+)
+
+// RelationKind is how two decisions relate.
+type RelationKind string
+
+// Conflicts relates two lookup dispatches on one field that map a variant to disjoint values for a shared purpose.
+const Conflicts RelationKind = "conflicts"
 
 // Branch is an arm of a decision: Claim holds where it runs. Tested is false for the arm reached when no test holds.
 type Branch struct {
@@ -46,7 +87,7 @@ type Decision struct {
 	ID          int
 	Node        *ast.Node
 	Line        int
-	Form        string
+	Form        DecisionForm
 	Function    int
 	Field       Field
 	Vocabulary  *Vocabulary
@@ -67,11 +108,10 @@ type side struct {
 }
 
 // Domain is a guard a function makes on a literal-valued part of a parameter before its work, possibly through a
-// forwarding call, and who narrows it: its own guard, or a sibling selector whose answer already implies it.
+// forwarding call, and who narrows it: its own guard, or a sibling selector whose answer already implies it. Its test
+// claims what holds after the guard.
 type Domain struct {
-	Node      *ast.Node
-	Value     Value
-	Claim     Claim
+	Test
 	Property  string
 	Selector  string
 	Handler   string
@@ -85,7 +125,7 @@ type Function struct {
 	Node    *ast.Node
 	Line    int
 	Name    string
-	Kind    string
+	Kind    FunctionKind
 	Answer  []Test
 	Domains []Domain
 }
@@ -100,7 +140,7 @@ type Gate struct {
 }
 
 type Relation struct {
-	Kind   string
+	Kind   RelationKind
 	A      int
 	B      int
 	Detail string
@@ -152,25 +192,14 @@ func Build(a *Analyzer) *File {
 }
 
 type arm struct {
-	accepted   []string
-	vocabulary *Vocabulary
-	condition  *ast.Node
-	body       []*ast.Node
+	claim     Claim
+	condition *ast.Node
+	body      []*ast.Node
 }
 
 func (md *builder) line(n *ast.Node) int {
 	sf := md.source
 	return scanner.GetECMALineOfPosition(sf, scanner.SkipTrivia(sf.Text(), n.Pos())) + 1
-}
-
-func complement(values, accepted []string) []string {
-	out := []string{}
-	for _, v := range values {
-		if !slices.Contains(accepted, v) {
-			out = append(out, v)
-		}
-	}
-	return out
 }
 
 func (md *builder) typeName(t *checker.Type) string {
@@ -325,46 +354,46 @@ func (md *builder) outcomeOf(body []*ast.Node, receiver *ast.Node, tag string) O
 		}
 		switch {
 		case len(statements) == 0:
-			return Outcome{Kind: "fallback"}
+			return Outcome{Kind: Fallback}
 		case len(statements) == 1 && statements[0].Kind == ast.KindReturnStatement:
 			e = statements[0].Expression()
 			if e == nil {
-				return Outcome{Kind: "fallback"}
+				return Outcome{Kind: Fallback}
 			}
 		case len(statements) == 1 && (statements[0].Kind == ast.KindThrowStatement || statements[0].Kind == ast.KindContinueStatement):
-			return Outcome{Kind: "fallback"}
+			return Outcome{Kind: Fallback}
 		case control(statements):
-			return Outcome{Kind: "stepwise"}
+			return Outcome{Kind: Stepwise}
 		default:
 			last := statements[len(statements)-1]
 			if last.Kind == ast.KindReturnStatement && last.Expression() != nil {
 				e = last.Expression()
 			} else {
-				return Outcome{Kind: "effect"}
+				return Outcome{Kind: Effect}
 			}
 		}
 	}
 	if trivial(e) {
-		return Outcome{Kind: "fallback"}
+		return Outcome{Kind: Fallback}
 	}
 	values := []string{}
 	if literals(e, &values) {
-		return Outcome{Kind: "lookup", Values: values}
+		return Outcome{Kind: Lookup, Values: values}
 	}
 	u := Unwrap(e)
 	if receiver != nil && md.m.SameValue(u, receiver) {
-		return Outcome{Kind: "identity"}
+		return Outcome{Kind: Identity}
 	}
 	if receiver != nil && md.m.ObjectResult(u) && len(md.m.ConstructionFields(u, receiver, tag)) > 0 {
-		return Outcome{Kind: "construct"}
+		return Outcome{Kind: Construct}
 	}
 	if md.delegates(u, receiver) {
-		return Outcome{Kind: "delegate"}
+		return Outcome{Kind: Delegate}
 	}
 	if u.Kind == ast.KindCallExpression || u.Kind == ast.KindNewExpression {
-		return Outcome{Kind: "call"}
+		return Outcome{Kind: Invoke}
 	}
-	return Outcome{Kind: "other"}
+	return Outcome{Kind: Other}
 }
 
 func (md *builder) enclosing(n *ast.Node) int {
@@ -382,39 +411,41 @@ func (md *builder) add(d *Decision) *Decision {
 	return d
 }
 
-func (md *builder) record(root, subjectNode *ast.Node, first *Leaf, arms []arm, alternative []*ast.Node) {
+func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, arms []arm, alternative []*ast.Node) {
 	if len(arms) == 0 {
 		return
 	}
-	field := md.m.FieldOf(first.Subject)
+	field := md.m.FieldOf(subjectNode)
 	var receiver *ast.Node
 	tag := ""
 	if u := Unwrap(subjectNode); u.Kind == ast.KindPropertyAccessExpression {
 		receiver = Unwrap(u.Expression())
 		tag = u.Name().Text()
 	}
-	d := &Decision{Node: Unwrap(subjectNode), Line: md.line(subjectNode), Function: md.enclosing(root), Field: field, Vocabulary: first.Vocabulary}
+	d := &Decision{Node: Unwrap(subjectNode), Line: md.line(subjectNode), Function: md.enclosing(root), Field: field, Vocabulary: vocabulary}
 	pure := true
-	covered := []string{}
+	covered := Claim{Domain: vocabulary.Values, Accepted: []string{}, Vocabulary: vocabulary}
 	for _, a := range arms {
-		p := a.condition == nil || md.m.classifier.Test(a.condition) != nil
-		pure = pure && p
-		complete := pure && len(within(covered, a.accepted)) == 0
-		covered = append(covered, a.accepted...)
-		d.Arms = append(d.Arms, Branch{Claim: Claim{Domain: a.vocabulary.Values, Accepted: a.accepted, Vocabulary: a.vocabulary}, Complete: complete, Tested: true, Body: a.body, Outcome: md.outcomeOf(a.body, receiver, tag), Logic: logic(a.body)})
+		if a.condition != nil {
+			_, whole := md.m.literalTest(a.condition)
+			pure = pure && whole
+		}
+		complete := pure && len(a.claim.And(covered).Accepted) == 0
+		covered = covered.Or(a.claim)
+		d.Arms = append(d.Arms, Branch{Claim: a.claim, Complete: complete, Tested: true, Body: a.body, Outcome: md.outcomeOf(a.body, receiver, tag), Logic: logic(a.body)})
 	}
 	if alternative != nil && pure {
-		d.Arms = append(d.Arms, Branch{Claim: Claim{Domain: first.Vocabulary.Values, Accepted: complement(first.Vocabulary.Values, covered), Vocabulary: first.Vocabulary}, Complete: true, Body: alternative, Outcome: md.outcomeOf(alternative, receiver, tag), Logic: logic(alternative)})
+		d.Arms = append(d.Arms, Branch{Claim: covered.Not(), Complete: true, Body: alternative, Outcome: md.outcomeOf(alternative, receiver, tag), Logic: logic(alternative)})
 	}
 	work := 0
 	for _, a := range d.Arms {
-		if a.Outcome.Kind != "fallback" {
+		if a.Outcome.Kind != Fallback {
 			work++
 		}
 	}
-	d.Form = "guard"
+	d.Form = GuardForm
 	if work >= 2 {
-		d.Form = "dispatch"
+		d.Form = DispatchForm
 	}
 	d.path = md.path(root)
 	d.Root = root
@@ -428,24 +459,25 @@ func (md *builder) record(root, subjectNode *ast.Node, first *Leaf, arms []arm, 
 	md.add(d)
 }
 
-func (md *builder) matching(condition *ast.Node, first *Leaf) *Leaf {
-	for _, leaf := range md.m.classifier.Leaves(condition) {
-		if first == nil || SameSubject(leaf, first) {
-			return leaf
+// matching returns the first test of literal values in condition, or the first on the same subject as first.
+func (md *builder) matching(condition *ast.Node, first *Test) (Test, bool) {
+	for _, t := range md.m.Tests(condition) {
+		if first == nil || SameSubject(t, *first) {
+			return t, true
 		}
 	}
-	return nil
+	return Test{}, false
 }
 
-func (md *builder) chain(n *ast.Node, first *Leaf) ([]arm, *ast.Node) {
+func (md *builder) chain(n *ast.Node, first Test) ([]arm, *ast.Node) {
 	arms := []arm{}
 	for {
 		statement := n.AsIfStatement()
-		leaf := md.matching(statement.Expression, first)
-		if leaf == nil {
+		t, ok := md.matching(statement.Expression, &first)
+		if !ok {
 			return arms, n
 		}
-		arms = append(arms, arm{accepted: leaf.Accepted, vocabulary: leaf.Vocabulary, condition: statement.Expression, body: []*ast.Node{statement.ThenStatement}})
+		arms = append(arms, arm{claim: t.Claim, condition: statement.Expression, body: []*ast.Node{statement.ThenStatement}})
 		if statement.ElseStatement == nil || statement.ElseStatement.Kind != ast.KindIfStatement {
 			return arms, statement.ElseStatement
 		}
@@ -458,8 +490,8 @@ func (md *builder) statements(list []*ast.Node) {
 		if list[i].Kind != ast.KindIfStatement {
 			continue
 		}
-		first := md.matching(list[i].AsIfStatement().Expression, nil)
-		if first == nil {
+		first, ok := md.matching(list[i].AsIfStatement().Expression, nil)
+		if !ok {
 			continue
 		}
 		arms, rest := md.chain(list[i], first)
@@ -478,7 +510,7 @@ func (md *builder) statements(list []*ast.Node) {
 		if rest != nil {
 			alternative = []*ast.Node{rest}
 		}
-		md.record(list[i], first.Subject, first, arms, alternative)
+		md.record(list[i], first.Value.Node, first.Claim.Vocabulary, arms, alternative)
 		i = end
 	}
 }
@@ -494,11 +526,10 @@ func clauseBody(clauses []*ast.Node) []*ast.Node {
 
 func (md *builder) switchStatement(n *ast.Node) {
 	subjectNode := n.Expression()
-	v := md.m.classifier.Vocabulary(subjectNode)
+	v := md.m.Vocabulary(subjectNode)
 	if v == nil {
 		return
 	}
-	first := &Leaf{Vocabulary: v, Subject: Unwrap(subjectNode)}
 	arms := []arm{}
 	var alternative []*ast.Node
 	clauses := n.AsSwitchStatement().CaseBlock.AsCaseBlock().Clauses.Nodes
@@ -514,33 +545,33 @@ func (md *builder) switchStatement(n *ast.Node) {
 		if !Root(clause) {
 			continue
 		}
-		if s := md.m.classifier.Classify(clause); s != nil {
-			arms = append(arms, arm{accepted: s.Leaves[0].Accepted, vocabulary: v, body: body})
+		if s := md.m.Classify(clause); s != nil {
+			arms = append(arms, arm{claim: s.Tests[0].Claim, body: body})
 		}
 	}
-	md.record(n, subjectNode, first, arms, alternative)
+	md.record(n, subjectNode, v, arms, alternative)
 }
 
 func (md *builder) ternary(n *ast.Node) {
 	if p := n.Parent; p.Kind == ast.KindConditionalExpression && p.AsConditionalExpression().WhenFalse == n {
 		return
 	}
-	first := md.matching(n.AsConditionalExpression().Condition, nil)
-	if first == nil {
+	first, ok := md.matching(n.AsConditionalExpression().Condition, nil)
+	if !ok {
 		return
 	}
 	arms := []arm{}
 	current := n
 	for current.Kind == ast.KindConditionalExpression {
 		c := current.AsConditionalExpression()
-		leaf := md.matching(c.Condition, first)
-		if leaf == nil {
+		t, ok := md.matching(c.Condition, &first)
+		if !ok {
 			break
 		}
-		arms = append(arms, arm{accepted: leaf.Accepted, vocabulary: leaf.Vocabulary, condition: c.Condition, body: []*ast.Node{c.WhenTrue}})
+		arms = append(arms, arm{claim: t.Claim, condition: c.Condition, body: []*ast.Node{c.WhenTrue}})
 		current = c.WhenFalse
 	}
-	md.record(n, first.Subject, first, arms, []*ast.Node{current})
+	md.record(n, first.Value.Node, first.Claim.Vocabulary, arms, []*ast.Node{current})
 }
 
 func parts(n *ast.Node, operator ast.Kind) []*ast.Node {
@@ -581,17 +612,17 @@ func (md *builder) selector(f *Function) {
 		return
 	}
 	if declaresPredicate(fn) {
-		f.Kind = "predicate"
+		f.Kind = PredicateFunction
 	} else {
 		t := md.m.ctx.TypeChecker.GetTypeAtLocation(e)
 		if t == nil || t.Flags()&checker.TypeFlagsBooleanLike == 0 {
 			return
 		}
-		f.Kind = "selector"
+		f.Kind = SelectorFunction
 	}
 	f.Answer = md.answer(fn, e, 0)
 	if len(f.Answer) == 0 {
-		f.Kind = "function"
+		f.Kind = PlainFunction
 	}
 }
 
@@ -599,11 +630,11 @@ func (md *builder) selector(f *Function) {
 // across || on one value, negated with !, and read through calls to project functions, up to three calls deep.
 func (md *builder) answer(fn, e *ast.Node, depth int) []Test {
 	e = Unwrap(e)
-	if leaf := md.m.classifier.Test(e); leaf != nil {
-		if _, ok := md.m.parameterOf(fn, leaf.Subject); !ok {
+	if t, ok := md.m.literalTest(e); ok {
+		if _, ok := md.m.parameterOf(fn, t.Value.Node); !ok {
 			return nil
 		}
-		return []Test{{Node: e, Value: md.m.ValueOf(leaf.Subject), Claim: valuesClaim(leaf), Leaf: leaf}}
+		return []Test{t}
 	}
 	if e.Kind == ast.KindBinaryExpression {
 		switch e.AsBinaryExpression().OperatorToken.Kind {
@@ -671,10 +702,10 @@ func (md *builder) entryDomains(fn *ast.Node) []Domain {
 	md.analyzed[fn] = nil
 	domains := []Domain{}
 	for _, e := range md.m.Entries(fn) {
-		if e.Test.Leaf == nil {
+		if e.Test.Claim.Presence() {
 			continue
 		}
-		domains = append(domains, Domain{Node: e.Test.Node, Value: e.Test.Value, Claim: e.Claim, Property: md.label(e.Test.Leaf.Subject)})
+		domains = append(domains, Domain{Test: Test{Node: e.Test.Node, Value: e.Test.Value, Claim: e.Claim}, Property: md.label(e.Test.Value.Node)})
 	}
 	if len(domains) == 0 {
 		domains = md.passthrough(fn)
@@ -761,7 +792,7 @@ func (md *builder) siblings(container *ast.Node, members []*ast.Node) {
 	}
 	for _, s := range entries {
 		sf := byNode[s.fn]
-		if sf == nil || (sf.Kind != "selector" && sf.Kind != "predicate") {
+		if sf == nil || (sf.Kind != SelectorFunction && sf.Kind != PredicateFunction) {
 			continue
 		}
 		st := md.firstParameterType(s.fn)
@@ -1001,12 +1032,12 @@ func (md *builder) purpose(d *Decision) {
 }
 
 func (md *builder) mapping(d *Decision) map[string][]string {
-	if d.Form != "dispatch" {
+	if d.Form != DispatchForm {
 		return nil
 	}
 	out := map[string][]string{}
 	for _, a := range d.Arms {
-		if !a.Complete || a.Outcome.Kind != "lookup" {
+		if !a.Complete || a.Outcome.Kind != Lookup {
 			return nil
 		}
 		for _, v := range a.Claim.Accepted {
@@ -1044,7 +1075,7 @@ func (md *builder) relations() {
 					break
 				}
 				purpose := strings.Join(shared, ", ")
-				md.Relations = append(md.Relations, Relation{Kind: "conflicts", A: a.ID, B: b.ID, Detail: fmt.Sprintf("%s: %v vs %v; purpose %s", v, x, y, purpose)})
+				md.Relations = append(md.Relations, Relation{Kind: Conflicts, A: a.ID, B: b.ID, Detail: fmt.Sprintf("%s: %v vs %v; purpose %s", v, x, y, purpose)})
 				break
 			}
 		}
@@ -1059,7 +1090,7 @@ func (md *builder) collectFunctions(n *ast.Node) bool {
 		} else if p := n.Parent; p != nil && (p.Kind == ast.KindPropertyAssignment || p.Kind == ast.KindVariableDeclaration || p.Kind == ast.KindPropertyDeclaration) {
 			name = Text(p.Name(), 40)
 		}
-		f := &Function{ID: len(md.Functions), Line: md.line(n), Name: name, Kind: "function", Node: n}
+		f := &Function{ID: len(md.Functions), Line: md.line(n), Name: name, Kind: PlainFunction, Node: n}
 		md.ids[n] = f.ID
 		md.Functions = append(md.Functions, f)
 	}

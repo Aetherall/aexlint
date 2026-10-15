@@ -40,7 +40,7 @@ func (r *checkRun) check(test, reported *ast.Node) bool {
 		return false
 	}
 	if !ok {
-		if r.declares(r.a.Field(fact)) {
+		if r.declares(r.a.Property(fact)) {
 			return false
 		}
 		helpers := r.a.HelpersOf(t, fact)
@@ -271,7 +271,7 @@ func (r *checkRun) flag(declaration *ast.Node) bool {
 // comparison names.
 func (r *checkRun) asked(t model.Test) string {
 	if !t.Claim.Presence() {
-		return "compared with " + t.Leaf.Vocabulary.Display(strings.Split(t.Named, ","))
+		return "compared with " + t.Claim.Vocabulary.Display(strings.Split(t.Named, ","))
 	}
 	claim := r.a.DeclaredClaim(t)
 	missing := claim.Accepted
@@ -328,8 +328,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-fact-outside-owner",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		limit := model.ParseMax("no-fact-outside-owner", options, 4)
-		classifier := model.NewClassifier(ctx.TypeChecker)
-		r := &checkRun{ctx: ctx, a: model.NewAnalyzer(ctx, classifier), places: model.NewPlaces(ctx), covered: map[*ast.Node]bool{}}
+		r := &checkRun{ctx: ctx, a: model.NewAnalyzer(ctx), places: model.NewPlaces(ctx), covered: map[*ast.Node]bool{}}
 		r.unanswered(limit)
 		return rule.RuleListeners{ast.KindPropertyAccessExpression: r.visit}
 	},

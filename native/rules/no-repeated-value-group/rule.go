@@ -11,20 +11,10 @@ import (
 )
 
 type measure struct {
-	ctx        rule.RuleContext
-	classifier *model.Classifier
-	index      *model.Index
-	places     model.Places
-}
-
-func complement(s *model.Site) []string {
-	result := []string{}
-	for _, value := range s.Leaves[0].Vocabulary.Values {
-		if !slices.Contains(s.Leaves[0].Accepted, value) {
-			result = append(result, value)
-		}
-	}
-	return result
+	ctx      rule.RuleContext
+	analyzer *model.Analyzer
+	index    *model.Index
+	places   model.Places
 }
 
 // matches returns the other unnamed sites and the named sites spelling out s's group.
@@ -36,7 +26,7 @@ func (m *measure) matches(s *model.Site) ([]*ast.Node, []*model.Site) {
 			return
 		}
 		seen[root] = true
-		if other := m.classifier.Classify(root); other != nil && other.Group == s.Group {
+		if other := m.analyzer.Classify(root); other != nil && other.Group == s.Group {
 			if other.Named != "" {
 				named = append(named, other)
 			} else {
@@ -44,7 +34,7 @@ func (m *measure) matches(s *model.Site) ([]*ast.Node, []*model.Site) {
 			}
 		}
 	}
-	for _, values := range [][]string{s.Leaves[0].Accepted, complement(s)} {
+	for _, values := range [][]string{s.Tests[0].Claim.Accepted, s.Tests[0].Claim.Rejected()} {
 		for _, root := range m.index.Keyed(values[0]) {
 			visit(root)
 		}
@@ -56,15 +46,15 @@ func (m *measure) matches(s *model.Site) ([]*ast.Node, []*model.Site) {
 }
 
 func (m *measure) report(s *model.Site, others []*ast.Node, named []*model.Site) {
-	group := s.Leaves[0].Vocabulary.Display(s.Leaves[0].Accepted)
+	group := s.Tests[0].Claim.Vocabulary.Display(s.Tests[0].Claim.Accepted)
 	var description string
 	switch s.Root.Kind {
 	case ast.KindArrayLiteralExpression:
 		description = fmt.Sprintf("This list spells out the value group %s, which is also written elsewhere.", group)
 	case ast.KindCaseClause:
-		description = fmt.Sprintf("These cases group the values %s of `%s`, a group also written elsewhere.", group, model.Text(s.Leaves[0].Subject, 40))
+		description = fmt.Sprintf("These cases group the values %s of `%s`, a group also written elsewhere.", group, model.Text(s.Tests[0].Value.Node, 40))
 	default:
-		description = fmt.Sprintf("`%s` is tested against the value group %s, which is also written elsewhere.", model.Text(s.Leaves[0].Subject, 40), group)
+		description = fmt.Sprintf("`%s` is tested against the value group %s, which is also written elsewhere.", model.Text(s.Tests[0].Value.Node, 40), group)
 	}
 	m.places.Sort(others)
 	locations := []string{}
@@ -86,7 +76,7 @@ func (m *measure) report(s *model.Site, others []*ast.Node, named []*model.Site)
 
 func (m *measure) run() {
 	for _, root := range m.index.File(m.ctx.SourceFile) {
-		s := m.classifier.Classify(root)
+		s := m.analyzer.Classify(root)
 		if s == nil || s.Group == "" || s.Named != "" {
 			continue
 		}
@@ -100,7 +90,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-repeated-value-group",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-repeated-value-group", options)
-		(&measure{ctx: ctx, classifier: model.NewClassifier(ctx.TypeChecker), index: model.IndexFor(ctx.Program), places: model.NewPlaces(ctx)}).run()
+		(&measure{ctx: ctx, analyzer: model.NewAnalyzer(ctx), index: model.IndexFor(ctx.Program), places: model.NewPlaces(ctx)}).run()
 		return rule.RuleListeners{}
 	},
 }

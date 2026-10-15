@@ -72,7 +72,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-external-variant-behavior",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-external-variant-behavior", options)
-		m := &measure{ctx: ctx, model: model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))}
+		m := &measure{ctx: ctx, model: model.NewAnalyzer(ctx)}
 		for _, d := range model.Dispatches(m.model) {
 			m.report(d)
 		}

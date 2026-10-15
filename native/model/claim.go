@@ -54,10 +54,6 @@ func presenceClaim(p Presence) Claim {
 	return Claim{Domain: presence, Accepted: minus(presence, removed)}
 }
 
-func valuesClaim(l *Leaf) Claim {
-	return Claim{Domain: l.Vocabulary.Values, Accepted: l.Accepted, Vocabulary: l.Vocabulary}
-}
-
 // Truthiness is what a truthiness test establishes: the value is present and not falsy.
 func Truthiness() Claim { return Claim{Domain: presence, Accepted: []string{Present}} }
 
@@ -76,8 +72,18 @@ func (c Claim) Under(held []string) Claim {
 
 // Or is what holds where c or o holds.
 func (c Claim) Or(o Claim) Claim {
-	return Claim{Domain: c.Domain, Accepted: append(slices.Clone(c.Accepted), minus(o.Accepted, c.Accepted)...), Vocabulary: c.Vocabulary}
+	return Claim{Domain: c.Domain, Accepted: slices.DeleteFunc(slices.Clone(c.Domain), func(k string) bool {
+		return !slices.Contains(c.Accepted, k) && !slices.Contains(o.Accepted, k)
+	}), Vocabulary: c.Vocabulary}
 }
+
+// And is what holds where c and o hold.
+func (c Claim) And(o Claim) Claim {
+	return Claim{Domain: c.Domain, Accepted: within(c.Accepted, o.Accepted), Vocabulary: c.Vocabulary}
+}
+
+// Arity is the size of the smaller side of the split c makes: 1 for a test of a single value or of all values but one.
+func (c Claim) Arity() int { return min(len(c.Accepted), len(c.Domain)-len(c.Accepted)) }
 
 // Rejected is the values c rules out.
 func (c Claim) Rejected() []string { return minus(c.Domain, c.Accepted) }

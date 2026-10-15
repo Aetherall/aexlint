@@ -186,9 +186,11 @@ func (m *Analyzer) reread(root *ast.Node, tested Value) *ast.Node {
 }
 
 // Field is what a value names across code: the declarations of the property it ends at, or of the variable it is.
+// Symbol is that property or variable, or nil when it is not found.
 type Field struct {
 	Name         string
 	Declarations []*ast.Node
+	Symbol       *ast.Symbol
 }
 
 // Same reports whether two fields have the same name and share a declaration.
@@ -208,13 +210,13 @@ func (m *Analyzer) FieldOf(n *ast.Node) Field {
 				continue
 			}
 			if property := tc.GetPropertyOfType(tc.GetNonNullableType(t), name); property != nil && len(property.Declarations) > 0 {
-				return Field{Name: name, Declarations: property.Declarations}
+				return Field{Name: name, Declarations: property.Declarations, Symbol: property}
 			}
 		}
 		return Field{Name: name}
 	}
 	if symbol := tc.GetSymbolAtLocation(n); symbol != nil && symbol.ValueDeclaration != nil {
-		return Field{Name: symbol.Name, Declarations: []*ast.Node{symbol.ValueDeclaration}}
+		return Field{Name: symbol.Name, Declarations: []*ast.Node{symbol.ValueDeclaration}, Symbol: symbol}
 	}
 	return Field{}
 }

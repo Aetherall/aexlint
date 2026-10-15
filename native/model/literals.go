@@ -18,31 +18,19 @@ type Vocabulary struct {
 	shown  map[string]string
 }
 
-// Leaf is a test of one subject against a vocabulary, reduced to the values it accepts.
-type Leaf struct {
-	Vocabulary *Vocabulary
-	Accepted   []string
-	Subject    *ast.Node
-}
-
-// Arity is the size of the smaller side of the partition a leaf makes: 1 for a test of a single value or of all values but one.
-func (l *Leaf) Arity() int {
-	return min(len(l.Accepted), len(l.Vocabulary.Values)-len(l.Accepted))
-}
-
 type expr struct {
 	op     string
 	kids   []*expr
-	leaf   *Leaf
+	test   *Test
 	opaque string
 }
 
-// Site is a question a root node asks about vocabularies.
+// Site is a question a root node asks about vocabularies: Tests are its tests of literal values, merged by subject.
 type Site struct {
-	Root   *ast.Node
-	Pos    int
-	End    int
-	Leaves []*Leaf
+	Root  *ast.Node
+	Pos   int
+	End   int
+	Tests []Test
 	// Canon identifies the question by the values of its vocabularies, the values it accepts and the text of its other operands.
 	Canon string
 	// Group is the accepted values of a site testing one vocabulary against several values, or "".
@@ -51,17 +39,6 @@ type Site struct {
 	Named string
 	// Outcome is the normalized text of what the question leads to, or "" when it leads to nothing or to a trivial value.
 	Outcome string
-}
-
-// Classifier reduces roots to sites with one invocation's checker.
-type Classifier struct {
-	checker *checker.Checker
-	sites   map[*ast.Node]*Site
-	vocabs  map[*checker.Type]*Vocabulary
-}
-
-func NewClassifier(c *checker.Checker) *Classifier {
-	return &Classifier{checker: c, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}}
 }
 
 func Unwrap(n *ast.Node) *ast.Node {
@@ -102,51 +79,51 @@ func (v *Vocabulary) Display(keys []string) string {
 }
 
 // Declared returns the declared type of an identifier, call, or property read; a property is read from its object's declared type, so narrowing the object does not narrow it.
-func (c *Classifier) Declared(n *ast.Node) *checker.Type {
+func (m *Analyzer) Declared(n *ast.Node) *checker.Type {
 	switch n = Unwrap(n); n.Kind {
 	case ast.KindPropertyAccessExpression:
 		if n.Name().Kind == ast.KindIdentifier {
-			if object := c.Declared(n.Expression()); object != nil {
-				object = c.checker.GetNonNullableType(object)
+			if object := m.Declared(n.Expression()); object != nil {
+				object = m.ctx.TypeChecker.GetNonNullableType(object)
 				if object.Flags()&checker.TypeFlagsInstantiable != 0 {
-					if constraint := checker.Checker_getBaseConstraintOfType(c.checker, object); constraint != nil {
+					if constraint := checker.Checker_getBaseConstraintOfType(m.ctx.TypeChecker, object); constraint != nil {
 						object = constraint
 					}
 				}
-				if property := c.checker.GetPropertyOfType(object, n.Name().Text()); property != nil {
-					return c.checker.GetTypeOfSymbol(property)
+				if property := m.ctx.TypeChecker.GetPropertyOfType(object, n.Name().Text()); property != nil {
+					return m.ctx.TypeChecker.GetTypeOfSymbol(property)
 				}
 			}
 		}
-		if symbol := c.checker.GetSymbolAtLocation(n.Name()); symbol != nil && symbol.Flags&(ast.SymbolFlagsProperty|ast.SymbolFlagsGetAccessor) != 0 {
-			return c.checker.GetTypeOfSymbol(symbol)
+		if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n.Name()); symbol != nil && symbol.Flags&(ast.SymbolFlagsProperty|ast.SymbolFlagsGetAccessor) != 0 {
+			return m.ctx.TypeChecker.GetTypeOfSymbol(symbol)
 		}
 	case ast.KindIdentifier:
-		if symbol := c.checker.GetSymbolAtLocation(n); symbol != nil && symbol.Flags&(ast.SymbolFlagsVariable|ast.SymbolFlagsProperty) != 0 {
-			return c.checker.GetTypeOfSymbol(symbol)
+		if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n); symbol != nil && symbol.Flags&(ast.SymbolFlagsVariable|ast.SymbolFlagsProperty) != 0 {
+			return m.ctx.TypeChecker.GetTypeOfSymbol(symbol)
 		}
 	case ast.KindCallExpression:
-		if signature := c.checker.GetResolvedSignature(n); signature != nil {
-			return c.checker.GetReturnTypeOfSignature(signature)
+		if signature := m.ctx.TypeChecker.GetResolvedSignature(n); signature != nil {
+			return m.ctx.TypeChecker.GetReturnTypeOfSignature(signature)
 		}
 	}
 	return nil
 }
 
-func (c *Classifier) vocabularyOf(t *checker.Type) *Vocabulary {
+func (m *Analyzer) vocabularyOf(t *checker.Type) *Vocabulary {
 	if t == nil {
 		return nil
 	}
-	t = c.checker.GetNonNullableType(t)
+	t = m.ctx.TypeChecker.GetNonNullableType(t)
 	if t.Flags()&checker.TypeFlagsUnion == 0 && t.Flags()&checker.TypeFlagsInstantiable != 0 {
-		if constraint := checker.Checker_getBaseConstraintOfType(c.checker, t); constraint != nil {
-			t = c.checker.GetNonNullableType(constraint)
+		if constraint := checker.Checker_getBaseConstraintOfType(m.ctx.TypeChecker, t); constraint != nil {
+			t = m.ctx.TypeChecker.GetNonNullableType(constraint)
 		}
 	}
 	if t.Flags()&checker.TypeFlagsUnion == 0 {
 		return nil
 	}
-	if v, ok := c.vocabs[t]; ok {
+	if v, ok := m.vocabs[t]; ok {
 		return v
 	}
 	values := []string{}
@@ -157,28 +134,28 @@ func (c *Classifier) vocabularyOf(t *checker.Type) *Vocabulary {
 			key = valueKey(member)
 		}
 		if key == "" {
-			c.vocabs[t] = nil
+			m.vocabs[t] = nil
 			return nil
 		}
 		values = append(values, key)
-		shown[key] = c.checker.TypeToString(member)
+		shown[key] = m.ctx.TypeChecker.TypeToString(member)
 	}
 	slices.Sort(values)
 	v := &Vocabulary{Values: slices.Compact(values), Type: t, shown: shown}
 	if len(v.Values) < 2 {
 		v = nil
 	}
-	c.vocabs[t] = v
+	m.vocabs[t] = v
 	return v
 }
 
 // Vocabulary returns the vocabulary of n's declared type, not its flow-narrowed type.
-func (c *Classifier) Vocabulary(n *ast.Node) *Vocabulary { return c.vocabularyOf(c.Declared(n)) }
+func (m *Analyzer) Vocabulary(n *ast.Node) *Vocabulary { return m.vocabularyOf(m.Declared(n)) }
 
-func (c *Classifier) Unit(n *ast.Node) (string, bool) {
+func (m *Analyzer) Unit(n *ast.Node) (string, bool) {
 	switch n = Unwrap(n); n.Kind {
 	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral, ast.KindNumericLiteral, ast.KindPrefixUnaryExpression:
-		if t := c.checker.GetTypeAtLocation(n); t != nil && literal(t) {
+		if t := m.ctx.TypeChecker.GetTypeAtLocation(n); t != nil && literal(t) {
 			return valueKey(t), true
 		}
 	case ast.KindPropertyAccessExpression, ast.KindIdentifier:
@@ -186,12 +163,12 @@ func (c *Classifier) Unit(n *ast.Node) (string, bool) {
 		if n.Kind == ast.KindPropertyAccessExpression {
 			name = n.Name()
 		}
-		symbol := c.checker.GetSymbolAtLocation(name)
+		symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name)
 		if symbol != nil && symbol.Flags&ast.SymbolFlagsAlias != 0 {
-			symbol = c.checker.GetAliasedSymbol(symbol)
+			symbol = m.ctx.TypeChecker.GetAliasedSymbol(symbol)
 		}
 		if symbol != nil && symbol.Flags&(ast.SymbolFlagsEnumMember|ast.SymbolFlagsBlockScopedVariable|ast.SymbolFlagsProperty) != 0 {
-			if t := c.checker.GetTypeOfSymbol(symbol); t != nil && literal(t) {
+			if t := m.ctx.TypeChecker.GetTypeOfSymbol(symbol); t != nil && literal(t) {
 				return valueKey(t), true
 			}
 		}
@@ -199,12 +176,12 @@ func (c *Classifier) Unit(n *ast.Node) (string, bool) {
 	return "", false
 }
 
-func (c *Classifier) arrayElement(t *checker.Type) *checker.Type {
+func (m *Analyzer) arrayElement(t *checker.Type) *checker.Type {
 	if t == nil {
 		return nil
 	}
 	if t.Flags()&checker.TypeFlagsInstantiable != 0 {
-		if constraint := checker.Checker_getBaseConstraintOfType(c.checker, t); constraint != nil {
+		if constraint := checker.Checker_getBaseConstraintOfType(m.ctx.TypeChecker, t); constraint != nil {
 			t = constraint
 		}
 	}
@@ -215,22 +192,22 @@ func (c *Classifier) arrayElement(t *checker.Type) *checker.Type {
 	for _, candidate := range candidates {
 		switch {
 		case checker.IsTupleType(candidate):
-			if arguments := c.checker.GetTypeArguments(candidate); len(arguments) > 0 {
+			if arguments := m.ctx.TypeChecker.GetTypeArguments(candidate); len(arguments) > 0 {
 				return arguments[0]
 			}
-		case checker.Checker_isArrayType(c.checker, candidate):
-			return c.checker.GetElementTypeOfArrayType(candidate)
+		case checker.Checker_isArrayType(m.ctx.TypeChecker, candidate):
+			return m.ctx.TypeChecker.GetElementTypeOfArrayType(candidate)
 		}
 	}
 	return nil
 }
 
-func (c *Classifier) elements(receiver *ast.Node) ([]string, bool) {
+func (m *Analyzer) elements(receiver *ast.Node) ([]string, bool) {
 	receiver = Unwrap(receiver)
 	if receiver.Kind == ast.KindArrayLiteralExpression {
 		values := []string{}
 		for _, element := range receiver.Elements() {
-			value, ok := c.Unit(element)
+			value, ok := m.Unit(element)
 			if !ok {
 				return nil, false
 			}
@@ -238,11 +215,11 @@ func (c *Classifier) elements(receiver *ast.Node) ([]string, bool) {
 		}
 		return values, len(values) > 0
 	}
-	t := c.checker.GetTypeAtLocation(receiver)
+	t := m.ctx.TypeChecker.GetTypeAtLocation(receiver)
 	members := []*checker.Type{}
 	if t != nil && checker.IsTupleType(t) {
-		members = c.checker.GetTypeArguments(t)
-	} else if element := c.arrayElement(t); element != nil {
+		members = m.ctx.TypeChecker.GetTypeArguments(t)
+	} else if element := m.arrayElement(t); element != nil {
 		members = []*checker.Type{element}
 	}
 	values := []string{}
@@ -261,31 +238,27 @@ func (c *Classifier) elements(receiver *ast.Node) ([]string, bool) {
 	return values, len(values) > 0
 }
 
-func accept(v *Vocabulary, values []string, negated bool) ([]string, bool) {
-	for _, value := range values {
-		if !slices.Contains(v.Values, value) {
-			return nil, false
-		}
+// accepting is the claim that a value of v is one of values, or false when v does not hold them all.
+func accepting(v *Vocabulary, values []string) (Claim, bool) {
+	if slices.ContainsFunc(values, func(value string) bool { return !slices.Contains(v.Values, value) }) {
+		return Claim{}, false
 	}
-	accepted := []string{}
-	for _, value := range v.Values {
-		if slices.Contains(values, value) != negated {
-			accepted = append(accepted, value)
-		}
-	}
-	return accepted, true
+	return Claim{Domain: v.Values, Accepted: within(v.Values, values), Vocabulary: v}, true
 }
 
-func (c *Classifier) leaf(subject *ast.Node, values []string, negated bool) *expr {
-	v := c.Vocabulary(subject)
+func (m *Analyzer) valueTest(n, subject *ast.Node, values []string, negated bool) *expr {
+	v := m.Vocabulary(subject)
 	if v == nil {
 		return nil
 	}
-	accepted, ok := accept(v, values, negated)
+	claim, ok := accepting(v, values)
 	if !ok {
 		return nil
 	}
-	return &expr{leaf: &Leaf{Vocabulary: v, Accepted: accepted, Subject: Unwrap(subject)}}
+	if negated {
+		claim = claim.Not()
+	}
+	return &expr{test: &Test{Node: n, Value: m.ValueOf(subject), Claim: claim}}
 }
 
 func equality(kind ast.Kind) (bool, bool) {
@@ -309,7 +282,7 @@ func includes(n *ast.Node) (*ast.Node, bool) {
 	return callee.Expression(), true
 }
 
-func (c *Classifier) observe(n *ast.Node) *expr {
+func (m *Analyzer) observe(n *ast.Node) *expr {
 	switch n.Kind {
 	case ast.KindBinaryExpression:
 		binary := n.AsBinaryExpression()
@@ -318,8 +291,8 @@ func (c *Classifier) observe(n *ast.Node) *expr {
 				if Unwrap(pair[0]).Kind == ast.KindTypeOfExpression {
 					continue
 				}
-				if value, ok := c.Unit(pair[1]); ok {
-					if e := c.leaf(pair[0], []string{value}, negated); e != nil {
+				if value, ok := m.Unit(pair[1]); ok {
+					if e := m.valueTest(n, pair[0], []string{value}, negated); e != nil {
 						return e
 					}
 				}
@@ -327,31 +300,31 @@ func (c *Classifier) observe(n *ast.Node) *expr {
 		}
 	case ast.KindCallExpression:
 		if receiver, ok := includes(n); ok {
-			if values, ok := c.elements(receiver); ok {
-				return c.leaf(n.Arguments()[0], values, false)
+			if values, ok := m.elements(receiver); ok {
+				return m.valueTest(n, n.Arguments()[0], values, false)
 			}
 		}
 	}
 	return nil
 }
 
-func (c *Classifier) build(n *ast.Node, text string) *expr {
+func (m *Analyzer) build(n *ast.Node, text string) *expr {
 	n = Unwrap(n)
-	if e := c.observe(n); e != nil {
+	if e := m.observe(n); e != nil {
 		return e
 	}
 	switch n.Kind {
 	case ast.KindPrefixUnaryExpression:
 		if unary := n.AsPrefixUnaryExpression(); unary.Operator == ast.KindExclamationToken {
-			return negate(c.build(unary.Operand, text))
+			return negate(m.build(unary.Operand, text))
 		}
 	case ast.KindBinaryExpression:
 		binary := n.AsBinaryExpression()
 		switch binary.OperatorToken.Kind {
 		case ast.KindAmpersandAmpersandToken:
-			return &expr{op: "&", kids: []*expr{c.build(binary.Left, text), c.build(binary.Right, text)}}
+			return &expr{op: "&", kids: []*expr{m.build(binary.Left, text), m.build(binary.Right, text)}}
 		case ast.KindBarBarToken:
-			return &expr{op: "|", kids: []*expr{c.build(binary.Left, text), c.build(binary.Right, text)}}
+			return &expr{op: "|", kids: []*expr{m.build(binary.Left, text), m.build(binary.Right, text)}}
 		}
 	}
 	return &expr{opaque: Squash(text[scanner.SkipTrivia(text, n.Pos()):n.End()])}
@@ -359,11 +332,10 @@ func (c *Classifier) build(n *ast.Node, text string) *expr {
 
 func negate(e *expr) *expr {
 	switch {
-	case e.leaf != nil:
-		accepted, _ := accept(e.leaf.Vocabulary, e.leaf.Accepted, true)
-		copied := *e.leaf
-		copied.Accepted = accepted
-		return &expr{leaf: &copied}
+	case e.test != nil:
+		copied := *e.test
+		copied.Claim = copied.Claim.Not()
+		return &expr{test: &copied}
 	case e.op != "":
 		op := "|"
 		if e.op == "|" {
@@ -381,9 +353,9 @@ func negate(e *expr) *expr {
 	return &expr{opaque: "!" + e.opaque}
 }
 
-// SameSubject reports whether two leaves test the same vocabulary on the same expression text.
-func SameSubject(a, b *Leaf) bool {
-	return slices.Equal(a.Vocabulary.Values, b.Vocabulary.Values) && Squash(source(a.Subject)) == Squash(source(b.Subject))
+// SameSubject reports whether two tests of literal values test the same vocabulary on the same expression text.
+func SameSubject(a, b Test) bool {
+	return slices.Equal(a.Claim.Vocabulary.Values, b.Claim.Vocabulary.Values) && written(a.Value.Node) == written(b.Value.Node)
 }
 
 func normalize(e *expr) *expr {
@@ -402,9 +374,9 @@ func normalize(e *expr) *expr {
 	merged := []*expr{}
 	for _, k := range flat {
 		var existing *expr
-		if k.leaf != nil {
+		if k.test != nil {
 			for _, m := range merged {
-				if m.leaf != nil && SameSubject(m.leaf, k.leaf) {
+				if m.test != nil && SameSubject(*m.test, *k.test) {
 					existing = m
 					break
 				}
@@ -414,15 +386,13 @@ func normalize(e *expr) *expr {
 			merged = append(merged, k)
 			continue
 		}
-		combined := *existing.leaf
-		combined.Accepted = []string{}
-		for _, value := range k.leaf.Vocabulary.Values {
-			in, other := slices.Contains(existing.leaf.Accepted, value), slices.Contains(k.leaf.Accepted, value)
-			if (e.op == "|" && (in || other)) || (e.op == "&" && in && other) {
-				combined.Accepted = append(combined.Accepted, value)
-			}
+		combined := *existing.test
+		if e.op == "|" {
+			combined.Claim = combined.Claim.Or(k.test.Claim)
+		} else {
+			combined.Claim = combined.Claim.And(k.test.Claim)
 		}
-		existing.leaf = &combined
+		existing.test = &combined
 	}
 	if len(merged) == 1 {
 		return merged[0]
@@ -432,8 +402,8 @@ func normalize(e *expr) *expr {
 
 func canon(e *expr) string {
 	switch {
-	case e.leaf != nil:
-		return "{" + strings.Join(e.leaf.Vocabulary.Values, ",") + "}∈{" + strings.Join(e.leaf.Accepted, ",") + "}"
+	case e.test != nil:
+		return "{" + strings.Join(e.test.Claim.Vocabulary.Values, ",") + "}∈{" + strings.Join(e.test.Claim.Accepted, ",") + "}"
 	case e.op != "":
 		parts := []string{}
 		for _, k := range e.kids {
@@ -445,33 +415,38 @@ func canon(e *expr) string {
 	return "?" + e.opaque
 }
 
-func collect(e *expr, leaves *[]*Leaf) {
+func collect(e *expr, tests *[]Test) {
 	switch {
-	case e.leaf != nil:
-		*leaves = append(*leaves, e.leaf)
+	case e.test != nil:
+		*tests = append(*tests, *e.test)
 	case e.op != "":
 		for _, k := range e.kids {
-			collect(k, leaves)
+			collect(k, tests)
 		}
 	}
 }
 
-// Leaves returns the vocabulary tests of a condition after merging tests of the same subject.
-func (c *Classifier) Leaves(condition *ast.Node) []*Leaf {
-	text := ast.GetSourceFileOfNode(condition).Text()
-	leaves := []*Leaf{}
-	collect(normalize(c.build(condition, text)), &leaves)
-	return leaves
+// Tests returns the tests of literal values a condition makes, after merging tests of the same subject.
+func (m *Analyzer) Tests(condition *ast.Node) []Test {
+	tests := []Test{}
+	collect(normalize(m.build(condition, ast.GetSourceFileOfNode(condition).Text())), &tests)
+	return tests
 }
 
-// Test returns the single vocabulary test a whole condition consists of, or nil when the condition has other operands.
-func (c *Classifier) Test(condition *ast.Node) *Leaf {
-	return normalize(c.build(condition, ast.GetSourceFileOfNode(condition).Text())).leaf
+// literalTest reads a whole condition as one test of literal values, or returns false when it has other operands.
+func (m *Analyzer) literalTest(condition *ast.Node) (Test, bool) {
+	e := normalize(m.build(condition, ast.GetSourceFileOfNode(condition).Text()))
+	if e.test == nil {
+		return Test{}, false
+	}
+	t := *e.test
+	t.Node, t.Named = condition, m.named(condition, t.Claim.Vocabulary)
+	return t, true
 }
 
-func (c *Classifier) parameterType(call *ast.Node, argument *ast.Node) *checker.Type {
+func (m *Analyzer) parameterType(call *ast.Node, argument *ast.Node) *checker.Type {
 	index := slices.Index(call.Arguments(), argument)
-	signature := c.checker.GetResolvedSignature(call)
+	signature := m.ctx.TypeChecker.GetResolvedSignature(call)
 	if index < 0 || signature == nil {
 		return nil
 	}
@@ -482,35 +457,35 @@ func (c *Classifier) parameterType(call *ast.Node, argument *ast.Node) *checker.
 	if index >= len(parameters) {
 		return nil
 	}
-	return c.checker.GetTypeOfSymbol(parameters[index])
+	return m.ctx.TypeChecker.GetTypeOfSymbol(parameters[index])
 }
 
-func (c *Classifier) list(n *ast.Node) *Site {
+func (m *Analyzer) list(n *ast.Node) *Site {
 	values := []string{}
 	for _, element := range n.Elements() {
-		value, ok := c.Unit(element)
+		value, ok := m.Unit(element)
 		if !ok {
 			return nil
 		}
 		values = append(values, value)
 	}
 	outer, parent := listContext(n)
-	contextual := checker.Checker_getContextualType(c.checker, outer, checker.ContextFlagsNone)
+	contextual := checker.Checker_getContextualType(m.ctx.TypeChecker, outer, checker.ContextFlagsNone)
 	if parent.Kind == ast.KindCallExpression || parent.Kind == ast.KindNewExpression {
-		if declared := c.parameterType(parent, outer); declared != nil {
+		if declared := m.parameterType(parent, outer); declared != nil {
 			contextual = declared
 		}
 	}
-	v := c.vocabularyOf(c.arrayElement(contextual))
+	v := m.vocabularyOf(m.arrayElement(contextual))
 	if v == nil {
 		return nil
 	}
-	accepted, ok := accept(v, values, false)
+	claim, ok := accepting(v, values)
 	if !ok {
 		return nil
 	}
-	l := &Leaf{Vocabulary: v, Accepted: accepted, Subject: n}
-	s := &Site{Root: n, Pos: scanner.SkipTrivia(ast.GetSourceFileOfNode(n).Text(), n.Pos()), End: n.End(), Leaves: []*Leaf{l}, Canon: canon(&expr{leaf: l})}
+	t := &Test{Node: n, Value: m.ValueOf(n), Claim: claim}
+	s := &Site{Root: n, Pos: scanner.SkipTrivia(ast.GetSourceFileOfNode(n).Text(), n.Pos()), End: n.End(), Tests: []Test{*t}, Canon: canon(&expr{test: t})}
 	switch parent.Kind {
 	case ast.KindVariableDeclaration, ast.KindPropertyDeclaration, ast.KindPropertyAssignment:
 		if parent.Name() != nil && parent.Name().Kind == ast.KindIdentifier && (parent.Kind != ast.KindPropertyAssignment || named(parent.Parent.Parent)) {
@@ -524,9 +499,9 @@ func named(n *ast.Node) bool {
 	return n != nil && (n.Kind == ast.KindVariableDeclaration || n.Kind == ast.KindPropertyDeclaration) && n.Name() != nil && n.Name().Kind == ast.KindIdentifier
 }
 
-func (c *Classifier) caseGroup(first *ast.Node) *Site {
+func (m *Analyzer) caseGroup(first *ast.Node) *Site {
 	switchStatement := first.Parent.Parent
-	v := c.Vocabulary(switchStatement.Expression())
+	v := m.Vocabulary(switchStatement.Expression())
 	if v == nil {
 		return nil
 	}
@@ -537,7 +512,7 @@ func (c *Classifier) caseGroup(first *ast.Node) *Site {
 		if clause.Kind == ast.KindDefaultClause {
 			return nil
 		}
-		value, ok := c.Unit(clause.Expression())
+		value, ok := m.Unit(clause.Expression())
 		if !ok {
 			return nil
 		}
@@ -547,18 +522,18 @@ func (c *Classifier) caseGroup(first *ast.Node) *Site {
 			break
 		}
 	}
-	accepted, ok := accept(v, values, false)
+	claim, ok := accepting(v, values)
 	if !ok {
 		return nil
 	}
-	l := &Leaf{Vocabulary: v, Accepted: accepted, Subject: Unwrap(switchStatement.Expression())}
+	t := &Test{Node: first, Value: m.ValueOf(switchStatement.Expression()), Claim: claim}
 	text := ast.GetSourceFileOfNode(first).Text()
-	return &Site{Root: first, Pos: scanner.SkipTrivia(text, first.Pos()), End: last.Expression().End(), Leaves: []*Leaf{l}, Canon: canon(&expr{leaf: l}), Outcome: OutcomeText(first)}
+	return &Site{Root: first, Pos: scanner.SkipTrivia(text, first.Pos()), End: last.Expression().End(), Tests: []Test{*t}, Canon: canon(&expr{test: t}), Outcome: OutcomeText(first)}
 }
 
 // Exhaustive reports whether a switch on a vocabulary has no default clause and a case for every value.
-func (c *Classifier) Exhaustive(n *ast.Node) bool {
-	v := c.Vocabulary(n.Expression())
+func (m *Analyzer) Exhaustive(n *ast.Node) bool {
+	v := m.Vocabulary(n.Expression())
 	if v == nil {
 		return false
 	}
@@ -567,41 +542,41 @@ func (c *Classifier) Exhaustive(n *ast.Node) bool {
 		if clause.Kind == ast.KindDefaultClause {
 			return false
 		}
-		if key, ok := c.Unit(clause.Expression()); ok {
+		if key, ok := m.Unit(clause.Expression()); ok {
 			covered[key] = true
 		}
 	}
 	return !slices.ContainsFunc(v.Values, func(value string) bool { return !covered[value] })
 }
 
-func (c *Classifier) question(n *ast.Node) *Site {
+func (m *Analyzer) question(n *ast.Node) *Site {
 	text := ast.GetSourceFileOfNode(n).Text()
-	e := normalize(c.build(n, text))
-	leaves := []*Leaf{}
-	collect(e, &leaves)
-	if len(leaves) == 0 {
+	e := normalize(m.build(n, text))
+	tests := []Test{}
+	collect(e, &tests)
+	if len(tests) == 0 {
 		return nil
 	}
-	return &Site{Root: n, Pos: scanner.SkipTrivia(text, n.Pos()), End: n.End(), Leaves: leaves, Canon: canon(e), Named: predicateName(n), Outcome: OutcomeText(n)}
+	return &Site{Root: n, Pos: scanner.SkipTrivia(text, n.Pos()), End: n.End(), Tests: tests, Canon: canon(e), Named: predicateName(n), Outcome: OutcomeText(n)}
 }
 
 // Classify returns the site a root asks, or nil when it tests no vocabulary.
-func (c *Classifier) Classify(root *ast.Node) *Site {
-	if s, ok := c.sites[root]; ok {
+func (m *Analyzer) Classify(root *ast.Node) *Site {
+	if s, ok := m.sites[root]; ok {
 		return s
 	}
 	var s *Site
 	switch root.Kind {
 	case ast.KindArrayLiteralExpression:
-		s = c.list(root)
+		s = m.list(root)
 	case ast.KindCaseClause:
-		s = c.caseGroup(root)
+		s = m.caseGroup(root)
 	default:
-		s = c.question(root)
+		s = m.question(root)
 	}
-	if s != nil && len(s.Leaves) == 1 && s.Leaves[0].Arity() >= 2 {
-		s.Group = strings.Join(s.Leaves[0].Accepted, "\x00")
+	if s != nil && len(s.Tests) == 1 && s.Tests[0].Claim.Arity() >= 2 {
+		s.Group = strings.Join(s.Tests[0].Claim.Accepted, "\x00")
 	}
-	c.sites[root] = s
+	m.sites[root] = s
 	return s
 }

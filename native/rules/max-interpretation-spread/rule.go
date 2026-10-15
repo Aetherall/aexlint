@@ -28,7 +28,7 @@ type Site struct {
 
 // sites returns the checks of particular values a root makes. A typed list defines a group of values rather than
 // checking one, and an exhaustive switch without default fails to compile when a value is added.
-func sites(c *model.Classifier, root *ast.Node) []Site {
+func sites(c *model.Analyzer, root *ast.Node) []Site {
 	check := root
 	switch root.Kind {
 	case ast.KindArrayLiteralExpression:
@@ -43,8 +43,8 @@ func sites(c *model.Classifier, root *ast.Node) []Site {
 		return nil
 	}
 	found := []Site{}
-	for _, leaf := range s.Leaves {
-		found = append(found, Site{strings.Join(leaf.Vocabulary.Values, "\x00"), leaf.Vocabulary, leaf.Subject, check})
+	for _, t := range s.Tests {
+		found = append(found, Site{strings.Join(t.Claim.Vocabulary.Values, "\x00"), t.Claim.Vocabulary, t.Value.Node, check})
 	}
 	return found
 }
@@ -57,7 +57,7 @@ type origin struct {
 }
 
 // origins returns where a site's vocabulary comes from. A property read through a union of object types has one origin per declaration.
-func origins(c *model.Classifier, tc *checker.Checker, n *ast.Node) []origin {
+func origins(c *model.Analyzer, tc *checker.Checker, n *ast.Node) []origin {
 	n = model.Unwrap(n)
 	if t := c.Declared(n); t != nil {
 		for _, candidate := range []*checker.Type{t, tc.GetNonNullableType(t)} {
@@ -132,8 +132,8 @@ type group struct {
 }
 
 type measure struct {
-	ctx        rule.RuleContext
-	classifier *model.Classifier
+	ctx      rule.RuleContext
+	analyzer *model.Analyzer
 }
 
 // values lists the vocabulary's sorted literals.
@@ -155,7 +155,7 @@ func (m *measure) origins(sites []Site) ([]string, string) {
 	}
 	byText := map[string]*entry{}
 	for _, s := range sites {
-		for _, o := range origins(m.classifier, m.ctx.TypeChecker, s.Node) {
+		for _, o := range origins(m.analyzer, m.ctx.TypeChecker, s.Node) {
 			text := o.label
 			if o.declaration != nil {
 				text += " (" + model.NewPlaces(m.ctx).Relative(ast.GetSourceFileOfNode(o.declaration).FileName()) + ")"
@@ -223,7 +223,7 @@ func (m *measure) run(limit int) {
 	groups := map[string]*group{}
 	order := []string{}
 	for _, root := range index.File(m.ctx.SourceFile) {
-		for _, s := range sites(m.classifier, root) {
+		for _, s := range sites(m.analyzer, root) {
 			if groups[s.Key] == nil {
 				groups[s.Key] = &group{first: s, checks: map[*ast.Node]bool{}, files: map[*ast.SourceFile]bool{}}
 				order = append(order, s.Key)
@@ -240,7 +240,7 @@ func (m *measure) run(limit int) {
 			return
 		}
 		seen[root] = true
-		for _, s := range sites(m.classifier, root) {
+		for _, s := range sites(m.analyzer, root) {
 			if g := groups[s.Key]; g != nil {
 				g.files[ast.GetSourceFileOfNode(root)] = true
 				g.sites = append(g.sites, s)
@@ -268,7 +268,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/max-interpretation-spread",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		limit := parseOptions(options)
-		(&measure{ctx: ctx, classifier: model.NewClassifier(ctx.TypeChecker)}).run(limit)
+		(&measure{ctx: ctx, analyzer: model.NewAnalyzer(ctx)}).run(limit)
 		return rule.RuleListeners{}
 	},
 }

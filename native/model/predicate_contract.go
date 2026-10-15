@@ -130,7 +130,7 @@ func (m *Analyzer) restriction(n *ast.Node, parameter *ast.Symbol, target *check
 		case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral, ast.KindNumericLiteral:
 			return true
 		case ast.KindIdentifier:
-			_, unit := m.classifier.Unit(n)
+			_, unit := m.Unit(n)
 			return unit && m.pure(n)
 		}
 		return false
@@ -153,7 +153,7 @@ func (m *Analyzer) restriction(n *ast.Node, parameter *ast.Symbol, target *check
 	if !m.pure(subject) || !checker.Checker_isTypeAssignableTo(tc, tc.GetTypeAtLocation(constant), tc.GetTypeAtLocation(subject)) {
 		return Restriction{}, false
 	}
-	compared, ok := m.classifier.Unit(constant)
+	compared, ok := m.Unit(constant)
 	if !ok {
 		return Restriction{}, false
 	}

@@ -34,7 +34,7 @@ The executable lives at `dist/native/<platform>-<arch>/aexlint-typed` (`.exe` on
 
 ## Shared decision model
 
-`native/model/` is a Go package, not a rule. It is copied next to the rules and imported as `internal/aexlint/model`. It holds the classifier that recognizes tests on finite literal values, syntax helpers, the per-program index of decision sites, ownership resolution, result construction, and the per-file decision model described in [decision model](design/decision-model.md). Rules build on it instead of copying its logic.
+`native/model/` is a Go package, not a rule. It is copied next to the rules and imported as `internal/aexlint/model`. It holds the analyzer that reads tests of finite literal values and of presence, syntax helpers, the per-program index of decision sites, ownership resolution, result construction, and the per-file decision model described in [decision model](design/decision-model.md). Rules build on it instead of copying its logic.
 
 The test-only `native/probe/decision-model` rule reports model facts as diagnostics, so the model is tested on real programs with the standard rule tester. Run `pnpm native:test decision-model`.
 

@@ -8,12 +8,11 @@ import (
 )
 
 // Test is a place where code learns a claim about a value: Claim holds where Node is true. Named is the vocabulary
-// values a test of literal values writes, sorted and joined.
+// values a test of literal values written as a whole condition writes, sorted and joined.
 type Test struct {
 	Node  *ast.Node
 	Value Value
 	Claim Claim
-	Leaf  *Leaf
 	Named string
 }
 
@@ -31,8 +30,8 @@ func (m *Analyzer) TestOf(n *ast.Node) (Test, bool) {
 	if argument, ok := booleanCall(n); ok {
 		n, bare = argument, true
 	}
-	if leaf := m.classifier.Test(n); leaf != nil {
-		return Test{Node: n, Value: m.ValueOf(leaf.Subject), Claim: valuesClaim(leaf), Leaf: leaf, Named: m.named(n, leaf.Vocabulary)}, true
+	if t, ok := m.literalTest(n); ok {
+		return t, true
 	}
 	if p, ok := PresenceTest(n); ok && (bare || Unwrap(n) != p.Subject) {
 		return Test{Node: n, Value: m.ValueOf(p.Subject), Claim: presenceClaim(p)}, true
@@ -58,7 +57,7 @@ func (m *Analyzer) named(test *ast.Node, vocabulary *Vocabulary) string {
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
 		if operand(n) {
-			if key, ok := m.classifier.Unit(n); ok && slices.Contains(vocabulary.Values, key) {
+			if key, ok := m.Unit(n); ok && slices.Contains(vocabulary.Values, key) {
 				found = append(found, key)
 			}
 		}
@@ -70,8 +69,10 @@ func (m *Analyzer) named(test *ast.Node, vocabulary *Vocabulary) string {
 	return strings.Join(slices.Compact(found), ",")
 }
 
-// Field returns the project property t tests, or nil when t tests something else.
-func (m *Analyzer) Field(t Test) *ast.Symbol {
+// Property returns the project property t tests as resolved where it is read, so on a narrowed receiver it is the
+// narrowed member's, whose type is what the read can hold; it is nil when t tests something else. Field identity
+// across code uses FieldOf instead.
+func (m *Analyzer) Property(t Test) *ast.Symbol {
 	n := t.Value.Node
 	if n.Kind != ast.KindPropertyAccessExpression || n.Name().Kind != ast.KindIdentifier {
 		return nil
@@ -89,7 +90,7 @@ func (t Test) Receiver() *ast.Node { return Unwrap(t.Value.Node.Expression()) }
 // FieldTest reads n as a test of a project property that rules out a value the property's declared type can hold.
 func (m *Analyzer) FieldTest(n *ast.Node) (Test, bool) {
 	t, ok := m.TestOf(n)
-	if !ok || m.Field(t) == nil || !m.DeclaredClaim(t).Splits() {
+	if !ok || m.Property(t) == nil || !m.DeclaredClaim(t).Splits() {
 		return Test{}, false
 	}
 	return t, true
@@ -100,7 +101,7 @@ func (m *Analyzer) DeclaredClaim(t Test) Claim {
 	if !t.Claim.Presence() {
 		return t.Claim
 	}
-	return t.Claim.Under(m.HeldBy(m.ctx.TypeChecker.GetTypeOfSymbol(m.Field(t))))
+	return t.Claim.Under(m.HeldBy(m.ctx.TypeChecker.GetTypeOfSymbol(m.Property(t))))
 }
 
 // shared restricts the declared claims of two tests to the values both declared types can hold.
@@ -117,7 +118,7 @@ func (m *Analyzer) SameQuestion(a, b Test) bool {
 	if !x.comparable(y) || a.Named != b.Named || !x.Splits() || !(x.Same(y) || x.Same(y.Not())) {
 		return false
 	}
-	return slices.ContainsFunc(m.Field(a).Declarations, func(d *ast.Node) bool { return slices.Contains(m.Field(b).Declarations, d) })
+	return m.FieldOf(a.Value.Node).Same(m.FieldOf(b.Value.Node))
 }
 
 // Opposite reports whether two tests asking the same question accept complementary values.
@@ -203,31 +204,15 @@ func retested(n *ast.Node) bool {
 
 // Boolean reports whether n's value is used only for its truthiness: as a condition, negated, or through && and || whose
 // own value is used that way.
-func Boolean(n *ast.Node) bool {
-	child, p := parent(n)
-	if p == nil {
-		return false
-	}
-	switch p.Kind {
-	case ast.KindIfStatement, ast.KindWhileStatement, ast.KindDoStatement:
-		return p.Expression() == child
-	case ast.KindForStatement:
-		return p.AsForStatement().Condition == child
-	case ast.KindConditionalExpression:
-		return p.AsConditionalExpression().Condition == child
-	case ast.KindPrefixUnaryExpression:
-		return p.AsPrefixUnaryExpression().Operator == ast.KindExclamationToken
-	case ast.KindBinaryExpression:
-		switch p.AsBinaryExpression().OperatorToken.Kind {
-		case ast.KindAmpersandAmpersandToken, ast.KindBarBarToken:
-			return Boolean(p)
-		}
-	}
-	return false
-}
+func Boolean(n *ast.Node) bool { return decides(n, true) }
 
 // Condition reports whether n's value is used as a condition.
-func Condition(n *ast.Node) bool {
+func Condition(n *ast.Node) bool { return decides(n, false) }
+
+// decides reports whether n's value is used as a condition, or with only, used only for its truthiness. The left operand
+// of && and || is a condition, since it decides whether the right one runs, but its value can be the result: it is used
+// only for its truthiness when the whole is.
+func decides(n *ast.Node, only bool) bool {
 	child, p := parent(n)
 	if p == nil {
 		return false
@@ -244,7 +229,7 @@ func Condition(n *ast.Node) bool {
 	case ast.KindBinaryExpression:
 		switch p.AsBinaryExpression().OperatorToken.Kind {
 		case ast.KindAmpersandAmpersandToken, ast.KindBarBarToken:
-			return p.AsBinaryExpression().Left == child || Condition(p)
+			return !only && p.AsBinaryExpression().Left == child || decides(p, only)
 		}
 	}
 	return false

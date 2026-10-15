@@ -45,7 +45,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-procedural-value-dispatch",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-procedural-value-dispatch", options)
-		for _, d := range model.Dispatches(model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))) {
+		for _, d := range model.Dispatches(model.NewAnalyzer(ctx)) {
 			report(ctx, d)
 		}
 		return rule.RuleListeners{}

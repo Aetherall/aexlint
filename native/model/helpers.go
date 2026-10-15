@@ -137,7 +137,7 @@ func (m *Analyzer) helper(h Helper) (Predicate, bool) {
 // in program file order.
 func (m *Analyzer) HelpersOf(t *checker.Type, test Test) []Predicate {
 	found := []Predicate{}
-	for _, h := range HelpersFor(m.ctx.Program).byProperty[m.Field(test).Name] {
+	for _, h := range HelpersFor(m.ctx.Program).byProperty[m.Property(test).Name] {
 		p, ok := m.helper(h)
 		if !ok || !m.SameQuestion(p.Test, test) {
 			continue

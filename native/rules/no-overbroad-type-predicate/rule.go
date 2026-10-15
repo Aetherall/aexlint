@@ -30,7 +30,7 @@ var Rule = rule.Rule{
 			})
 			return nil
 		}
-		a := model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))
+		a := model.NewAnalyzer(ctx)
 		var visit func(*ast.Node) bool
 		visit = func(n *ast.Node) bool {
 			if ast.IsFunctionLike(n) {

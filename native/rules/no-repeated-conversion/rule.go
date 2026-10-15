@@ -108,7 +108,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-repeated-conversion",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-repeated-conversion", options)
-		analyzer := model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))
+		analyzer := model.NewAnalyzer(ctx)
 		(&measure{ctx: ctx, analyzer: analyzer, index: shapesFor(ctx.Program), places: model.NewPlaces(ctx),
 			dispatches: map[*ast.SourceFile][]*model.Decision{}, constructions: map[*model.Decision]map[string][]model.Construction{}}).run()
 		return rule.RuleListeners{}

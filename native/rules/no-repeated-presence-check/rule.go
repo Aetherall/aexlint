@@ -61,7 +61,7 @@ var Rule = rule.Rule{
 	Name: "aexlint/no-repeated-presence-check",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
 		model.ParseOptions("no-repeated-presence-check", options)
-		a := model.NewAnalyzer(ctx, model.NewClassifier(ctx.TypeChecker))
+		a := model.NewAnalyzer(ctx)
 		visit := func(n *ast.Node) {
 			for _, g := range a.Guards(n) {
 				check(ctx, a, g)
