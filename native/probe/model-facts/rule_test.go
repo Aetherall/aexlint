@@ -132,7 +132,22 @@ export function g(box?: Box) {
   if (!box || box.size === "L") return 0;
   if (box.size === "S") return 1;
   return 2;
-}`, Files: files, Options: only("decision"), Errors: facts("decision", 2)},
+}
+declare function log(): void;
+export function h(size: Size) {
+  if (size === "L") return 0;
+  log();
+  if (size === "S") return 1;
+  else return 2;
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 4)},
+			{Code: `import type { Size } from "./items.js";
+const declared: readonly Size[] = ["S", "M"];
+const literal = ["S", "M"] as const;
+export function f(size: Size) {
+  if (declared.includes(size)) return 1;
+  if (literal.includes(size)) return 2;
+  return 0;
+}`, Files: files, Options: only("test"), Errors: facts("test", 1)},
 			{Code: `export class Door {
   #state: "open" | "shut" = "shut";
   #lock?: string;
@@ -150,7 +165,7 @@ export function outside(panel: Panel) {
 declare function show(text: string): string;
 export function f(item: Item) { return item.kind === "text" ? show(item.text) : ""; }
 export function g(text: string | undefined) { return text ? show(text) : ""; }
-export function h(item: Item | undefined) { return item !== undefined && item.kind === "stock" && show(item.sku); }`, Files: files, Options: only("guard"), Errors: facts("guard", 5)},
+export function h(item: Item | undefined) { return item !== undefined && item.kind === "stock" && show(item.sku); }`, Files: files, Options: only("guard"), Errors: facts("guard", 4)},
 			{Code: `import type { Item } from "./items.js";
 export function f(text: string | undefined) {
   if (!text) return [];

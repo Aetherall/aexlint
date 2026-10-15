@@ -197,9 +197,17 @@ func (m *Analyzer) Guards(e *ast.Node) []Guard {
 		}
 	case e.Kind == ast.KindBinaryExpression && e.AsBinaryExpression().OperatorToken.Kind == ast.KindAmpersandAmpersandToken:
 		chain := parts(e, ast.KindAmpersandAmpersandToken)
+		condition := Condition(e)
 		for i, p := range chain[:len(chain)-1] {
+			work := chain[i+1:]
+			if condition {
+				work = slices.DeleteFunc(slices.Clone(work), func(w *ast.Node) bool {
+					_, test := m.TestOf(w)
+					return test
+				})
+			}
 			fallback := m.falsy(p)
-			add(m.guard(p, false, len(chain) == 2, nil, chain[i+1:], fallback, fallback))
+			add(m.guard(p, false, len(chain) == 2, nil, work, fallback, fallback))
 		}
 	}
 	return guards

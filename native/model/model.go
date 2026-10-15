@@ -279,6 +279,10 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		value, tested = md.m.ValueOf(receiver), tag
 	}
 	d := &Decision{Node: Unwrap(subjectNode), Line: md.line(subjectNode), Function: md.enclosing(root), Field: field, Vocabulary: vocabulary}
+	left := md.left(root, Test{Value: md.m.ValueOf(subjectNode), Claim: Claim{Domain: vocabulary.Values, Vocabulary: vocabulary}})
+	for i := range arms {
+		arms[i].claim = arms[i].claim.And(left)
+	}
 	pure := true
 	covered := Claim{Domain: vocabulary.Values, Accepted: []string{}, Vocabulary: vocabulary}
 	for _, a := range arms {
@@ -291,7 +295,7 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		d.Arms = append(d.Arms, Branch{Claim: a.claim, Complete: complete, Tested: true, Body: a.body, Outcome: md.m.OutcomeOf(a.body, value, tested), Logic: logic(a.body)})
 	}
 	if alternative != nil && pure {
-		d.Arms = append(d.Arms, Branch{Claim: covered.Not(), Complete: true, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), Logic: logic(alternative)})
+		d.Arms = append(d.Arms, Branch{Claim: covered.Not().And(left), Complete: true, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), Logic: logic(alternative)})
 	}
 	work := 0
 	for _, a := range d.Arms {
@@ -313,6 +317,31 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		}
 	}
 	md.add(d)
+}
+
+// left returns the values of subject a decision at root can still see: earlier statements of the list holding root
+// that leave when their whole condition, a test of subject, holds have already taken their values.
+func (md *builder) left(root *ast.Node, subject Test) Claim {
+	left := Claim{Domain: subject.Claim.Domain, Accepted: subject.Claim.Domain, Vocabulary: subject.Claim.Vocabulary}
+	statement := root
+	for statement.Parent != nil && statementList(statement.Parent) == nil && !ast.IsFunctionLike(statement.Parent) {
+		statement = statement.Parent
+	}
+	if statement.Parent == nil || statementList(statement.Parent) == nil {
+		return left
+	}
+	for _, earlier := range statementList(statement.Parent) {
+		if earlier == statement {
+			break
+		}
+		if earlier.Kind != ast.KindIfStatement || earlier.AsIfStatement().ElseStatement != nil || !exits(earlier.AsIfStatement().ThenStatement) {
+			continue
+		}
+		if t, ok := md.m.literalTest(earlier.AsIfStatement().Expression); ok && SameSubject(t, subject) {
+			left = left.And(t.Claim.Not())
+		}
+	}
+	return left
 }
 
 // matching returns the first test of literal values in condition, or the first on the same subject as first, whose

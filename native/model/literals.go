@@ -211,6 +211,8 @@ func (m *Analyzer) arrayElement(t *checker.Type) *checker.Type {
 	return nil
 }
 
+// elements returns the values an array holds, when they are known exactly: an array literal of literal values, or a
+// tuple of literal types such as an array written as const. An array type only says which values it may hold.
 func (m *Analyzer) elements(receiver *ast.Node) ([]string, bool) {
 	receiver = Unwrap(receiver)
 	if receiver.Kind == ast.KindArrayLiteralExpression {
@@ -225,24 +227,15 @@ func (m *Analyzer) elements(receiver *ast.Node) ([]string, bool) {
 		return values, len(values) > 0
 	}
 	t := m.ctx.TypeChecker.GetTypeAtLocation(receiver)
-	members := []*checker.Type{}
-	if t != nil && checker.IsTupleType(t) {
-		members = m.ctx.TypeChecker.GetTypeArguments(t)
-	} else if element := m.arrayElement(t); element != nil {
-		members = []*checker.Type{element}
+	if t == nil || !checker.IsTupleType(t) {
+		return nil, false
 	}
 	values := []string{}
-	for _, member := range members {
-		parts := []*checker.Type{member}
-		if member.Flags()&checker.TypeFlagsUnion != 0 {
-			parts = member.Types()
+	for _, member := range m.ctx.TypeChecker.GetTypeArguments(t) {
+		if !literal(member) {
+			return nil, false
 		}
-		for _, part := range parts {
-			if !literal(part) {
-				return nil, false
-			}
-			values = append(values, valueKey(part))
-		}
+		values = append(values, valueKey(member))
 	}
 	return values, len(values) > 0
 }
