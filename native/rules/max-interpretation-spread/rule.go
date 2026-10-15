@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
@@ -49,81 +48,6 @@ func sites(c *model.Analyzer, root *ast.Node) []Site {
 	return found
 }
 
-// origin names where a site's vocabulary comes from: a type alias or enum (rank 0), a property (rank 1), or a variable, parameter, or function (rank 2).
-type origin struct {
-	label       string
-	declaration *ast.Node
-	rank        int
-}
-
-// origins returns where a site's vocabulary comes from. A property read through a union of object types has one origin per declaration.
-func origins(c *model.Analyzer, tc *checker.Checker, n *ast.Node) []origin {
-	n = model.Unwrap(n)
-	if t := c.Declared(n); t != nil {
-		for _, candidate := range []*checker.Type{t, tc.GetNonNullableType(t)} {
-			if alias := candidate.Alias(); alias != nil {
-				return []origin{{alias.Symbol().Name, firstDeclaration(alias.Symbol()), 0}}
-			}
-			if symbol := candidate.Symbol(); symbol != nil && symbol.Flags&ast.SymbolFlagsEnum != 0 {
-				return []origin{{symbol.Name, firstDeclaration(symbol), 0}}
-			}
-		}
-	}
-	switch n.Kind {
-	case ast.KindPropertyAccessExpression:
-		if symbol := tc.GetSymbolAtLocation(n.Name()); symbol != nil {
-			if symbol.Parent != nil && !strings.HasPrefix(symbol.Parent.Name, ast.InternalSymbolNamePrefix) {
-				return []origin{{symbol.Parent.Name + "." + symbol.Name, symbol.ValueDeclaration, 1}}
-			}
-			result := []origin{}
-			for _, declaration := range symbol.Declarations {
-				label := symbol.Name
-				if container := container(declaration); container != "" {
-					label = container + "." + label
-				}
-				result = append(result, origin{label, declaration, 1})
-			}
-			if len(result) > 0 {
-				return result
-			}
-			return []origin{{symbol.Name, nil, 1}}
-		}
-	case ast.KindIdentifier:
-		if symbol := tc.GetSymbolAtLocation(n); symbol != nil {
-			return []origin{{symbol.Name, symbol.ValueDeclaration, 2}}
-		}
-	case ast.KindCallExpression:
-		if signature := tc.GetResolvedSignature(n); signature != nil && signature.Declaration() != nil && signature.Declaration().Name() != nil {
-			return []origin{{signature.Declaration().Name().Text() + "()", signature.Declaration(), 2}}
-		}
-	}
-	return []origin{{"value", nil, 3}}
-}
-
-// container returns the name of the type alias, interface, or class enclosing declaration, when no function, variable, or other named declaration intervenes.
-func container(declaration *ast.Node) string {
-	for n := declaration.Parent; n != nil && n.Kind != ast.KindSourceFile; n = n.Parent {
-		switch n.Kind {
-		case ast.KindTypeAliasDeclaration, ast.KindInterfaceDeclaration, ast.KindClassDeclaration, ast.KindClassExpression:
-			if n.Name() != nil {
-				return n.Name().Text()
-			}
-			return ""
-		}
-		if n.Name() != nil {
-			return ""
-		}
-	}
-	return ""
-}
-
-func firstDeclaration(symbol *ast.Symbol) *ast.Node {
-	if len(symbol.Declarations) == 0 {
-		return nil
-	}
-	return symbol.Declarations[0]
-}
-
 type group struct {
 	first  Site
 	checks map[*ast.Node]bool
@@ -136,32 +60,22 @@ type measure struct {
 	analyzer *model.Analyzer
 }
 
-// values lists the vocabulary's sorted literals.
-func (m *measure) values(union *checker.Type) []string {
-	texts := []string{}
-	for _, member := range union.Types() {
-		texts = append(texts, m.ctx.TypeChecker.TypeToString(member))
-	}
-	slices.Sort(texts)
-	return texts
-}
-
 // origins returns the group's distinct origins, by how many sites read them, then type aliases and enums before properties before other values, and the first origin's label.
 func (m *measure) origins(sites []Site) ([]string, string) {
 	type entry struct {
-		origin
+		model.Origin
 		text  string
 		sites int
 	}
 	byText := map[string]*entry{}
 	for _, s := range sites {
-		for _, o := range origins(m.analyzer, m.ctx.TypeChecker, s.Node) {
-			text := o.label
-			if o.declaration != nil {
-				text += " (" + model.NewPlaces(m.ctx).Relative(ast.GetSourceFileOfNode(o.declaration).FileName()) + ")"
+		for _, o := range m.analyzer.Origins(s.Node) {
+			text := o.Label
+			if o.Declaration != nil {
+				text += " (" + model.NewPlaces(m.ctx).Relative(ast.GetSourceFileOfNode(o.Declaration).FileName()) + ")"
 			}
 			if byText[text] == nil {
-				byText[text] = &entry{origin: o, text: text}
+				byText[text] = &entry{Origin: o, text: text}
 			}
 			byText[text].sites++
 		}
@@ -174,8 +88,8 @@ func (m *measure) origins(sites []Site) ([]string, string) {
 		if a.sites != b.sites {
 			return b.sites - a.sites
 		}
-		if a.rank != b.rank {
-			return a.rank - b.rank
+		if a.Rank != b.Rank {
+			return a.Rank - b.Rank
 		}
 		return strings.Compare(a.text, b.text)
 	})
@@ -183,7 +97,7 @@ func (m *measure) origins(sites []Site) ([]string, string) {
 	for _, e := range entries {
 		result = append(result, e.text)
 	}
-	return result, entries[0].label
+	return result, entries[0].Label
 }
 
 func (m *measure) report(g *group, limit int) {
@@ -199,7 +113,8 @@ func (m *measure) report(g *group, limit int) {
 	if len(g.checks) > 1 {
 		checks = fmt.Sprintf("%d such checks", len(g.checks))
 	}
-	values := m.values(g.first.Vocabulary.Type)
+	values := g.first.Vocabulary.Names(g.first.Vocabulary.Values)
+	slices.Sort(values)
 	shown := strings.Join(values, " | ")
 	help := fmt.Sprintf("Checked in %d files. Other files, nearest first: %s. Declared as: %s.", len(g.files), model.Listed(model.NewPlaces(m.ctx).Nearest(g.files), 3), model.Listed(origins, 4))
 	if len(values) > 5 {

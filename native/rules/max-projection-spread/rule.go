@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
@@ -35,27 +34,6 @@ type measure struct {
 	projections map[*ast.Node]bool
 }
 
-// ownerOf returns the owner of a chain's root: the alias, otherwise the symbol, of its non-nullable type, when the
-// project declares it, with that type.
-func (m *measure) ownerOf(root *ast.Node) (*ast.Symbol, *checker.Type) {
-	t := m.ctx.TypeChecker.GetTypeAtLocation(root)
-	if t == nil {
-		return nil, nil
-	}
-	t = m.ctx.TypeChecker.GetNonNullableType(t)
-	if t.Flags()&checker.TypeFlagsObject == 0 {
-		return nil, nil
-	}
-	symbol := t.Symbol()
-	if alias := t.Alias(); alias != nil {
-		symbol = alias.Symbol()
-	}
-	if !model.ProjectSymbol(symbol) {
-		return nil, nil
-	}
-	return symbol, t
-}
-
 // derive returns the derivation a property assignment makes, or nil.
 func (m *measure) derive(property *ast.Node) *derivation {
 	if d, ok := m.derivations[property]; ok {
@@ -70,9 +48,9 @@ func (m *measure) derive(property *ast.Node) *derivation {
 	if !ok {
 		return nil
 	}
-	root := m.ctx.TypeChecker.GetSymbolAtLocation(chain.Root)
-	owner, t := m.ownerOf(chain.Root)
-	if root == nil || owner == nil || checker.SkipAlias(root, m.ctx.TypeChecker).Flags&ast.SymbolFlagsVariable == 0 {
+	root := m.analyzer.Variable(chain.Root)
+	owner, t := m.analyzer.ObjectOwner(chain.Root)
+	if root == nil || owner == nil {
 		return nil
 	}
 	identity := fmt.Sprintf("%s|%p|%s", key, t, m.analyzer.Form(property.Initializer(), m.analyzer.ValueOf(chain.Root)))

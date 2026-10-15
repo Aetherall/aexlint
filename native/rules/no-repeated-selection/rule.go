@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
@@ -13,16 +12,11 @@ func api(ctx rule.RuleContext, analyzer *model.Analyzer, container *ast.Node) (s
 	if container == nil || container.Kind != ast.KindObjectLiteralExpression {
 		return "", false
 	}
-	t := checker.Checker_getContextualType(ctx.TypeChecker, container, checker.ContextFlagsNone)
-	if t == nil {
+	owner, typed := analyzer.ContextualOwner(container)
+	if !typed {
 		return "", false
 	}
-	t = ctx.TypeChecker.GetNonNullableType(t)
-	symbol := t.Alias().Symbol()
-	if symbol == nil {
-		symbol = t.Symbol()
-	}
-	if owner := analyzer.ProjectOwner(symbol); owner != nil {
+	if owner != nil {
 		return owner.Name, false
 	}
 	return "", true

@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
@@ -27,29 +26,27 @@ func (r *checkRun) check(test, reported *ast.Node) bool {
 	if !ok || fact.Receiver().Kind == ast.KindThisKeyword {
 		return false
 	}
-	t := r.ctx.TypeChecker.GetTypeAtLocation(fact.Receiver())
-	if t == nil {
-		return false
-	}
-	t = checker.Checker_getApparentType(r.ctx.TypeChecker, r.ctx.TypeChecker.GetNonNullableType(t))
-	if t.Flags()&(checker.TypeFlagsAny|checker.TypeFlagsUnknown|checker.TypeFlagsNever) != 0 {
-		return false
-	}
-	p, ok := r.a.PredicateFor(t, fact)
-	if ok && r.a.InsideMemberOwner(test, p.Declaration) {
-		return false
-	}
+	answers, ok := r.a.AnswersOf(fact)
 	if !ok {
+		return false
+	}
+	var p model.Predicate
+	if answers.Member != nil {
+		p = *answers.Member
+		if r.a.InsideMemberOwner(test, p.Declaration) {
+			return false
+		}
+	} else {
 		if r.declares(r.a.Property(fact)) {
 			return false
 		}
-		helpers := r.a.HelpersOf(t, fact)
+		helpers := answers.Helpers
 		if len(helpers) == 0 || slices.ContainsFunc(helpers, func(h model.Predicate) bool { return ast.GetSourceFileOfNode(h.Declaration) == r.ctx.SourceFile }) {
 			return false
 		}
 		p = helpers[0]
 	}
-	if r.a.Relied(fact) || !fact.Claim.Presence() && t.Flags()&checker.TypeFlagsUnion != 0 && !p.Narrows {
+	if r.a.Relied(fact) || !fact.Claim.Presence() && answers.Union && !p.Narrows {
 		return false
 	}
 	negation := ""
@@ -71,8 +68,7 @@ func (r *checkRun) check(test, reported *ast.Node) bool {
 		present = fmt.Sprintf("%s(%s)", p.Name, receiver)
 		missing = present
 		parameter := p.Declaration.Parameters()[0]
-		actual := r.ctx.TypeChecker.GetTypeAtLocation(fact.Receiver())
-		known = actual != nil && checker.Checker_isTypeAssignableTo(r.ctx.TypeChecker, actual, r.ctx.TypeChecker.GetTypeOfSymbol(parameter.Symbol()))
+		known = r.a.Accepts(p, fact)
 		if known {
 			expected, known = r.a.WhenMissing(p.Body, parameter.Name())
 		}
@@ -98,19 +94,14 @@ func (r *checkRun) check(test, reported *ast.Node) bool {
 // boolean: the value must stay a boolean, so an optional call, which gives undefined, falls back to false.
 func (r *checkRun) stored(reported *ast.Node, p model.Predicate, negation, missing string) (bool, string) {
 	switch {
-	case !r.boolean(reported):
+	case !r.a.BooleanTyped(reported):
 		return false, missing
 	case p.Helper:
-		return r.boolean(p.Body), missing
+		return r.a.BooleanTyped(p.Body), missing
 	case negation == "":
 		return true, missing + " ?? false"
 	}
 	return true, missing
-}
-
-func (r *checkRun) boolean(n *ast.Node) bool {
-	t := r.ctx.TypeChecker.GetTypeAtLocation(n)
-	return t != nil && t.Flags()&checker.TypeFlagsBooleanLike != 0
 }
 
 func (r *checkRun) cover(n *ast.Node) {
@@ -179,8 +170,7 @@ func (q *question) key() string {
 func (r *checkRun) questions(declaration *ast.Node, reads []*ast.Node) []*question {
 	found := []*question{}
 	for _, read := range reads {
-		symbol := r.ctx.TypeChecker.GetSymbolAtLocation(read.Name())
-		if symbol == nil || !slices.Contains(symbol.Declarations, declaration) || r.inside(read, declaration) {
+		if !r.a.Resolves(read, declaration) || r.inside(read, declaration) {
 			continue
 		}
 		whole := r.a.WholeTest(read)
@@ -203,15 +193,8 @@ func (r *checkRun) questions(declaration *ast.Node, reads []*ast.Node) []*questi
 }
 
 func (r *checkRun) answered(t model.Test) bool {
-	receiver := r.ctx.TypeChecker.GetTypeAtLocation(t.Receiver())
-	if receiver == nil {
-		return false
-	}
-	receiver = checker.Checker_getApparentType(r.ctx.TypeChecker, r.ctx.TypeChecker.GetNonNullableType(receiver))
-	if _, ok := r.a.PredicateFor(receiver, t); ok {
-		return true
-	}
-	return len(r.a.HelpersOf(receiver, t)) > 0
+	answers, ok := r.a.AnswersOf(t)
+	return ok && (answers.Member != nil || len(answers.Helpers) > 0)
 }
 
 func (r *checkRun) unanswered(limit int) {
@@ -238,7 +221,7 @@ func (r *checkRun) unanswered(limit int) {
 		found := map[*ast.Node][]*question{}
 		first := map[string]*question{}
 		for _, declaration := range declarations[name] {
-			if r.flag(declaration) || declaration.Initializer() != nil && ast.IsFunctionLike(model.Unwrap(declaration.Initializer())) {
+			if r.a.Flag(declaration) || declaration.Initializer() != nil && ast.IsFunctionLike(model.Unwrap(declaration.Initializer())) {
 				continue
 			}
 			for _, q := range r.questions(declaration, reads) {
@@ -259,12 +242,6 @@ func (r *checkRun) unanswered(limit int) {
 			}
 		}
 	}
-}
-
-// flag reports whether a property's type, apart from null and undefined, is boolean: the property is its own answer.
-func (r *checkRun) flag(declaration *ast.Node) bool {
-	t := r.ctx.TypeChecker.GetTypeAtLocation(declaration.Name())
-	return t != nil && r.ctx.TypeChecker.GetNonNullableType(t).Flags()&checker.TypeFlagsBooleanLike != 0
 }
 
 // asked describes the fact a test establishes: the missing values a presence test splits off, or the literal values a

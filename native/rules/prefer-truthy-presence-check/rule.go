@@ -4,17 +4,11 @@ import (
 	"slices"
 
 	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/microsoft/typescript-go/shim/core"
 	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
-
-func isUndefined(node *ast.Node, tc *checker.Checker) bool {
-	node = ast.SkipParentheses(node)
-	return node.Kind == ast.KindIdentifier && node.Text() == "undefined" && tc.GetTypeAtLocation(node).Flags() == checker.TypeFlagsUndefined
-}
 
 func check(ctx rule.RuleContext, a *model.Analyzer, node *ast.Node) {
 	binary := node.AsBinaryExpression()
@@ -29,17 +23,16 @@ func check(ctx rule.RuleContext, a *model.Analyzer, node *ast.Node) {
 		return
 	}
 	value := binary.Left
-	if isUndefined(binary.Left, ctx.TypeChecker) {
+	if a.UndefinedLiteral(binary.Left) {
 		value = binary.Right
-	} else if !isUndefined(binary.Right, ctx.TypeChecker) {
+	} else if !a.UndefinedLiteral(binary.Right) {
 		return
 	}
-	t := utils.GetConstrainedTypeAtLocation(ctx.TypeChecker, ast.SkipParentheses(value))
-	if slices.ContainsFunc(t.Distributed(), func(part *checker.Type) bool { return part.Flags()&checker.TypeFlagsEnumLike != 0 }) {
+	held, enum := a.ConstrainedHeld(value)
+	if enum {
 		return
 	}
 	test, ok := a.TestOf(node)
-	held := a.HeldBy(t)
 	claim, truthiness := test.Claim.Under(held), model.Truthiness().Under(held)
 	if !ok || !slices.Contains(held, model.MissingUndefined) || !claim.Splits() || !claim.Same(truthiness) && !claim.Same(truthiness.Not()) {
 		return

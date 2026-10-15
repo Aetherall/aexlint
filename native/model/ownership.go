@@ -231,3 +231,47 @@ func (m *Analyzer) InsideMemberOwner(n, member *ast.Node) bool {
 	}
 	return false
 }
+
+// ObjectOwner returns the project declaration naming n's object type without null and undefined: its alias, otherwise
+// its symbol, with that type. It returns nil when the type is not an object type or the project does not declare it.
+func (m *Analyzer) ObjectOwner(n *ast.Node) (*ast.Symbol, *checker.Type) {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(n)
+	if t == nil {
+		return nil, nil
+	}
+	t = m.ctx.TypeChecker.GetNonNullableType(t)
+	if t.Flags()&checker.TypeFlagsObject == 0 {
+		return nil, nil
+	}
+	symbol := t.Symbol()
+	if alias := t.Alias(); alias != nil {
+		symbol = alias.Symbol()
+	}
+	if !ProjectSymbol(symbol) {
+		return nil, nil
+	}
+	return symbol, t
+}
+
+// ContextualOwner returns the established project owner of the type n is written for, and whether n has such a type.
+func (m *Analyzer) ContextualOwner(n *ast.Node) (*ast.Symbol, bool) {
+	t := checker.Checker_getContextualType(m.ctx.TypeChecker, n, checker.ContextFlagsNone)
+	if t == nil {
+		return nil, false
+	}
+	t = m.ctx.TypeChecker.GetNonNullableType(t)
+	symbol := t.Alias().Symbol()
+	if symbol == nil {
+		symbol = t.Symbol()
+	}
+	return m.ProjectOwner(symbol), true
+}
+
+// Variable returns the variable n names, through import aliases, or nil.
+func (m *Analyzer) Variable(n *ast.Node) *ast.Symbol {
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
+	if symbol == nil || checker.SkipAlias(symbol, m.ctx.TypeChecker).Flags&ast.SymbolFlagsVariable == 0 {
+		return nil
+	}
+	return symbol
+}

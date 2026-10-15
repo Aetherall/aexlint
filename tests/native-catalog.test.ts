@@ -26,6 +26,16 @@ test("native rules have contracts, real tests, unique names, and no unfinished p
     assert.ok(metadata.description);
     const source = readFileSync(new URL(`${name}/rule.go`, native), "utf8");
     assert.ok(source.includes(`"aexlint/${name}"`));
+    for (const file of readdirSync(new URL(`${name}/`, native)).filter(
+      (entry) => entry.endsWith(".go") && !entry.endsWith("_test.go"),
+    )) {
+      const code = readFileSync(new URL(`${name}/${file}`, native), "utf8");
+      assert.doesNotMatch(
+        code,
+        /shim\/checker"|\bTypeChecker\.(?!TypeToString\b)/,
+        `${name}/${file} reasons about types itself; query the model instead (docs/native.md)`,
+      );
+    }
     for (const text of [
       source,
       JSON.stringify(metadata),

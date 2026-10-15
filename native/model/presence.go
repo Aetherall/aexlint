@@ -7,6 +7,7 @@ import (
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/microsoft/typescript-go/shim/jsnum"
+	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
 
 // Absence is a set of missing values: undefined, null, and other falsy values.
@@ -298,4 +299,18 @@ func (m *Analyzer) WhenMissing(test *ast.Node, receiver *ast.Node) (bool, bool) 
 		return false, false
 	}
 	return evaluate(test)
+}
+
+// UndefinedLiteral reports whether n is the identifier undefined, typed as undefined.
+func (m *Analyzer) UndefinedLiteral(n *ast.Node) bool {
+	n = ast.SkipParentheses(n)
+	return n.Kind == ast.KindIdentifier && n.Text() == "undefined" && m.ctx.TypeChecker.GetTypeAtLocation(n).Flags() == checker.TypeFlagsUndefined
+}
+
+// ConstrainedHeld returns the presence values n's type can hold, with type parameters replaced by their constraints, and
+// whether a part of that type is an enum.
+func (m *Analyzer) ConstrainedHeld(n *ast.Node) ([]string, bool) {
+	t := utils.GetConstrainedTypeAtLocation(m.ctx.TypeChecker, ast.SkipParentheses(n))
+	enum := slices.ContainsFunc(t.Distributed(), func(part *checker.Type) bool { return part.Flags()&checker.TypeFlagsEnumLike != 0 })
+	return m.HeldBy(t), enum
 }

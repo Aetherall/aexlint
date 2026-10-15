@@ -162,3 +162,58 @@ func (m *Analyzer) overrides(class *ast.Node, name string) []*ast.Node {
 	}
 	return found
 }
+
+// Answers is what answers the question a field test asks: a predicate member of its receiver's type, or otherwise the
+// program's helper predicates accepting that type. Union reports whether the receiver's type is a union.
+type Answers struct {
+	Member  *Predicate
+	Helpers []Predicate
+	Union   bool
+}
+
+// AnswersOf returns what answers t's question on its receiver's apparent type without null and undefined, or false
+// when that type is any, unknown or never.
+func (m *Analyzer) AnswersOf(t Test) (Answers, bool) {
+	tc := m.ctx.TypeChecker
+	receiver := tc.GetTypeAtLocation(t.Receiver())
+	if receiver == nil {
+		return Answers{}, false
+	}
+	receiver = checker.Checker_getApparentType(tc, tc.GetNonNullableType(receiver))
+	if receiver.Flags()&(checker.TypeFlagsAny|checker.TypeFlagsUnknown|checker.TypeFlagsNever) != 0 {
+		return Answers{}, false
+	}
+	answers := Answers{Union: receiver.Flags()&checker.TypeFlagsUnion != 0}
+	if p, ok := m.PredicateFor(receiver, t); ok {
+		answers.Member = &p
+		return answers, true
+	}
+	answers.Helpers = m.HelpersOf(receiver, t)
+	return answers, true
+}
+
+// Accepts reports whether helper, a helper predicate, accepts the receiver t tests as it is typed where t reads it.
+func (m *Analyzer) Accepts(helper Predicate, t Test) bool {
+	tc := m.ctx.TypeChecker
+	actual := tc.GetTypeAtLocation(t.Receiver())
+	return actual != nil && checker.Checker_isTypeAssignableTo(tc, actual, tc.GetTypeOfSymbol(helper.Declaration.Parameters()[0].Symbol()))
+}
+
+// Flag reports whether a property declaration's type, apart from null and undefined, is boolean: the property is its
+// own answer.
+func (m *Analyzer) Flag(declaration *ast.Node) bool {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(declaration.Name())
+	return t != nil && m.ctx.TypeChecker.GetNonNullableType(t).Flags()&checker.TypeFlagsBooleanLike != 0
+}
+
+// BooleanTyped reports whether n's type where it is written is boolean.
+func (m *Analyzer) BooleanTyped(n *ast.Node) bool {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(n)
+	return t != nil && t.Flags()&checker.TypeFlagsBooleanLike != 0
+}
+
+// Resolves reports whether a property read resolves, where it is read, to declaration.
+func (m *Analyzer) Resolves(read, declaration *ast.Node) bool {
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(read.Name())
+	return symbol != nil && slices.Contains(symbol.Declarations, declaration)
+}

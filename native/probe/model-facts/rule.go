@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
-	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/microsoft/typescript-go/shim/core"
 	"github.com/microsoft/typescript-go/shim/scanner"
 	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
@@ -166,26 +165,21 @@ func (p *probe) test(n *ast.Node) {
 }
 
 func (p *probe) answered(t model.Test) string {
-	tc := p.ctx.TypeChecker
-	receiver := tc.GetTypeAtLocation(t.Receiver())
-	if receiver == nil {
+	answers, ok := p.a.AnswersOf(t)
+	if !ok {
 		return "unknown"
 	}
-	receiver = checker.Checker_getApparentType(tc, tc.GetNonNullableType(receiver))
-	if receiver.Flags()&(checker.TypeFlagsAny|checker.TypeFlagsUnknown|checker.TypeFlagsNever) != 0 {
-		return "unknown"
+	found := []string{}
+	if answers.Member != nil {
+		found = append(found, "member "+answers.Member.Name)
 	}
-	answers := []string{}
-	if predicate, ok := p.a.PredicateFor(receiver, t); ok {
-		answers = append(answers, "member "+predicate.Name)
+	for _, helper := range answers.Helpers {
+		found = append(found, "helper "+helper.Name)
 	}
-	for _, helper := range p.a.HelpersOf(receiver, t) {
-		answers = append(answers, "helper "+helper.Name)
-	}
-	if len(answers) == 0 {
+	if len(found) == 0 {
 		return "none"
 	}
-	return strings.Join(answers, ", ")
+	return strings.Join(found, ", ")
 }
 
 func (p *probe) decision(d *model.Decision) {
