@@ -122,6 +122,22 @@ export class View {
   local(item: Item) { return item.kind === "text" ? [1, 2].map((n) => n * 2) : JSON.stringify(item.sku); }
   wrap(item: Item) { return item; }
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 5)},
+			{Code: `import type { Box, Size } from "./items.js";
+export function f(size: Size, ready: boolean) {
+  if (size === "S" || (size === "M" && ready)) return 1;
+  if (size !== "L" || ready) return 2;
+  return 3;
+}
+export function g(box?: Box) {
+  if (!box || box.size === "L") return 0;
+  if (box.size === "S") return 1;
+  return 2;
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 2)},
+			{Code: `export class Door {
+  #state: "open" | "shut" = "shut";
+  #lock?: string;
+  label() { return this.#state === "open" ? "open" : this.#lock ? "locked" : "shut"; }
+}`, Options: only("test"), Errors: facts("test", 2)},
 			{Code: `import type { Size } from "./items.js";
 export class Panel {
   constructor(readonly size: Size) {}
@@ -161,8 +177,9 @@ export function f(text: string | undefined) {
   return a + b + c;
 }`, Options: only("boundary"), Errors: facts("boundary", 3)},
 			{Code: `declare function validate(value: string): void;
+class Rejected extends Error { constructor(readonly input: string) { super(input); } }
 export function parse(input: string, limit: number) {
-  if (input.length > limit) throw new Error("too long");
+  if (input.length > limit) throw new Rejected(input);
   validate(input);
   const trimmed = input.trim();
   return { value: trimmed, limit };
@@ -173,7 +190,7 @@ export class Account {
     if (amount <= 0) throw new Error("positive");
     this.balance += amount;
   }
-}`, Options: only("flow"), Errors: facts("flow", 2)},
+}`, Options: only("flow"), Errors: facts("flow", 3)},
 			{Code: `type Pet = { kind: "cat"; lives: number } | { kind: "dog"; good: boolean };
 export function isCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat"; }
 export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }

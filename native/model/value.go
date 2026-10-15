@@ -205,6 +205,12 @@ func (m *Analyzer) FieldOf(n *ast.Node) Field {
 	tc := m.ctx.TypeChecker
 	if n.Kind == ast.KindPropertyAccessExpression {
 		name := n.Name().Text()
+		if n.Name().Kind == ast.KindPrivateIdentifier {
+			if property := tc.GetSymbolAtLocation(n.Name()); property != nil && len(property.Declarations) > 0 {
+				return Field{Name: name, Declarations: declarations(property.Declarations), Symbol: property}
+			}
+			return Field{Name: name}
+		}
 		for _, t := range []*checker.Type{m.ReceiverType(n.Expression()), tc.GetTypeAtLocation(n.Expression())} {
 			if t == nil {
 				continue

@@ -178,6 +178,38 @@ Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fi
 ---
 
 [TestModelFacts/invalid-5 - 1]
+Diagnostic 1: decision (3:7 - 3:10)
+Message: guard on size; field size @ ../../fixtures/file.ts:2; owner none; arms {"M" | "S"} of {"L" | "M" | "S"} tested -> constant 1, logic 0, built 0; constructions []
+   2 | export function f(size: Size, ready: boolean) {
+   3 |   if (size === "S" || (size === "M" && ready)) return 1;
+     |       ~~~~
+   4 |   if (size !== "L" || ready) return 2;
+
+Diagnostic 2: decision (8:15 - 8:22)
+Message: guard on box.size; field size @ ../../fixtures/items.ts:8; owner Box, inside no; arms {"L"} of {"L" | "M" | "S"} tested -> empty, logic 0, built 0 / {"S"} of {"L" | "M" | "S"} tested -> constant 1, logic 0, built 0; constructions []
+   7 | export function g(box?: Box) {
+   8 |   if (!box || box.size === "L") return 0;
+     |               ~~~~~~~~
+   9 |   if (box.size === "S") return 1;
+---
+
+[TestModelFacts/invalid-6 - 1]
+Diagnostic 1: test (4:20 - 4:41)
+Message: test value this.#state; claim {"open"} of {"open" | "shut"}; field #state @ ../../fixtures/file.ts:2; named "open"; property #state; declared {"open"} of {"open" | "shut"}; answered by none
+   3 |   #lock?: string;
+   4 |   label() { return this.#state === "open" ? "open" : this.#lock ? "locked" : "shut"; }
+     |                    ~~~~~~~~~~~~~~~~~~~~~~
+   5 | }
+
+Diagnostic 2: test (4:54 - 4:63)
+Message: test value this.#lock; claim {present} of {`null` | `undefined` | other falsy values | present}; field #lock @ ../../fixtures/file.ts:3; held `undefined` | other falsy values | present; relied no; property #lock; declared {present} of {`undefined` | other falsy values | present}; answered by none
+   3 |   #lock?: string;
+   4 |   label() { return this.#state === "open" ? "open" : this.#lock ? "locked" : "shut"; }
+     |                                                      ~~~~~~~~~~
+   5 | }
+---
+
+[TestModelFacts/invalid-7 - 1]
 Diagnostic 1: decision (4:20 - 4:28)
 Message: dispatch on this.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside yes; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 10, logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 20, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> constant 30, logic 0, built 0; constructions []
    3 |   constructor(readonly size: Size) {}
@@ -193,7 +225,7 @@ Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Pa
    8 | }
 ---
 
-[TestModelFacts/invalid-6 - 1]
+[TestModelFacts/invalid-8 - 1]
 Diagnostic 1: guard (3:40 - 3:59)
 Message: guard on item.kind; holds {"text"} of {"stock" | "text"}; whole yes; fallback "\"\""; work 1
    2 | declare function show(text: string): string;
@@ -227,7 +259,7 @@ Message: guard on item; holds {`null` | other falsy values | present} of {`null`
      |                                                    ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-7 - 1]
+[TestModelFacts/invalid-9 - 1]
 Diagnostic 1: entry (3:7 - 3:11)
 Message: entry on text; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "[]"; work 1
    2 | export function f(text: string | undefined) {
@@ -256,7 +288,7 @@ Message: entry on text; holds {`undefined` | other falsy values | present} of {`
      |                                           ~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-8 - 1]
+[TestModelFacts/invalid-10 - 1]
 Diagnostic 1: boundary (8:27 - 8:30)
 Message: boundary into text of strict; keeps yes; rechecks []
    7 | export function f(text: string | undefined) {
@@ -279,23 +311,30 @@ Message: boundary into text of fallback; keeps no; rechecks []
   11 |   return a + b + c;
 ---
 
-[TestModelFacts/invalid-9 - 1]
-Diagnostic 1: flow (2:17 - 2:21)
-Message: flow; checks [throw new Error("too long"); checks [input.length, limit] reads [input.length, limit]]; calls [validate(input) with [input] after 1 checks / input.trim() with  after 1 checks]; results [trimmed, part of input, limit]; carried [0, 1]; checked {0: [$.length], 1: [$]}; read {0: [$.length], 1: [$]}
+[TestModelFacts/invalid-11 - 1]
+Diagnostic 1: flow (2:32 - 2:66)
+Message: flow; checks []; calls [super(input) with [] after 0 checks]; results []; carried []; checked {}; read {}
    1 | declare function validate(value: string): void;
-   2 | export function parse(input: string, limit: number) {
-     |                 ~~~~~
-   3 |   if (input.length > limit) throw new Error("too long");
+   2 | class Rejected extends Error { constructor(readonly input: string) { super(input); } }
+     |                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   3 | export function parse(input: string, limit: number) {
 
-Diagnostic 2: flow (10:3 - 10:9)
-Message: flow; checks [throw new Error("positive"); checks [amount] reads [amount]]; calls []; results []; carried []; checked {0: [$]}; read {0: [$]}
-   9 |   private balance = 0;
-  10 |   deposit(amount: number) {
+Diagnostic 2: flow (3:17 - 3:21)
+Message: flow; checks [throw new Rejected(input); checks [input.length, limit] reads [input.length, limit]]; calls [new Rejected(input) with [input] after 0 checks thrown / validate(input) with [input] after 1 checks / input.trim() with  after 1 checks]; results [trimmed, part of input, limit]; carried [0, 1]; checked {0: [$.length], 1: [$]}; read {0: [$.length], 1: [$]}
+   2 | class Rejected extends Error { constructor(readonly input: string) { super(input); } }
+   3 | export function parse(input: string, limit: number) {
+     |                 ~~~~~
+   4 |   if (input.length > limit) throw new Rejected(input);
+
+Diagnostic 3: flow (11:3 - 11:9)
+Message: flow; checks [throw new Error("positive"); checks [amount] reads [amount]]; calls [new Error("positive") with [] after 0 checks thrown]; results []; carried []; checked {0: [$]}; read {0: [$]}
+  10 |   private balance = 0;
+  11 |   deposit(amount: number) {
      |   ~~~~~~~
-  11 |     if (amount <= 0) throw new Error("positive");
+  12 |     if (amount <= 0) throw new Error("positive");
 ---
 
-[TestModelFacts/invalid-10 - 1]
+[TestModelFacts/invalid-12 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -303,7 +342,7 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-11 - 1]
+[TestModelFacts/invalid-13 - 1]
 Diagnostic 1: function (3:12 - 3:45)
 Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; domains []
    2 | export const view = {
@@ -326,7 +365,7 @@ Message: gate matches -> render
    4 |   render(item: Item) {
 ---
 
-[TestModelFacts/invalid-12 - 1]
+[TestModelFacts/invalid-14 - 1]
 Diagnostic 1: conflict (4:13 - 4:23)
 Message: conflicts with line 5: s:done: [dim] vs [success]; purpose argument paint(color)
    3 | export function row(node: Node) {

@@ -315,25 +315,29 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 	md.add(d)
 }
 
-// matching returns the first test of literal values in condition, or the first on the same subject as first.
-func (md *builder) matching(condition *ast.Node, first *Test) (Test, bool) {
+// matching returns the first test of literal values in condition, or the first on the same subject as first, whose
+// condition restricts that subject, with what the condition implies about it.
+func (md *builder) matching(condition *ast.Node, first *Test) (Test, Claim, bool) {
 	for _, t := range md.m.Tests(condition) {
-		if first == nil || SameSubject(t, *first) {
-			return t, true
+		if first != nil && !SameSubject(t, *first) {
+			continue
+		}
+		if implied := md.m.Implied(condition, t); len(implied.Accepted) < len(implied.Domain) {
+			return t, implied, true
 		}
 	}
-	return Test{}, false
+	return Test{}, Claim{}, false
 }
 
 func (md *builder) chain(n *ast.Node, first Test) ([]arm, *ast.Node) {
 	arms := []arm{}
 	for {
 		statement := n.AsIfStatement()
-		t, ok := md.matching(statement.Expression, &first)
+		_, implied, ok := md.matching(statement.Expression, &first)
 		if !ok {
 			return arms, n
 		}
-		arms = append(arms, arm{claim: t.Claim, condition: statement.Expression, body: []*ast.Node{statement.ThenStatement}})
+		arms = append(arms, arm{claim: implied, condition: statement.Expression, body: []*ast.Node{statement.ThenStatement}})
 		if statement.ElseStatement == nil || statement.ElseStatement.Kind != ast.KindIfStatement {
 			return arms, statement.ElseStatement
 		}
@@ -346,7 +350,7 @@ func (md *builder) statements(list []*ast.Node) {
 		if list[i].Kind != ast.KindIfStatement {
 			continue
 		}
-		first, ok := md.matching(list[i].AsIfStatement().Expression, nil)
+		first, _, ok := md.matching(list[i].AsIfStatement().Expression, nil)
 		if !ok {
 			continue
 		}
@@ -412,7 +416,7 @@ func (md *builder) ternary(n *ast.Node) {
 	if p := n.Parent; p.Kind == ast.KindConditionalExpression && p.AsConditionalExpression().WhenFalse == n {
 		return
 	}
-	first, ok := md.matching(n.AsConditionalExpression().Condition, nil)
+	first, _, ok := md.matching(n.AsConditionalExpression().Condition, nil)
 	if !ok {
 		return
 	}
@@ -420,11 +424,11 @@ func (md *builder) ternary(n *ast.Node) {
 	current := n
 	for current.Kind == ast.KindConditionalExpression {
 		c := current.AsConditionalExpression()
-		t, ok := md.matching(c.Condition, &first)
+		_, implied, ok := md.matching(c.Condition, &first)
 		if !ok {
 			break
 		}
-		arms = append(arms, arm{claim: t.Claim, condition: c.Condition, body: []*ast.Node{c.WhenTrue}})
+		arms = append(arms, arm{claim: implied, condition: c.Condition, body: []*ast.Node{c.WhenTrue}})
 		current = c.WhenFalse
 	}
 	md.record(n, first.Value.Node, first.Claim.Vocabulary, arms, []*ast.Node{current})

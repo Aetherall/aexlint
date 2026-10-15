@@ -18,11 +18,15 @@ type Vocabulary struct {
 	shown  map[string]string
 }
 
+// expr is a condition read as tests of literal values joined by && and ||, with negations pushed to its operands. Any
+// other operand is opaque: its node, whether it is negated, and its text.
 type expr struct {
-	op     string
-	kids   []*expr
-	test   *Test
-	opaque string
+	op      string
+	kids    []*expr
+	test    *Test
+	opaque  string
+	node    *ast.Node
+	negated bool
 }
 
 // Site is a question a root node asks about vocabularies: Tests are its tests of literal values, merged by subject.
@@ -332,7 +336,7 @@ func (m *Analyzer) build(n *ast.Node, text string) *expr {
 			return &expr{op: "|", kids: []*expr{m.build(binary.Left, text), m.build(binary.Right, text)}}
 		}
 	}
-	return &expr{opaque: Squash(text[scanner.SkipTrivia(text, n.Pos()):n.End()])}
+	return &expr{opaque: Squash(text[scanner.SkipTrivia(text, n.Pos()):n.End()]), node: n}
 }
 
 func negate(e *expr) *expr {
@@ -353,9 +357,9 @@ func negate(e *expr) *expr {
 		return &expr{op: op, kids: kids}
 	}
 	if text, ok := strings.CutPrefix(e.opaque, "!"); ok {
-		return &expr{opaque: text}
+		return &expr{opaque: text, node: e.node, negated: !e.negated}
 	}
-	return &expr{opaque: "!" + e.opaque}
+	return &expr{opaque: "!" + e.opaque, node: e.node, negated: !e.negated}
 }
 
 // SameSubject reports whether two tests of literal values test the same vocabulary on the same expression text.
@@ -436,6 +440,46 @@ func (m *Analyzer) Tests(condition *ast.Node) []Test {
 	tests := []Test{}
 	collect(normalize(m.build(condition, ast.GetSourceFileOfNode(condition).Text())), &tests)
 	return tests
+}
+
+// Implied returns what condition establishes about the subject of t, one of its tests: t's claim where condition is t,
+// combined through && and || with the other operands. An operand holding only where an object the subject is read from
+// is missing leaves the subject without a value; other operands establish nothing about it.
+func (m *Analyzer) Implied(condition *ast.Node, t Test) Claim {
+	all := Claim{Domain: t.Claim.Domain, Accepted: t.Claim.Domain, Vocabulary: t.Claim.Vocabulary}
+	none := Claim{Domain: all.Domain, Accepted: []string{}, Vocabulary: all.Vocabulary}
+	var implied func(*expr) Claim
+	implied = func(e *expr) Claim {
+		switch {
+		case e.test != nil && SameSubject(*e.test, t):
+			return e.test.Claim
+		case e.opaque != "" && m.absent(e, t.Value):
+			return none
+		case e.op == "&":
+			c := all
+			for _, k := range e.kids {
+				c = c.And(implied(k))
+			}
+			return c
+		case e.op == "|":
+			c := none
+			for _, k := range e.kids {
+				c = c.Or(implied(k))
+			}
+			return c
+		}
+		return all
+	}
+	return implied(normalize(m.build(condition, ast.GetSourceFileOfNode(condition).Text())))
+}
+
+// absent reports whether an opaque operand holds only where subject, or an object it is read from, is missing.
+func (m *Analyzer) absent(e *expr, subject Value) bool {
+	p, ok := PresenceTest(e.node)
+	if !ok || p.Missing == e.negated {
+		return false
+	}
+	return subject.Within(m.ValueOf(p.Subject))
 }
 
 // literalTest reads a whole condition as one test of literal values, or returns false when it has other operands.

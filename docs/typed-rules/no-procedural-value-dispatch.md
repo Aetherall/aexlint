@@ -52,7 +52,7 @@ switch (event) {
 ## What counts
 
 - Vocabularies follow [no-repeated-value-group](no-repeated-value-group.md#what-counts).
-- A dispatch is a `switch` on a vocabulary, an `if`/`else if` chain whose tests all test the same subject of one vocabulary, consecutive `if` statements without `else` testing the same subject, or a chain of conditional expressions doing so. Tests may combine the subject with other conditions. An `if` with one tested branch counts only when it has an `else`.
+- A dispatch is a `switch` on a vocabulary, an `if`/`else if` chain whose tests all test the same subject of one vocabulary, consecutive `if` statements without `else` testing the same subject, or a chain of conditional expressions doing so. Tests may combine the subject with other conditions, as long as the condition restricts the subject's values: `x === "a" && ready` is a branch for `"a"`, `x === "a" || (x === "b" && ready)` one for `"a"` and `"b"`, and `!item || item.kind === "a"` one for `"a"`, while `x !== "a" || ready` restricts nothing and is not a branch. Help lists what each condition implies about the subject. An `if` with one tested branch counts only when it has an `else`.
 - A branch is procedural when it contains an `if`, `switch`, conditional expression, loop or `try`, including inside arrow functions and function expressions written in the branch. Nested function declarations and methods are not searched.
 - `default` branches, `else` branches after the last test, and statements after an `if` sequence are not examined.
 - Where the vocabulary is declared does not matter.

@@ -74,7 +74,7 @@ func (m *Analyzer) named(test *ast.Node, vocabulary *Vocabulary) string {
 // across code uses FieldOf instead.
 func (m *Analyzer) Property(t Test) *ast.Symbol {
 	n := t.Value.Node
-	if n.Kind != ast.KindPropertyAccessExpression || n.Name().Kind != ast.KindIdentifier {
+	if n.Kind != ast.KindPropertyAccessExpression || n.Name().Kind != ast.KindIdentifier && n.Name().Kind != ast.KindPrivateIdentifier {
 		return nil
 	}
 	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n.Name())

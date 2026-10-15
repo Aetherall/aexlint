@@ -23,9 +23,11 @@ type Check struct {
 	Owned bool
 }
 
-// Call is a call or construction in a function body, the input data each argument carries, and the checks reading
-// data, not owned by a type, that precede it in source order.
+// Call is a call or construction in a function body, the input data and the data read through this that each argument
+// carries, and the checks reading data, not owned by a type, that precede it in source order. Thrown marks a call
+// building what a throw raises.
 type Call struct {
+	Thrown    bool
 	Node      *ast.Node
 	Arguments [][]Value
 	Checks    []*Check
@@ -54,6 +56,7 @@ type call struct {
 	node      *ast.Node
 	arguments [][]Value
 	prior     int
+	thrown    bool
 }
 
 // flowAnalysis tracks one function body: which values are input, and which data each parameter and local holds.
@@ -585,6 +588,11 @@ func (a *flowAnalysis) visit(n *ast.Node, guards []*ast.Node, inTry bool) {
 	}
 	switch n.Kind {
 	case ast.KindThrowStatement:
+		before := len(a.calls)
+		a.visitChildren(n, guards, inTry)
+		for i := before; i < len(a.calls); i++ {
+			a.calls[i].thrown = true
+		}
 		if len(guards) > 0 && !inTry {
 			checked, read := []Value{}, []Value{}
 			for _, guard := range guards {
@@ -756,7 +764,10 @@ func (m *Analyzer) Flow(fn *ast.Node) *Flow {
 		a.relative(found.Read, f.Read)
 	}
 	for _, site := range a.calls {
-		c := Call{Node: site.node, Arguments: site.arguments}
+		c := Call{Node: site.node, Thrown: site.thrown}
+		for _, argument := range site.arguments {
+			c.Arguments = append(c.Arguments, a.inputs(argument, true))
+		}
 		for _, found := range a.found[:site.prior] {
 			if len(found.Read) > 0 && !found.Owned {
 				c.Checks = append(c.Checks, found)

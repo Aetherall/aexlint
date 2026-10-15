@@ -62,7 +62,7 @@ func (m *measure) check(fn *ast.Node) {
 		return
 	}
 	for _, call := range f.Calls {
-		if len(call.Checks) == 0 {
+		if len(call.Checks) == 0 || call.Thrown {
 			continue
 		}
 		class, declaration := m.a.Member(call.Node)

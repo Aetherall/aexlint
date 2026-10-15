@@ -40,6 +40,16 @@ func TestRule(t *testing.T) {
 		[]rule_tester.ValidTestCase{
 			// Cross-file: the factory checks its parameter itself.
 			{Code: issue, Files: map[string]string{"credential.ts": checkedCredential}},
+			// Data given to an error a throw raises describes the rejection.
+			{Code: `class NotFound extends Error {
+  constructor(readonly id: string) { super(id); }
+  static of(id: string) { return new NotFound(id); }
+}
+export function load(id: string, known: Set<string>) {
+  if (id.length === 0) throw new Error("empty");
+  if (!known.has(id)) throw NotFound.of(id);
+  return id;
+}`},
 			// The check is made after the call, on data not passed, or only narrows.
 			{Code: `import { Credential } from "./credential.js";
 export function after(command: { expiresAt: string }) {

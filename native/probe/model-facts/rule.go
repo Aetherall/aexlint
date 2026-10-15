@@ -157,7 +157,7 @@ func (p *probe) test(n *ast.Node) {
 		parts = append(parts, "relied "+yes(p.a.Relied(t)))
 	}
 	if property := p.a.Property(t); property != nil {
-		parts = append(parts, "property "+property.Name, "declared "+claim(p.a.DeclaredClaim(t)))
+		parts = append(parts, "property "+t.Value.Node.Name().Text(), "declared "+claim(p.a.DeclaredClaim(t)))
 	}
 	if fact, ok := p.a.FieldTest(n); ok {
 		parts = append(parts, "answered by "+p.answered(fact))
@@ -308,7 +308,11 @@ func (p *probe) flow(fn *ast.Node) {
 		for _, a := range c.Arguments {
 			arguments = append(arguments, values(a))
 		}
-		calls = append(calls, fmt.Sprintf("%s with %s after %d checks", model.Text(c.Node, 40), strings.Join(arguments, " "), len(c.Checks)))
+		thrown := ""
+		if c.Thrown {
+			thrown = " thrown"
+		}
+		calls = append(calls, fmt.Sprintf("%s with %s after %d checks%s", model.Text(c.Node, 40), strings.Join(arguments, " "), len(c.Checks), thrown))
 	}
 	carried := []string{}
 	for _, index := range slices.Sorted(maps.Keys(f.Carried)) {
