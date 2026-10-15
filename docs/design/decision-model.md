@@ -134,6 +134,8 @@ The parts combine into the structures rules query:
 
 - **Types only.** A decision's field needs a finite literal type. Values typed as plain `string` are not given a vocabulary guessed from the literals they are compared with; typing them as a union is the fix that makes them visible.
 - **Conflicts are not a rule yet.** The relation stays in the model; its usefulness and generality remain unestablished.
+- **One reading of conditions.** Sites, decision arms, guards, entry tests and selector answers are all built from tests: a value and a claim. A claim about presence ranges over its own vocabulary, so every claim has one.
+- **Kept apart on purpose.** A site's outcome is written text, because the shared index that keys it is built without a checker. A type predicate's contract compares with its target type, including open `string`, which no finite claim can range over. A check's claim is not read; it is known by its data.
 - **Grouping is by written expression.** The arms of one decision, and the tests merged in one site, test the same written expression: `getKind() === "a" || getKind() === "b"` is one question about values, although two calls are two pieces of data.
 
 ## Limitations
