@@ -12,7 +12,7 @@ A fact has six parts: the [value](#value) it is about, the [claim](#claim) it ma
 
 A **value** is data reached from a root through property reads, optional or not, and element reads with a literal key. The root is a variable, `this` in one function or class, or an expression evaluated once, such as a call. Two reads are the same value when their roots and paths are the same, so two calls written alike are different values. Identity comes from symbols, not text. A value is **partial** when it stands for an unknown part of the data at its path, such as what a method call reads.
 
-A **field** is what a value names across code: the declarations of the property it ends at, or of the variable it is. A property is looked up on its object's declared type, so narrowing does not change it, or on the narrowed type when only some members of the declared type have it. Two values are the same field when they have the same name and share a declaration.
+A **field** is what a value names across code: the declarations of the property it ends at, or of the variable it is. A variable bound by destructuring, as in `const { kind } = item` or `function f({ kind }: Item)`, names the property it binds. A property is looked up on its object's declared type, so narrowing does not change it, or on the narrowed type when only some members of the declared type have it. Two values are the same field when they have the same name and share a declaration.
 
 Code is compared by its whole written text, with whitespace collapsed; shortened text is only for display.
 
@@ -77,7 +77,7 @@ A function whose body, returned value, or single expression statement is a call 
 
 ## Owner
 
-An **owner** is who a type belongs to: a class, a runtime value, or a declaring module or namespace, resolved as described in [variant behavior ownership](variant-behavior-ownership.md). Code is **inside an owner** when it is written in the owner's own declaration, or for a type-only owner, in its module. Code is **inside a member's owner** when it is written in a class that has the member, declared there or inherited, mixins included. A class **extends** another when it is that class or derives from it through `extends`, at any depth.
+An **owner** is who a type belongs to: a class, a runtime value, or a declaring module or namespace, resolved as described in [variant behavior ownership](variant-behavior-ownership.md). A type made by an alias mapping over `keyof` one of its type parameters, such as `Readonly<T>` or `Partial<T>`, belongs to the owner of the type it maps unless the alias is itself owned. Code is **inside an owner** when it is written in the owner's own declaration, or for a type-only owner, in its module. Code is **inside a member's owner** when it is written in a class that has the member, declared there or inherited, mixins included. A class **extends** another when it is that class or derives from it through `extends`, at any depth.
 
 An owner answers questions about its values through **answers**: functions whose result is a test.
 

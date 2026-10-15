@@ -148,6 +148,16 @@ export function f(size: Size) {
   if (literal.includes(size)) return 2;
   return 0;
 }`, Files: files, Options: only("test"), Errors: facts("test", 1)},
+			{Code: `import type { Item } from "./items.js";
+export type Panel = { size: "S" | "L"; title: string };
+export function f({ kind }: Item, { title, ...rest }: Panel) {
+  return kind === "text" && title ? rest.size : undefined;
+}
+export function g(panel: Readonly<Partial<Panel>>) {
+  return panel.size === "S" ? 1 : panel.size === "L" ? 2 : 0;
+}`, Files: files, Options: only("test", "decision"), Errors: []rule_tester.InvalidTestCaseError{
+				{MessageId: "decision"}, {MessageId: "decision"}, {MessageId: "test"}, {MessageId: "test"}, {MessageId: "test"}, {MessageId: "test"},
+			}},
 			{Code: `export class Door {
   #state: "open" | "shut" = "shut";
   #lock?: string;

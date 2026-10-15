@@ -222,9 +222,37 @@ func (m *Analyzer) FieldOf(n *ast.Node) Field {
 		return Field{Name: name}
 	}
 	if symbol := tc.GetSymbolAtLocation(n); symbol != nil && symbol.ValueDeclaration != nil {
+		if field, ok := m.bound(symbol.ValueDeclaration); ok {
+			return field
+		}
 		return Field{Name: symbol.Name, Declarations: []*ast.Node{symbol.ValueDeclaration}, Symbol: symbol}
 	}
 	return Field{}
+}
+
+// bound returns the property a destructured variable is bound to: in const { a } = value or function f({ a }: T), a is
+// the field a of the destructured type. Rest elements and computed names bind no single property.
+func (m *Analyzer) bound(declaration *ast.Node) (Field, bool) {
+	if declaration.Kind != ast.KindBindingElement || declaration.Parent == nil || declaration.Parent.Kind != ast.KindObjectBindingPattern || declaration.AsBindingElement().DotDotDotToken != nil {
+		return Field{}, false
+	}
+	key := declaration.PropertyName()
+	if key == nil {
+		key = declaration.Name()
+	}
+	if key.Kind != ast.KindIdentifier && !ast.IsStringLiteralLike(key) {
+		return Field{}, false
+	}
+	tc := m.ctx.TypeChecker
+	t := tc.GetTypeAtLocation(declaration.Parent)
+	if t == nil {
+		return Field{}, false
+	}
+	property := tc.GetPropertyOfType(tc.GetNonNullableType(t), key.Text())
+	if property == nil || len(property.Declarations) == 0 {
+		return Field{}, false
+	}
+	return Field{Name: key.Text(), Declarations: declarations(property.Declarations), Symbol: property}, true
 }
 
 // declarations returns nodes once each, by file and position: a property of a union lists a declaration once per member

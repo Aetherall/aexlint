@@ -72,6 +72,7 @@ func (m *Analyzer) Owner(receiver *ast.Node) *ast.Symbol {
 	if t.Flags()&(checker.TypeFlagsAny|checker.TypeFlagsUnknown|checker.TypeFlagsNever) != 0 {
 		return nil
 	}
+	t = m.mappedFrom(t)
 	symbol := t.Symbol()
 	if symbol == nil || symbol.Flags&ast.SymbolFlagsClass == 0 {
 		symbol = m.ownerFromSymbol(t.Alias().Symbol(), map[*ast.Symbol]bool{})
@@ -274,4 +275,50 @@ func (m *Analyzer) Variable(n *ast.Node) *ast.Symbol {
 		return nil
 	}
 	return symbol
+}
+
+// mappedFrom returns the type a mapped alias over keyof one of its type parameters maps, such as T for Readonly<T> or
+// Partial<T>, when the alias is not itself owned, repeating through nested mapped aliases. Other types are returned
+// unchanged.
+func (m *Analyzer) mappedFrom(t *checker.Type) *checker.Type {
+	for range 4 {
+		alias := t.Alias()
+		if alias == nil || m.established(m.ownerFromSymbol(alias.Symbol(), map[*ast.Symbol]bool{})) != nil {
+			return t
+		}
+		index := mappedParameter(alias.Symbol())
+		if index < 0 || index >= len(alias.TypeArguments()) {
+			return t
+		}
+		t = m.ctx.TypeChecker.GetNonNullableType(alias.TypeArguments()[index])
+	}
+	return t
+}
+
+// mappedParameter returns the position of the type parameter T that a type alias declared as { [P in keyof T]: ... }
+// maps, or -1.
+func mappedParameter(alias *ast.Symbol) int {
+	if alias == nil || len(alias.Declarations) != 1 || alias.Declarations[0].Kind != ast.KindTypeAliasDeclaration {
+		return -1
+	}
+	declaration := alias.Declarations[0]
+	mapped := declaration.Type()
+	if mapped == nil || mapped.Kind != ast.KindMappedType {
+		return -1
+	}
+	constraint := mapped.AsMappedTypeNode().TypeParameter.AsTypeParameterDeclaration().Constraint
+	if constraint == nil || constraint.Kind != ast.KindTypeOperator || constraint.AsTypeOperatorNode().Operator != ast.KindKeyOfKeyword {
+		return -1
+	}
+	target := constraint.AsTypeOperatorNode().Type
+	if target.Kind != ast.KindTypeReference || target.AsTypeReferenceNode().TypeName.Kind != ast.KindIdentifier {
+		return -1
+	}
+	name := target.AsTypeReferenceNode().TypeName.Text()
+	for i, parameter := range declaration.TypeParameters() {
+		if parameter.Name().Text() == name {
+			return i
+		}
+	}
+	return -1
 }
