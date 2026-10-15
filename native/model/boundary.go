@@ -43,12 +43,23 @@ func (m *Analyzer) BoundaryOf(call, argument *ast.Node) (Boundary, bool) {
 }
 
 // Keeps reports whether the parameter across b keeps what t establishes about the argument: the argument as written,
-// without the narrowing t brings, is not assignable to the parameter, so passing it untested would not type-check.
+// without the narrowing t brings, is not assignable to the parameter, so passing it untested would not type-check. A
+// default value accepts undefined as it arrives.
 func (m *Analyzer) Keeps(b Boundary, t Test) bool {
 	tc := m.ctx.TypeChecker
 	parameters := b.signature.Parameters()
 	untested := m.untested(b.Argument, t)
-	return b.index < len(parameters) && untested != nil && !checker.Checker_isTypeAssignableTo(tc, untested, tc.GetTypeOfSymbol(parameters[b.index]))
+	if b.index >= len(parameters) || untested == nil {
+		return false
+	}
+	if b.Parameter.Initializer() != nil {
+		defined := slices.DeleteFunc(slices.Clone(members(untested)), func(member *checker.Type) bool { return member.Flags()&checker.TypeFlagsUndefined != 0 })
+		if len(defined) == 0 {
+			return false
+		}
+		untested = tc.GetUnionType(defined)
+	}
+	return !checker.Checker_isTypeAssignableTo(tc, untested, tc.GetTypeOfSymbol(parameters[b.index]))
 }
 
 func (m *Analyzer) untested(argument *ast.Node, t Test) *checker.Type {

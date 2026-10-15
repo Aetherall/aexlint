@@ -36,7 +36,15 @@ The executable lives at `dist/native/<platform>-<arch>/aexlint-typed` (`.exe` on
 
 `native/model/` is a Go package, not a rule. It is copied next to the rules and imported as `internal/aexlint/model`. It holds the analyzer that reads tests of finite literal values and of presence, syntax helpers, the per-program index of decision sites, ownership resolution, result construction, and the per-file decision model described in [decision model](design/decision-model.md). Rules build on it instead of copying its logic.
 
-The test-only `native/probe/decision-model` rule reports model facts as diagnostics, so the model is tested on real programs with the standard rule tester. Run `pnpm native:test decision-model`.
+The test-only `native/probe/model-facts` rule reports every kind of model fact as a diagnostic: sites, tests, decisions with their arms and outcomes, functions, gates, conflicts, guards, entry tests, boundaries, flows and type-predicate contracts. Its `facts` option selects kinds, so each fixture asserts one kind exactly while its snapshot pins the content. A fact enters the model together with its fixture, before a rule relies on it. Run `pnpm native:test model-facts`. The older `native/probe/decision-model` probe covers selector narrowing and conflicts.
+
+To review a model change on real code, dump the facts of whole programs before and after it and diff them:
+
+```sh
+node scripts/scan.ts facts .native/probe/<platform>-<arch>/aexlint-typed <project root> <seed file>... > facts.tsv
+```
+
+`pnpm native:test` builds that probe binary; keep a copy from the base commit to compare with. `rules` instead of `facts` runs the shipped rules with a binary from `pnpm native:build`. Each line holds the seed, rule, file, byte range, message ID and text, sorted. Dumps are deterministic, so every difference is a changed fact to review against the [decision model](design/decision-model.md).
 
 ## Shared program indexes
 

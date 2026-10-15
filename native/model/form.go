@@ -97,9 +97,17 @@ func (m *Analyzer) reference(n *ast.Node) string {
 		symbol = m.ctx.TypeChecker.GetAliasedSymbol(symbol)
 	}
 	if symbol == nil {
-		return fmt.Sprintf("unresolved:%p", n)
+		return "unresolved:" + declared(n)
 	}
-	return fmt.Sprintf("symbol:%p", symbol)
+	if len(symbol.Declarations) == 0 {
+		return "symbol:" + symbol.Name
+	}
+	return "symbol:" + symbol.Name + "@" + declared(symbol.Declarations[0])
+}
+
+// declared identifies a node by its file and position, so references compare alike across invocations.
+func declared(n *ast.Node) string {
+	return fmt.Sprintf("%s:%d", ast.GetSourceFileOfNode(n).FileName(), n.Pos())
 }
 
 func propertyKey(name *ast.Node) string {

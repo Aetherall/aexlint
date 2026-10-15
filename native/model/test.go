@@ -96,12 +96,20 @@ func (m *Analyzer) FieldTest(n *ast.Node) (Test, bool) {
 	return t, true
 }
 
-// DeclaredClaim restricts t's claim to what the declared type of its field can hold.
+// DeclaredClaim restricts t's claim to what the declared type of its value can hold: the property's as resolved where it
+// is read, or otherwise the variable's or the expression's.
 func (m *Analyzer) DeclaredClaim(t Test) Claim {
 	if !t.Claim.Presence() {
 		return t.Claim
 	}
-	return t.Claim.Under(m.HeldBy(m.ctx.TypeChecker.GetTypeOfSymbol(m.Property(t))))
+	declared := m.Declared(t.Value.Node)
+	if property := m.Property(t); property != nil {
+		declared = m.ctx.TypeChecker.GetTypeOfSymbol(property)
+	}
+	if declared == nil {
+		return t.Claim
+	}
+	return t.Claim.Under(m.HeldBy(declared))
 }
 
 // shared restricts the declared claims of two tests to the values both declared types can hold.
@@ -148,7 +156,7 @@ func (m *Analyzer) Relied(t Test) bool {
 		if found {
 			return true
 		}
-		if n.Kind == ast.KindPropertyAccessExpression && n.Pos() >= t.Node.End() && m.ValueOf(n).Same(t.Value) && !m.presenceRead(n) {
+		if (n.Kind == ast.KindPropertyAccessExpression || n.Kind == ast.KindIdentifier) && n.Pos() >= t.Node.End() && m.ValueOf(n).Same(t.Value) && !m.presenceRead(n) {
 			if held, ok := m.Held(n); ok && len(minus(split, held)) > 0 {
 				found = true
 				return true

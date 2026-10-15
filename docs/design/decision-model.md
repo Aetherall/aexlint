@@ -48,7 +48,7 @@ A branch **rejects** variants when it does not read the tested value and the oth
 A **guard** is a test after which code does work only where a claim holds, and otherwise leaves without using the tested variable: it is a rejection. It is written as one of:
 
 - `a && b ? work : exit` or `a || b ? exit : work`: each of `a` and `b` is a guard;
-- `a && b && work`: `a` and `b` leave with their own value when they fail. That value is `false` for a `boolean` test, and the missing value for a truthiness test whose type allows only one missing value.
+- `a && b && work`: `a` and `b` leave with their own value when they fail. That value is `false` for a `boolean` test, and the missing value for a truthiness test whose type allows only one missing value. Each shorter prefix is read the same way, so in `a && b && c`, `a` also guards `b`.
 
 An **entry test** is a guard a function makes on a parameter, or on a property read from it, before its work. Its forms are:
 
