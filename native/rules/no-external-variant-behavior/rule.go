@@ -30,7 +30,7 @@ func (m *measure) report(d *model.Decision) {
 	fields := []string{}
 	destinations := []*ast.Symbol{}
 	for _, a := range arms {
-		for _, result := range m.model.Results(a.Body, receiver, tag) {
+		for _, result := range m.model.Built(d, a) {
 			for _, field := range m.model.ConstructionFields(result, receiver, tag) {
 				if !slices.Contains(fields, field) {
 					fields = append(fields, field)

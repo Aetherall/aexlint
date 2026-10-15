@@ -278,13 +278,7 @@ func (r *checkRun) asked(t model.Test) string {
 	if slices.Contains(missing, model.Present) {
 		missing = claim.Rejected()
 	}
-	names := []string{}
-	for _, key := range []string{model.MissingNull, model.MissingUndefined, model.MissingFalsy} {
-		if slices.Contains(missing, key) {
-			names = append(names, map[string]string{model.MissingNull: "`null`", model.MissingUndefined: "`undefined`", model.MissingFalsy: "other falsy values"}[key])
-		}
-	}
-	return "checked for " + strings.Join(names, " and ")
+	return "checked for " + strings.Join(claim.Vocabulary.Names(missing), " and ")
 }
 
 func (r *checkRun) reportUnanswered(declaration *ast.Node, unanswered []*question) {

@@ -68,10 +68,21 @@ func (m *Analyzer) ConstructionFields(root, receiver *ast.Node, tag string) []st
 	return fields
 }
 
+// constructs reports whether n builds an object from fields of receiver other than tag.
+func (m *Analyzer) constructs(n, receiver *ast.Node, tag string) bool {
+	return receiver != nil && m.ObjectResult(n) && len(m.ConstructionFields(n, receiver, tag)) > 0
+}
+
+// Built returns the objects an arm of d builds from fields of d's receiver other than the one d tests: its value, and
+// what it returns, assigns or declares.
+func (m *Analyzer) Built(d *Decision, b Branch) []*ast.Node {
+	return m.Results(b.Body, d.Receiver, d.Field.Name)
+}
+
 func (m *Analyzer) Results(nodes []*ast.Node, receiver *ast.Node, tag string) []*ast.Node {
 	results := []*ast.Node{}
 	add := func(expression *ast.Node) {
-		if expression != nil && m.ObjectResult(expression) && len(m.ConstructionFields(expression, receiver, tag)) > 0 {
+		if expression != nil && m.constructs(expression, receiver, tag) {
 			results = append(results, expression)
 		}
 	}

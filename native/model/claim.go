@@ -7,9 +7,10 @@ import (
 	"github.com/microsoft/typescript-go/shim/checker"
 )
 
-// Claim is what a test establishes about a value: it is one of Accepted, among the values of Domain. A claim about
-// literal values ranges over its Vocabulary; a claim about presence ranges over Present and the missing values
-// undefined, null and other falsy values.
+// Claim is what a test establishes about a value: it is one of Accepted, among the values of Domain, which are values
+// of its Vocabulary. A claim about literal values ranges over the literal values of the value's declared type; a claim
+// about presence ranges over the presence vocabulary: present and the missing values null, undefined and other falsy
+// values.
 type Claim struct {
 	Domain     []string
 	Accepted   []string
@@ -23,7 +24,12 @@ const (
 	MissingFalsy     = "falsy"
 )
 
-var presence = []string{MissingFalsy, MissingNull, Present, MissingUndefined}
+var presence = []string{MissingNull, MissingUndefined, MissingFalsy, Present}
+
+// presenceVocabulary is the domain of every claim about presence.
+var presenceVocabulary = &Vocabulary{Values: presence, shown: map[string]string{
+	MissingNull: "`null`", MissingUndefined: "`undefined`", MissingFalsy: "other falsy values", Present: "present",
+}}
 
 func missing(a Absence) []string {
 	keys := []string{}
@@ -49,16 +55,18 @@ func within(a, b []string) []string {
 func presenceClaim(p Presence) Claim {
 	removed := missing(p.Removes)
 	if p.Missing {
-		return Claim{Domain: presence, Accepted: removed}
+		return Claim{Domain: presence, Accepted: within(presence, removed), Vocabulary: presenceVocabulary}
 	}
-	return Claim{Domain: presence, Accepted: minus(presence, removed)}
+	return Claim{Domain: presence, Accepted: minus(presence, removed), Vocabulary: presenceVocabulary}
 }
 
 // Truthiness is what a truthiness test establishes: the value is present and not falsy.
-func Truthiness() Claim { return Claim{Domain: presence, Accepted: []string{Present}} }
+func Truthiness() Claim {
+	return Claim{Domain: presence, Accepted: []string{Present}, Vocabulary: presenceVocabulary}
+}
 
 // Presence reports whether c is about presence rather than literal values.
-func (c Claim) Presence() bool { return c.Vocabulary == nil }
+func (c Claim) Presence() bool { return c.Vocabulary == presenceVocabulary }
 
 // Not is what holds where c does not.
 func (c Claim) Not() Claim {
@@ -101,7 +109,7 @@ func sameSet(a, b []string) bool {
 }
 
 func (c Claim) comparable(o Claim) bool {
-	return c.Presence() == o.Presence() && (c.Presence() || slices.Equal(c.Vocabulary.Values, o.Vocabulary.Values))
+	return slices.Equal(c.Vocabulary.Values, o.Vocabulary.Values)
 }
 
 // Implies reports whether every value c accepts, o accepts too.

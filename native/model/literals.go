@@ -70,12 +70,17 @@ func valueKey(t *checker.Type) string {
 }
 
 // Display renders value keys as the vocabulary's members print, such as "sms" or Level.High.
-func (v *Vocabulary) Display(keys []string) string {
-	texts := []string{}
-	for _, key := range keys {
-		texts = append(texts, v.shown[key])
+func (v *Vocabulary) Display(keys []string) string { return strings.Join(v.Names(keys), " | ") }
+
+// Names returns how the given value keys print, in the vocabulary's order.
+func (v *Vocabulary) Names(keys []string) []string {
+	names := []string{}
+	for _, key := range v.Values {
+		if slices.Contains(keys, key) {
+			names = append(names, v.shown[key])
+		}
 	}
-	return strings.Join(texts, " | ")
+	return names
 }
 
 // Declared returns the declared type of an identifier, call, or property read; a property is read from its object's declared type, so narrowing the object does not narrow it.

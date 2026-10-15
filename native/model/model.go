@@ -384,7 +384,7 @@ func (md *builder) outcomeOf(body []*ast.Node, receiver *ast.Node, tag string) O
 	if receiver != nil && md.m.SameValue(u, receiver) {
 		return Outcome{Kind: Identity}
 	}
-	if receiver != nil && md.m.ObjectResult(u) && len(md.m.ConstructionFields(u, receiver, tag)) > 0 {
+	if md.m.constructs(u, receiver, tag) {
 		return Outcome{Kind: Construct}
 	}
 	if md.delegates(u, receiver) {
