@@ -89,7 +89,17 @@ A **selector** is a function whose whole result is a boolean made of tests of li
 
 ## Outcome
 
-An **outcome** is what an arm produces when it runs: delegate (passes the whole value on), construct (builds a result from the value's other fields), lookup (picks a constant), identity (returns the value's object itself), call, effect, stepwise (several statements whose result comes from their own `if`, `switch`, loop or `try`), fallback (nothing new: nothing, `undefined`, `null`, a boolean, `""`, `0`, `-1`, empty values, `return`, `throw`, `continue`), or other. The outcome describes what runs: a conditional expression is part of a value, and functions written in the arm do not run with it.
+An **outcome** is what an arm produces when it runs: the data its result depends on, and whether it has **effects**, doing more than producing it. The result is the arm's expression, or the value its last statement returns; an arm whose result is a call returning `void` or `undefined` has effects and no result. Relative to the value its decision tests, or to the receiver when it tests a property, the result depends on:
+
+- **none**: there is no result, as with `return`, `throw`, `continue` or statements only;
+- **empty**: nothing new, as with `undefined`, `null`, a boolean, `""`, `0`, `-1`, or object and array literals holding only missing or empty values;
+- **constant**: constants only, compared by their literals or their form;
+- **value**: the value as a whole: the arm returns it, passes it on, or calls a method on it;
+- **parts**: parts of the value other than the tested property;
+- **other**: other data only;
+- **mixed**: the value and other data.
+
+Functions, classes, namespaces, enums and ambient globals are code, not data, and so is a function called by name or a method of `this`; the receiver of any other call is data. Constants and bindings declared in the arm read nothing. An arm does no **work** when it has no effects and its result is none or empty, and it is a **lookup** when it has no effects and its result is constant. The outcome describes what runs: a conditional expression is part of a value, and functions written in the arm do not run with it.
 
 **Logic** is what an arm contains: the `if`, `switch`, conditional expression, loop and `try` nodes written in it, in source order, including inside arrow functions and function expressions written there, but not inside named nested functions or methods. Logic describes what is written, whether or not it runs with the arm.
 
@@ -147,3 +157,4 @@ The parts combine into the structures rules query:
 - JSX attributes and children are not slots.
 - Selectors and handlers are related only inside one object literal or class.
 - Field identity across files relies on property declarations; aliases through mapped or generic types are unverified.
+- Outcomes treat values declared only in declaration files as code, so data they export is not counted, and a read with a computed key counts as reading the whole value.

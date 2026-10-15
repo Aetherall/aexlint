@@ -105,35 +105,35 @@ Message: test value shape.kind; claim {"square"} of {"circle" | "square"}; field
 
 [TestModelFacts/invalid-3 - 1]
 Diagnostic 1: decision (4:11 - 4:19)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> delegate, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> construct, logic 0, built 1; constructions ["stock": return: {count:$["count"],sku:$["sku"]}]
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> value, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> parts, logic 0, built 1; constructions ["stock": return: {count:$["count"],sku:$["sku"]}]
    3 | export function outcomes(item: Item) {
    4 |   switch (item.kind) {
      |           ~~~~~~~~~
    5 |     case "text": return render(item);
 
 Diagnostic 2: decision (10:7 - 10:15)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> identity, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> call, logic 0, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> value, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> none with effects, logic 0, built 0; constructions []
    9 | export function more(item: Item) {
   10 |   if (item.kind === "text") return item;
      |       ~~~~~~~~~
   11 |   if (item.kind === "stock") return log("x");
 
 Diagnostic 3: decision (14:10 - 14:18)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> lookup label, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> fallback, logic 0, built 0 / {nothing} of {"stock" | "text"} complete -> lookup none, logic 0, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant label, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> empty, logic 0, built 0 / {nothing} of {"stock" | "text"} complete -> constant none, logic 0, built 0; constructions []
   13 | export function rest(item: Item) {
   14 |   return item.kind === "text" ? "label" : item.kind === "stock" ? undefined : "none";
      |          ~~~~~~~~~
   15 | }
 
 Diagnostic 4: decision (17:11 - 17:19)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> effect, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> stepwise, logic 1, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> none with effects, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> constant with effects 1, logic 1, built 0; constructions []
   16 | export function steps(item: Item) {
   17 |   switch (item.kind) {
      |           ~~~~~~~~~
   18 |     case "text":
 
 Diagnostic 5: decision (28:10 - 28:18)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> other, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> delegate, logic 0, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> parts, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> value, logic 0, built 0; constructions []
   27 | export function other(item: Item) {
   28 |   return item.kind === "text" ? item.text + "!" : wrap(item);
      |          ~~~~~~~~~
@@ -141,22 +141,59 @@ Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fi
 ---
 
 [TestModelFacts/invalid-4 - 1]
+Diagnostic 1: decision (6:33 - 6:41)
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant {size:1,tone:symbol:Tone@file.ts:39["Loud"]}, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> constant [symbol:Tone@file.ts:39["Calm"]], logic 0, built 0; constructions []
+   5 |   scale = 2;
+   6 |   constant(item: Item) { return item.kind === "text" ? { tone: Tone.Loud, size: 1 } : [Tone.Calm]; }
+     |                                 ~~~~~~~~~
+   7 |   empty(item: Item) { return item.kind === "text" ? { label: undefined, rows: [] } : { label: "", rows: [null] }; }
+
+Diagnostic 2: decision (7:30 - 7:38)
+Message: guard on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> empty, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> empty, logic 0, built 0; constructions []
+   6 |   constant(item: Item) { return item.kind === "text" ? { tone: Tone.Loud, size: 1 } : [Tone.Calm]; }
+   7 |   empty(item: Item) { return item.kind === "text" ? { label: undefined, rows: [] } : { label: "", rows: [null] }; }
+     |                              ~~~~~~~~~
+   8 |   other(item: Item) { return item.kind === "text" ? settings.width : this.scale; }
+
+Diagnostic 3: decision (8:30 - 8:38)
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> other, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> other, logic 0, built 0; constructions []
+   7 |   empty(item: Item) { return item.kind === "text" ? { label: undefined, rows: [] } : { label: "", rows: [null] }; }
+   8 |   other(item: Item) { return item.kind === "text" ? settings.width : this.scale; }
+     |                              ~~~~~~~~~
+   9 |   mixed(item: Item) { return item.kind === "text" ? this.wrap(item) : Math.max(item.count, settings.width); }
+
+Diagnostic 4: decision (9:30 - 9:38)
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> value, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> mixed, logic 0, built 0; constructions []
+   8 |   other(item: Item) { return item.kind === "text" ? settings.width : this.scale; }
+   9 |   mixed(item: Item) { return item.kind === "text" ? this.wrap(item) : Math.max(item.count, settings.width); }
+     |                              ~~~~~~~~~
+  10 |   local(item: Item) { return item.kind === "text" ? [1, 2].map((n) => n * 2) : JSON.stringify(item.sku); }
+
+Diagnostic 5: decision (10:30 - 10:38)
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant [1,2]["map"](~(n) => n * 2), logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> parts, logic 0, built 0; constructions []
+   9 |   mixed(item: Item) { return item.kind === "text" ? this.wrap(item) : Math.max(item.count, settings.width); }
+  10 |   local(item: Item) { return item.kind === "text" ? [1, 2].map((n) => n * 2) : JSON.stringify(item.sku); }
+     |                              ~~~~~~~~~
+  11 |   wrap(item: Item) { return item; }
+---
+
+[TestModelFacts/invalid-5 - 1]
 Diagnostic 1: decision (4:20 - 4:28)
-Message: dispatch on this.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside yes; arms {"S"} of {"L" | "M" | "S"} complete tested -> lookup 10, logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> lookup 20, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> lookup 30, logic 0, built 0; constructions []
+Message: dispatch on this.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside yes; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 10, logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 20, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> constant 30, logic 0, built 0; constructions []
    3 |   constructor(readonly size: Size) {}
    4 |   width() { return this.size === "S" ? 10 : this.size === "M" ? 20 : 30; }
      |                    ~~~~~~~~~
    5 | }
 
 Diagnostic 2: decision (7:10 - 7:19)
-Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside no; arms {"S"} of {"L" | "M" | "S"} complete tested -> construct, logic 0, built 1 / {"L" | "M"} of {"L" | "M" | "S"} complete -> construct, logic 0, built 1; constructions ["L": value: {wide:$["width"]()} / "M": value: {wide:$["width"]()} / "S": value: {narrow:$["width"]()}]
+Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside no; arms {"S"} of {"L" | "M" | "S"} complete tested -> value, logic 0, built 1 / {"L" | "M"} of {"L" | "M" | "S"} complete -> value, logic 0, built 1; constructions ["L": value: {wide:$["width"]()} / "M": value: {wide:$["width"]()} / "S": value: {narrow:$["width"]()}]
    6 | export function outside(panel: Panel) {
    7 |   return panel.size === "S" ? { narrow: panel.width() } : { wide: panel.width() };
      |          ~~~~~~~~~~
    8 | }
 ---
 
-[TestModelFacts/invalid-5 - 1]
+[TestModelFacts/invalid-6 - 1]
 Diagnostic 1: guard (3:40 - 3:59)
 Message: guard on item.kind; holds {"text"} of {"stock" | "text"}; whole yes; fallback "\"\""; work 1
    2 | declare function show(text: string): string;
@@ -190,7 +227,7 @@ Message: guard on item; holds {`null` | other falsy values | present} of {`null`
      |                                                    ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-6 - 1]
+[TestModelFacts/invalid-7 - 1]
 Diagnostic 1: entry (3:7 - 3:11)
 Message: entry on text; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "[]"; work 1
    2 | export function f(text: string | undefined) {
@@ -219,7 +256,7 @@ Message: entry on text; holds {`undefined` | other falsy values | present} of {`
      |                                           ~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-7 - 1]
+[TestModelFacts/invalid-8 - 1]
 Diagnostic 1: boundary (8:27 - 8:30)
 Message: boundary into text of strict; keeps yes; rechecks []
    7 | export function f(text: string | undefined) {
@@ -242,7 +279,7 @@ Message: boundary into text of fallback; keeps no; rechecks []
   11 |   return a + b + c;
 ---
 
-[TestModelFacts/invalid-8 - 1]
+[TestModelFacts/invalid-9 - 1]
 Diagnostic 1: flow (2:17 - 2:21)
 Message: flow; checks [throw new Error("too long"); checks [input.length, limit] reads [input.length, limit]]; calls [validate(input) with [input] after 1 checks / input.trim() with  after 1 checks]; results [trimmed, part of input, limit]; carried [0, 1]; checked {0: [$.length], 1: [$]}; read {0: [$.length], 1: [$]}
    1 | declare function validate(value: string): void;
@@ -258,7 +295,7 @@ Message: flow; checks [throw new Error("positive"); checks [amount] reads [amoun
   11 |     if (amount <= 0) throw new Error("positive");
 ---
 
-[TestModelFacts/invalid-9 - 1]
+[TestModelFacts/invalid-10 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -266,7 +303,7 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-10 - 1]
+[TestModelFacts/invalid-11 - 1]
 Diagnostic 1: function (3:12 - 3:45)
 Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; domains []
    2 | export const view = {
@@ -289,7 +326,7 @@ Message: gate matches -> render
    4 |   render(item: Item) {
 ---
 
-[TestModelFacts/invalid-11 - 1]
+[TestModelFacts/invalid-12 - 1]
 Diagnostic 1: conflict (4:13 - 4:23)
 Message: conflicts with line 5: s:done: [dim] vs [success]; purpose argument paint(color)
    3 | export function row(node: Node) {

@@ -110,6 +110,18 @@ export function steps(item: Item) {
 export function other(item: Item) {
   return item.kind === "text" ? item.text + "!" : wrap(item);
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 5)},
+			{Code: `import type { Item } from "./items.js";
+enum Tone { Loud = "loud", Calm = "calm" }
+declare const settings: { width: number };
+export class View {
+  scale = 2;
+  constant(item: Item) { return item.kind === "text" ? { tone: Tone.Loud, size: 1 } : [Tone.Calm]; }
+  empty(item: Item) { return item.kind === "text" ? { label: undefined, rows: [] } : { label: "", rows: [null] }; }
+  other(item: Item) { return item.kind === "text" ? settings.width : this.scale; }
+  mixed(item: Item) { return item.kind === "text" ? this.wrap(item) : Math.max(item.count, settings.width); }
+  local(item: Item) { return item.kind === "text" ? [1, 2].map((n) => n * 2) : JSON.stringify(item.sku); }
+  wrap(item: Item) { return item; }
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 5)},
 			{Code: `import type { Size } from "./items.js";
 export class Panel {
   constructor(readonly size: Size) {}

@@ -28,27 +28,6 @@ func NewAnalyzer(ctx rule.RuleContext) *Analyzer {
 	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}}
 }
 
-// OutcomeKind is what an arm produces when it runs.
-type OutcomeKind string
-
-const (
-	Delegate  OutcomeKind = "delegate"
-	Construct OutcomeKind = "construct"
-	Lookup    OutcomeKind = "lookup"
-	Identity  OutcomeKind = "identity"
-	Invoke    OutcomeKind = "call"
-	Effect    OutcomeKind = "effect"
-	Stepwise  OutcomeKind = "stepwise"
-	Fallback  OutcomeKind = "fallback"
-	Other     OutcomeKind = "other"
-)
-
-// Outcome is what an arm produces when it runs. Values are the literals a lookup picks.
-type Outcome struct {
-	Kind   OutcomeKind
-	Values []string
-}
-
 // DecisionForm is how many arms of a decision do work: at most one for a guard, several for a dispatch.
 type DecisionForm string
 
@@ -232,34 +211,6 @@ func (md *builder) label(n *ast.Node) string {
 	return ""
 }
 
-func trivial(n *ast.Node) bool {
-	return n == nil || trivialValue(n)
-}
-
-func literalText(n *ast.Node) (string, bool) {
-	n = Unwrap(n)
-	switch n.Kind {
-	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral, ast.KindNumericLiteral:
-		return n.Text(), true
-	}
-	return "", false
-}
-
-func literals(n *ast.Node, out *[]string) bool {
-	n = Unwrap(n)
-	if v, ok := literalText(n); ok {
-		if !slices.Contains(*out, v) {
-			*out = append(*out, v)
-		}
-		return true
-	}
-	if n.Kind == ast.KindConditionalExpression {
-		c := n.AsConditionalExpression()
-		return literals(c.WhenTrue, out) && literals(c.WhenFalse, out)
-	}
-	return false
-}
-
 func exits(n *ast.Node) bool {
 	if n == nil {
 		return false
@@ -297,105 +248,6 @@ func logic(nodes []*ast.Node) []*ast.Node {
 	return found
 }
 
-func control(nodes []*ast.Node) bool {
-	found := false
-	var walk func(*ast.Node) bool
-	walk = func(n *ast.Node) bool {
-		if found || ast.IsFunctionLike(n) {
-			return found
-		}
-		switch n.Kind {
-		case ast.KindIfStatement, ast.KindSwitchStatement, ast.KindForStatement, ast.KindForOfStatement, ast.KindForInStatement, ast.KindWhileStatement, ast.KindDoStatement, ast.KindTryStatement:
-			found = true
-			return true
-		}
-		n.ForEachChild(walk)
-		return found
-	}
-	for _, n := range nodes {
-		if n != nil {
-			walk(n)
-		}
-	}
-	return found
-}
-
-func (md *builder) delegates(n *ast.Node, receiver *ast.Node) bool {
-	if receiver == nil || n.Kind != ast.KindCallExpression {
-		return false
-	}
-	for _, a := range n.Arguments() {
-		if md.m.SameValue(a, receiver) {
-			return true
-		}
-	}
-	callee := Unwrap(n.Expression())
-	return callee.Kind == ast.KindPropertyAccessExpression && md.m.SameValue(callee.Expression(), receiver)
-}
-
-func (md *builder) outcomeOf(body []*ast.Node, receiver *ast.Node, tag string) Outcome {
-	var e *ast.Node
-	if len(body) == 1 && body[0] != nil && ast.IsExpression(body[0]) {
-		e = body[0]
-	} else {
-		statements := []*ast.Node{}
-		for _, n := range body {
-			if n == nil {
-				continue
-			}
-			if n.Kind == ast.KindBlock {
-				statements = append(statements, n.Statements()...)
-			} else {
-				statements = append(statements, n)
-			}
-		}
-		for len(statements) > 0 && statements[len(statements)-1].Kind == ast.KindBreakStatement {
-			statements = statements[:len(statements)-1]
-		}
-		switch {
-		case len(statements) == 0:
-			return Outcome{Kind: Fallback}
-		case len(statements) == 1 && statements[0].Kind == ast.KindReturnStatement:
-			e = statements[0].Expression()
-			if e == nil {
-				return Outcome{Kind: Fallback}
-			}
-		case len(statements) == 1 && (statements[0].Kind == ast.KindThrowStatement || statements[0].Kind == ast.KindContinueStatement):
-			return Outcome{Kind: Fallback}
-		case control(statements):
-			return Outcome{Kind: Stepwise}
-		default:
-			last := statements[len(statements)-1]
-			if last.Kind == ast.KindReturnStatement && last.Expression() != nil {
-				e = last.Expression()
-			} else {
-				return Outcome{Kind: Effect}
-			}
-		}
-	}
-	if trivial(e) {
-		return Outcome{Kind: Fallback}
-	}
-	values := []string{}
-	if literals(e, &values) {
-		return Outcome{Kind: Lookup, Values: values}
-	}
-	u := Unwrap(e)
-	if receiver != nil && md.m.SameValue(u, receiver) {
-		return Outcome{Kind: Identity}
-	}
-	if md.m.constructs(u, receiver, tag) {
-		return Outcome{Kind: Construct}
-	}
-	if md.delegates(u, receiver) {
-		return Outcome{Kind: Delegate}
-	}
-	if u.Kind == ast.KindCallExpression || u.Kind == ast.KindNewExpression {
-		return Outcome{Kind: Invoke}
-	}
-	return Outcome{Kind: Other}
-}
-
 func (md *builder) enclosing(n *ast.Node) int {
 	for p := n.Parent; p != nil; p = p.Parent {
 		if id, ok := md.ids[p]; ok {
@@ -422,6 +274,10 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		receiver = Unwrap(u.Expression())
 		tag = u.Name().Text()
 	}
+	value, tested := md.m.ValueOf(subjectNode), ""
+	if receiver != nil {
+		value, tested = md.m.ValueOf(receiver), tag
+	}
 	d := &Decision{Node: Unwrap(subjectNode), Line: md.line(subjectNode), Function: md.enclosing(root), Field: field, Vocabulary: vocabulary}
 	pure := true
 	covered := Claim{Domain: vocabulary.Values, Accepted: []string{}, Vocabulary: vocabulary}
@@ -432,14 +288,14 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		}
 		complete := pure && len(a.claim.And(covered).Accepted) == 0
 		covered = covered.Or(a.claim)
-		d.Arms = append(d.Arms, Branch{Claim: a.claim, Complete: complete, Tested: true, Body: a.body, Outcome: md.outcomeOf(a.body, receiver, tag), Logic: logic(a.body)})
+		d.Arms = append(d.Arms, Branch{Claim: a.claim, Complete: complete, Tested: true, Body: a.body, Outcome: md.m.OutcomeOf(a.body, value, tested), Logic: logic(a.body)})
 	}
 	if alternative != nil && pure {
-		d.Arms = append(d.Arms, Branch{Claim: covered.Not(), Complete: true, Body: alternative, Outcome: md.outcomeOf(alternative, receiver, tag), Logic: logic(alternative)})
+		d.Arms = append(d.Arms, Branch{Claim: covered.Not(), Complete: true, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), Logic: logic(alternative)})
 	}
 	work := 0
 	for _, a := range d.Arms {
-		if a.Outcome.Kind != Fallback {
+		if !a.Outcome.Fallback() {
 			work++
 		}
 	}
@@ -1037,7 +893,7 @@ func (md *builder) mapping(d *Decision) map[string][]string {
 	}
 	out := map[string][]string{}
 	for _, a := range d.Arms {
-		if !a.Complete || a.Outcome.Kind != Lookup {
+		if !a.Complete || !a.Outcome.Lookup() {
 			return nil
 		}
 		for _, v := range a.Claim.Accepted {

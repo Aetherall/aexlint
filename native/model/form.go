@@ -8,6 +8,7 @@ import (
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/scanner"
+	"github.com/microsoft/typescript-go/shim/tspath"
 )
 
 func (m *Analyzer) Form(n *ast.Node, source Value) string {
@@ -97,17 +98,23 @@ func (m *Analyzer) reference(n *ast.Node) string {
 		symbol = m.ctx.TypeChecker.GetAliasedSymbol(symbol)
 	}
 	if symbol == nil {
-		return "unresolved:" + declared(n)
+		return "unresolved:" + m.declared(n)
 	}
 	if len(symbol.Declarations) == 0 {
 		return "symbol:" + symbol.Name
 	}
-	return "symbol:" + symbol.Name + "@" + declared(symbol.Declarations[0])
+	return "symbol:" + symbol.Name + "@" + m.declared(symbol.Declarations[0])
 }
 
-// declared identifies a node by its file and position, so references compare alike across invocations.
-func declared(n *ast.Node) string {
-	return fmt.Sprintf("%s:%d", ast.GetSourceFileOfNode(n).FileName(), n.Pos())
+// declared identifies a node by its file, relative to the program's directory, and position, so references compare
+// alike across invocations and machines.
+func (m *Analyzer) declared(n *ast.Node) string {
+	directory := m.ctx.Program.GetCurrentDirectory()
+	file := tspath.GetRelativePathFromDirectory(directory, ast.GetSourceFileOfNode(n).FileName(), tspath.ComparePathsOptions{
+		UseCaseSensitiveFileNames: m.ctx.Program.UseCaseSensitiveFileNames(),
+		CurrentDirectory:          directory,
+	})
+	return fmt.Sprintf("%s:%d", file, n.Pos())
 }
 
 func propertyKey(name *ast.Node) string {
