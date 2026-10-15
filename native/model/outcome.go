@@ -159,8 +159,8 @@ type Reads struct {
 }
 
 // ReadsOf reports which data evaluating e reads relative to value, ignoring tag, the property of value the decision
-// tests. Functions written in e do not run with it. Functions, classes, namespaces, enums, callable values and objects
-// of functions and constants are code, not data, and so is a function called by name or a method of this; constants, intrinsic values such as
+// tests. Functions written in e do not run with it. Functions, classes, namespaces, enums, callable values, helper
+// objects of functions and values declared only in declaration files are code, not data, and so is a function called by name or a method of this; constants, intrinsic values such as
 // undefined, and bindings declared in e read nothing. A method called on value reads value as a whole, and one called
 // on other data reads that data.
 func (m *Analyzer) ReadsOf(e *ast.Node, value Value, tag string) Reads {
@@ -258,32 +258,24 @@ func own(n *ast.Node) bool {
 	return n.Kind == ast.KindIdentifier || n.Kind == ast.KindPropertyAccessExpression && Unwrap(n.Expression()).Kind == ast.KindThisKeyword
 }
 
-// code reports whether a symbol names code rather than data: a function, class, method, namespace or enum, or a value
-// whose type is callable or constructable, or an object whose members are all functions or readonly primitive
-// constants, such as JSON, Math or a helper object. Where it is declared does not matter.
+// code reports whether a symbol names code rather than data: a function, class, method, namespace or enum, a value
+// whose type is callable or constructable, a constant initialized with an object literal of functions, such as a
+// helper object, or a value declared only in declaration files, such as a global of the runtime. An object type alone
+// cannot tell code from data: an instance of Promise or Map has only methods too.
 func (m *Analyzer) code(symbol *ast.Symbol) bool {
 	if symbol.Flags&(ast.SymbolFlagsFunction|ast.SymbolFlagsClass|ast.SymbolFlagsMethod|ast.SymbolFlagsEnum|ast.SymbolFlagsValueModule|ast.SymbolFlagsNamespaceModule) != 0 {
 		return true
 	}
-	tc := m.ctx.TypeChecker
-	t := tc.GetTypeOfSymbol(symbol)
-	if t == nil {
-		return false
-	}
-	if tc.TypeHasCallOrConstructSignatures(t) {
+	if t := m.ctx.TypeChecker.GetTypeOfSymbol(symbol); t != nil && m.ctx.TypeChecker.TypeHasCallOrConstructSignatures(t) {
 		return true
 	}
-	properties := checker.Checker_getPropertiesOfType(tc, t)
-	return t.Flags()&checker.TypeFlagsObject != 0 && len(properties) > 0 && !slices.ContainsFunc(properties, func(p *ast.Symbol) bool {
-		if p.Flags&ast.SymbolFlagsMethod != 0 {
-			return false
+	if declaration := symbol.ValueDeclaration; declaration != nil && declaration.Kind == ast.KindVariableDeclaration && ast.IsVarConst(declaration) {
+		if literal := Unwrap(declaration.Initializer()); literal != nil && literal.Kind == ast.KindObjectLiteralExpression && len(literal.Properties()) > 0 &&
+			!slices.ContainsFunc(literal.Properties(), func(p *ast.Node) bool {
+				return p.Kind != ast.KindMethodDeclaration && (p.Kind != ast.KindPropertyAssignment || !ast.IsFunctionLike(Unwrap(p.Initializer())))
+			}) {
+			return true
 		}
-		member := tc.GetTypeOfSymbol(p)
-		if tc.TypeHasCallOrConstructSignatures(member) {
-			return false
-		}
-		constant := member.Flags()&(checker.TypeFlagsStringLike|checker.TypeFlagsNumberLike|checker.TypeFlagsBooleanLike|checker.TypeFlagsBigIntLike|checker.TypeFlagsESSymbolLike) != 0 &&
-			len(p.Declarations) > 0 && !slices.ContainsFunc(p.Declarations, func(d *ast.Node) bool { return ast.GetCombinedModifierFlags(d)&ast.ModifierFlagsReadonly == 0 })
-		return !constant
-	})
+	}
+	return len(symbol.Declarations) > 0 && !slices.ContainsFunc(symbol.Declarations, func(d *ast.Node) bool { return !ast.GetSourceFileOfNode(d).IsDeclarationFile })
 }

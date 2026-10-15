@@ -261,12 +261,12 @@ Message: test value panel.size; claim {"L"} of {"L" | "S"}; field size @ ../../f
 ---
 
 [TestModelFacts/invalid-8 - 1]
-Diagnostic 1: decision (4:10 - 4:13)
-Message: dispatch on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant symbol:Labels@file.ts:45["of"]("small"), logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> other, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> value, logic 0, built 0; constructions []
-   3 | export function f(size: Size) {
-   4 |   return size === "S" ? Labels.of("small") : size === "M" ? runtime.region : JSON.stringify(size);
+Diagnostic 1: decision (5:10 - 5:13)
+Message: dispatch on size; field size @ ../../fixtures/file.ts:4; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant symbol:Labels@file.ts:45["of"]("small"), logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> other, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> value, logic 0, built 0; constructions []
+   4 | export function f(size: Size) {
+   5 |   return size === "S" ? Labels.of("small") : size === "M" ? loading : JSON.stringify(size);
      |          ~~~~
-   5 | }
+   6 | }
 ---
 
 [TestModelFacts/invalid-9 - 1]

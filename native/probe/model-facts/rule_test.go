@@ -160,9 +160,10 @@ export function g(panel: Readonly<Partial<Panel>>) {
 			}},
 			{Code: `import type { Size } from "./items.js";
 const Labels = { of(text: string) { return text.toUpperCase(); } };
+const loading = Promise.resolve("loading");
 export function f(size: Size) {
-  return size === "S" ? Labels.of("small") : size === "M" ? runtime.region : JSON.stringify(size);
-}`, Files: map[string]string{"items.ts": items, "runtime.d.ts": `declare const runtime: { region: string };`}, Options: only("decision"), Errors: facts("decision", 1)},
+  return size === "S" ? Labels.of("small") : size === "M" ? loading : JSON.stringify(size);
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 1)},
 			{Code: `export class Door {
   #state: "open" | "shut" = "shut";
   #lock?: string;
