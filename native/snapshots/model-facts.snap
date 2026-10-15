@@ -186,7 +186,7 @@ Message: dispatch on this.size; field size @ ../../fixtures/file.ts:3; owner Pan
    5 | }
 
 Diagnostic 2: decision (7:10 - 7:19)
-Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside no; arms {"S"} of {"L" | "M" | "S"} complete tested -> value, logic 0, built 1 / {"L" | "M"} of {"L" | "M" | "S"} complete -> value, logic 0, built 1; constructions ["L": value: {wide:$["width"]()} / "M": value: {wide:$["width"]()} / "S": value: {narrow:$["width"]()}]
+Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside no; arms {"S"} of {"L" | "M" | "S"} complete tested -> value, logic 0, built 0 / {"L" | "M"} of {"L" | "M" | "S"} complete -> value, logic 0, built 0; constructions []
    6 | export function outside(panel: Panel) {
    7 |   return panel.size === "S" ? { narrow: panel.width() } : { wide: panel.width() };
      |          ~~~~~~~~~~

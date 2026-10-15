@@ -62,7 +62,7 @@ func (m *Analyzer) Constructions(d *Decision) map[string][]Construction {
 			if ast.IsFunctionLike(n) || ast.IsClassLike(n) {
 				return false
 			}
-			if (n.Kind == ast.KindObjectLiteralExpression || n.Kind == ast.KindArrayLiteralExpression) && len(m.fieldsIn(n, d.Receiver, "")) > 0 {
+			if (n.Kind == ast.KindObjectLiteralExpression || n.Kind == ast.KindArrayLiteralExpression) && len(m.ReadsOf(n, source, "").Fields) > 0 {
 				signature := m.destination(n, boundary, source) + ": " + m.Form(n, source)
 				if !slices.ContainsFunc(found, func(c Construction) bool { return c.Signature == signature }) {
 					found = append(found, Construction{Node: n, Signature: signature})

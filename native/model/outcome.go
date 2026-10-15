@@ -85,7 +85,8 @@ func (m *Analyzer) result(e *ast.Node, value Value, tag string, effects bool) Ou
 			return Outcome{Source: NoResult, Effects: true}
 		}
 	}
-	whole, parts, other := m.dependence(e, value, tag)
+	reads := m.ReadsOf(e, value, tag)
+	whole, parts, other := reads.Whole, len(reads.Fields) > 0, reads.Other
 	switch {
 	case (whole || parts) && other:
 		return Outcome{Source: MixedResult, Effects: effects}
@@ -149,12 +150,22 @@ func literals(n *ast.Node, out *[]string) bool {
 	return false
 }
 
-// dependence reports which data evaluating e reads: value as a whole, parts of value other than tag, or other data.
-// Functions, classes, namespaces, enums and ambient declarations are code, not data, and so is a function called by
-// name or a method of this; constants, intrinsic values such as undefined, and bindings declared in e read nothing. A
-// method called on value reads value as a whole, and one called on other data reads that data.
-func (m *Analyzer) dependence(e *ast.Node, value Value, tag string) (whole, parts, other bool) {
+// Reads is the data evaluating an expression reads, relative to a value: the value as a whole, the fields of it other
+// than the tested one, by name, and other data.
+type Reads struct {
+	Whole  bool
+	Fields []string
+	Other  bool
+}
+
+// ReadsOf reports which data evaluating e reads relative to value, ignoring tag, the property of value the decision
+// tests. Functions written in e do not run with it. Functions, classes, namespaces, enums and ambient declarations are
+// code, not data, and so is a function called by name or a method of this; constants, intrinsic values such as
+// undefined, and bindings declared in e read nothing. A method called on value reads value as a whole, and one called
+// on other data reads that data.
+func (m *Analyzer) ReadsOf(e *ast.Node, value Value, tag string) Reads {
 	tc := m.ctx.TypeChecker
+	found := Reads{Fields: []string{}}
 	inside := func(symbol *ast.Symbol) bool {
 		return slices.ContainsFunc(symbol.Declarations, func(d *ast.Node) bool {
 			return ast.GetSourceFileOfNode(d) == ast.GetSourceFileOfNode(e) && d.Pos() >= e.Pos() && d.End() <= e.End()
@@ -166,14 +177,14 @@ func (m *Analyzer) dependence(e *ast.Node, value Value, tag string) (whole, part
 			switch {
 			case tag != "" && len(rest) > 0 && rest[0] == tag:
 			case len(rest) == 0 || len(rest) == 1 && callee(n):
-				whole = true
-			default:
-				parts = true
+				found.Whole = true
+			case !slices.Contains(found.Fields, rest[0]):
+				found.Fields = append(found.Fields, rest[0])
 			}
 			return
 		}
 		if v.This != nil {
-			other = true
+			found.Other = true
 			return
 		}
 		symbol := v.Root
@@ -186,11 +197,11 @@ func (m *Analyzer) dependence(e *ast.Node, value Value, tag string) (whole, part
 		if symbol == nil || len(symbol.Declarations) == 0 || inside(symbol) || code(symbol) {
 			return
 		}
-		other = true
+		found.Other = true
 	}
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
-		if ast.IsTypeNode(n) || declaresName(n) {
+		if ast.IsTypeNode(n) || declaresName(n) || n != e && (ast.IsFunctionLike(n) || ast.IsClassLike(n)) {
 			return false
 		}
 		switch n.Kind {
@@ -211,7 +222,7 @@ func (m *Analyzer) dependence(e *ast.Node, value Value, tag string) (whole, part
 		return false
 	}
 	walk(e)
-	return whole, parts, other
+	return found
 }
 
 // declaresName reports whether n is a name written in a declaration or a property name, not a read.
