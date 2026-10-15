@@ -104,7 +104,7 @@ func (p *probe) field(f model.Field) string {
 		locations = append(locations, p.places.Location(d))
 	}
 	slices.Sort(locations)
-	return f.Name + " @ " + strings.Join(slices.Compact(locations), ", ")
+	return f.Name + " @ " + strings.Join(locations, ", ")
 }
 
 func yes(b bool) string {

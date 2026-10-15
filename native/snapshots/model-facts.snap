@@ -89,14 +89,14 @@ Message: test value item.note; claim {`null` | other falsy values | present} of 
 
 [TestModelFacts/invalid-2 - 1]
 Diagnostic 1: test (3:7 - 3:29)
-Message: test value shape.kind; claim {"circle"} of {"circle" | "square"}; field kind @ ../../fixtures/file.ts:1; named "circle"; property kind; declared {"circle"} of {"circle" | "square"}; answered by none
+Message: test value shape.kind; claim {"circle"} of {"circle" | "square"}; field kind @ ../../fixtures/file.ts:1, ../../fixtures/file.ts:1; named "circle"; property kind; declared {"circle"} of {"circle" | "square"}; answered by none
    2 | export function area(shape: Shape) {
    3 |   if (shape.kind === "circle") return shape.radius;
      |       ~~~~~~~~~~~~~~~~~~~~~~~
    4 |   return shape.kind === "square" ? shape.side : 0;
 
 Diagnostic 2: test (4:10 - 4:32)
-Message: test value shape.kind; claim {"square"} of {"circle" | "square"}; field kind @ ../../fixtures/file.ts:1; named "square"; property kind; declared {"square"} of {"circle" | "square"}; answered by none
+Message: test value shape.kind; claim {"square"} of {"circle" | "square"}; field kind @ ../../fixtures/file.ts:1, ../../fixtures/file.ts:1; named "square"; property kind; declared {"square"} of {"circle" | "square"}; answered by none
    3 |   if (shape.kind === "circle") return shape.radius;
    4 |   return shape.kind === "square" ? shape.side : 0;
      |          ~~~~~~~~~~~~~~~~~~~~~~~

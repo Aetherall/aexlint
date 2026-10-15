@@ -210,7 +210,7 @@ func (m *Analyzer) FieldOf(n *ast.Node) Field {
 				continue
 			}
 			if property := tc.GetPropertyOfType(tc.GetNonNullableType(t), name); property != nil && len(property.Declarations) > 0 {
-				return Field{Name: name, Declarations: property.Declarations, Symbol: property}
+				return Field{Name: name, Declarations: declarations(property.Declarations), Symbol: property}
 			}
 		}
 		return Field{Name: name}
@@ -219,4 +219,17 @@ func (m *Analyzer) FieldOf(n *ast.Node) Field {
 		return Field{Name: symbol.Name, Declarations: []*ast.Node{symbol.ValueDeclaration}, Symbol: symbol}
 	}
 	return Field{}
+}
+
+// declarations returns nodes once each, by file and position: a property of a union lists a declaration once per member
+// that has it, and how many members the checker has resolved can vary.
+func declarations(nodes []*ast.Node) []*ast.Node {
+	sorted := slices.Clone(nodes)
+	slices.SortFunc(sorted, func(a, b *ast.Node) int {
+		if byFile := strings.Compare(ast.GetSourceFileOfNode(a).FileName(), ast.GetSourceFileOfNode(b).FileName()); byFile != 0 {
+			return byFile
+		}
+		return a.Pos() - b.Pos()
+	})
+	return slices.Compact(sorted)
 }
