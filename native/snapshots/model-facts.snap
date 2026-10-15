@@ -261,6 +261,15 @@ Message: test value panel.size; claim {"L"} of {"L" | "S"}; field size @ ../../f
 ---
 
 [TestModelFacts/invalid-8 - 1]
+Diagnostic 1: decision (4:10 - 4:13)
+Message: dispatch on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant symbol:Labels@file.ts:45["of"]("small"), logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> other, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> value, logic 0, built 0; constructions []
+   3 | export function f(size: Size) {
+   4 |   return size === "S" ? Labels.of("small") : size === "M" ? runtime.region : JSON.stringify(size);
+     |          ~~~~
+   5 | }
+---
+
+[TestModelFacts/invalid-9 - 1]
 Diagnostic 1: test (4:20 - 4:41)
 Message: test value this.#state; claim {"open"} of {"open" | "shut"}; field #state @ ../../fixtures/file.ts:2; named "open"; property #state; declared {"open"} of {"open" | "shut"}; answered by none
    3 |   #lock?: string;
@@ -276,7 +285,7 @@ Message: test value this.#lock; claim {present} of {`null` | `undefined` | other
    5 | }
 ---
 
-[TestModelFacts/invalid-9 - 1]
+[TestModelFacts/invalid-10 - 1]
 Diagnostic 1: decision (4:20 - 4:28)
 Message: dispatch on this.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside yes; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 10, logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 20, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> constant 30, logic 0, built 0; constructions []
    3 |   constructor(readonly size: Size) {}
@@ -292,7 +301,7 @@ Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Pa
    8 | }
 ---
 
-[TestModelFacts/invalid-10 - 1]
+[TestModelFacts/invalid-11 - 1]
 Diagnostic 1: guard (3:40 - 3:59)
 Message: guard on item.kind; holds {"text"} of {"stock" | "text"}; whole yes; fallback "\"\""; work 1
    2 | declare function show(text: string): string;
@@ -320,7 +329,7 @@ Message: guard on item.kind; holds {"stock"} of {"stock" | "text"}; whole no; fa
      |                                                                          ~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-11 - 1]
+[TestModelFacts/invalid-12 - 1]
 Diagnostic 1: entry (3:7 - 3:11)
 Message: entry on text; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "[]"; work 1
    2 | export function f(text: string | undefined) {
@@ -349,7 +358,7 @@ Message: entry on text; holds {`undefined` | other falsy values | present} of {`
      |                                           ~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-12 - 1]
+[TestModelFacts/invalid-13 - 1]
 Diagnostic 1: boundary (8:27 - 8:30)
 Message: boundary into text of strict; keeps yes; rechecks []
    7 | export function f(text: string | undefined) {
@@ -372,7 +381,7 @@ Message: boundary into text of fallback; keeps no; rechecks []
   11 |   return a + b + c;
 ---
 
-[TestModelFacts/invalid-13 - 1]
+[TestModelFacts/invalid-14 - 1]
 Diagnostic 1: flow (2:32 - 2:66)
 Message: flow; checks []; calls [super(input) with [] after 0 checks]; results []; carried []; checked {}; read {}
    1 | declare function validate(value: string): void;
@@ -395,7 +404,7 @@ Message: flow; checks [throw new Error("positive"); checks [amount] reads [amoun
   12 |     if (amount <= 0) throw new Error("positive");
 ---
 
-[TestModelFacts/invalid-14 - 1]
+[TestModelFacts/invalid-15 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -403,7 +412,7 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-15 - 1]
+[TestModelFacts/invalid-16 - 1]
 Diagnostic 1: function (3:12 - 3:45)
 Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; domains []
    2 | export const view = {
@@ -426,7 +435,7 @@ Message: gate matches -> render
    4 |   render(item: Item) {
 ---
 
-[TestModelFacts/invalid-16 - 1]
+[TestModelFacts/invalid-17 - 1]
 Diagnostic 1: conflict (4:13 - 4:23)
 Message: conflicts with line 5: s:done: [dim] vs [success]; purpose argument paint(color)
    3 | export function row(node: Node) {

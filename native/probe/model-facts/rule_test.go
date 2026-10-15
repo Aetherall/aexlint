@@ -158,6 +158,11 @@ export function g(panel: Readonly<Partial<Panel>>) {
 }`, Files: files, Options: only("test", "decision"), Errors: []rule_tester.InvalidTestCaseError{
 				{MessageId: "decision"}, {MessageId: "decision"}, {MessageId: "test"}, {MessageId: "test"}, {MessageId: "test"}, {MessageId: "test"},
 			}},
+			{Code: `import type { Size } from "./items.js";
+const Labels = { of(text: string) { return text.toUpperCase(); } };
+export function f(size: Size) {
+  return size === "S" ? Labels.of("small") : size === "M" ? runtime.region : JSON.stringify(size);
+}`, Files: map[string]string{"items.ts": items, "runtime.d.ts": `declare const runtime: { region: string };`}, Options: only("decision"), Errors: facts("decision", 1)},
 			{Code: `export class Door {
   #state: "open" | "shut" = "shut";
   #lock?: string;
