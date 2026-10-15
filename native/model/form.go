@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -9,33 +10,44 @@ import (
 	"github.com/microsoft/typescript-go/shim/scanner"
 )
 
-// Form is how n is computed from source. Reads within source become $ followed by their path; literals are compared by
-// value and kind, member reads and calls by member names and the forms of their parts, and object literals by their
-// entries in any order. Other code is its written text with the reads of source replaced.
 func (m *Analyzer) Form(n *ast.Node, source Value) string {
 	n = Unwrap(n)
-	if v := m.ValueOf(n); source.Named() && v.Within(source) {
-		return strings.Join(append([]string{"$"}, v.Path[len(source.Path):]...), ".")
+	if source.Named() && m.ValueOf(n).Same(source) {
+		return "$"
 	}
 	switch n.Kind {
+	case ast.KindIdentifier:
+		return m.reference(n)
 	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral:
 		return strconv.Quote(n.Text())
 	case ast.KindNumericLiteral, ast.KindTrueKeyword, ast.KindFalseKeyword, ast.KindNullKeyword:
 		return written(n)
 	case ast.KindPropertyAccessExpression:
 		if n.Name().Kind == ast.KindIdentifier {
-			return m.Form(n.Expression(), source) + "." + n.Name().Text()
+			operator := "["
+			if n.QuestionDotToken() != nil {
+				operator = "?.["
+			}
+			return m.Form(n.Expression(), source) + operator + strconv.Quote(n.Name().Text()) + "]"
 		}
+	case ast.KindElementAccessExpression:
+		operator := "["
+		if n.QuestionDotToken() != nil {
+			operator = "?.["
+		}
+		return m.Form(n.Expression(), source) + operator + m.Form(n.AsElementAccessExpression().ArgumentExpression, source) + "]"
 	case ast.KindCallExpression, ast.KindNewExpression:
 		arguments := []string{}
 		for _, argument := range n.Arguments() {
 			arguments = append(arguments, m.Form(argument, source))
 		}
-		prefix := ""
+		prefix, operator := "", "("
 		if n.Kind == ast.KindNewExpression {
 			prefix = "new "
+		} else if n.QuestionDotToken() != nil {
+			operator = "?.("
 		}
-		return prefix + m.Form(n.Expression(), source) + "(" + strings.Join(arguments, ",") + ")"
+		return prefix + m.Form(n.Expression(), source) + operator + strings.Join(arguments, ",") + ")"
 	case ast.KindArrayLiteralExpression:
 		elements := []string{}
 		for _, element := range n.Elements() {
@@ -44,25 +56,56 @@ func (m *Analyzer) Form(n *ast.Node, source Value) string {
 		return "[" + strings.Join(elements, ",") + "]"
 	case ast.KindObjectLiteralExpression:
 		entries := []string{}
+		keys := map[string]bool{}
+		reorder := true
 		for _, property := range n.Properties() {
+			key := propertyKey(property.Name())
+			if name := property.Name(); name != nil && name.Kind == ast.KindComputedPropertyName {
+				key = "[" + m.Form(name.Expression(), source) + "]"
+			}
 			switch property.Kind {
 			case ast.KindPropertyAssignment:
-				entries = append(entries, propertyKey(property.Name())+":"+m.Form(property.Initializer(), source))
+				reorder = reorder && property.Name().Kind != ast.KindComputedPropertyName && !keys[key] && m.pure(property.Initializer())
+				keys[key] = true
+				entries = append(entries, key+":"+m.Form(property.Initializer(), source))
 			case ast.KindShorthandPropertyAssignment:
-				entries = append(entries, property.Name().Text()+":~"+property.Name().Text())
+				reorder = reorder && !keys[key] && m.pure(property.Name())
+				keys[key] = true
+				entries = append(entries, key+":"+m.reference(property.Name()))
 			case ast.KindSpreadAssignment:
+				reorder = false
 				entries = append(entries, "..."+m.Form(property.Expression(), source))
 			default:
-				entries = append(entries, propertyKey(property.Name())+":~"+m.replaced(property, source))
+				reorder = false
+				entries = append(entries, key+":~"+m.replaced(property, source))
 			}
 		}
-		slices.Sort(entries)
+		if reorder {
+			slices.Sort(entries)
+		}
 		return "{" + strings.Join(entries, ",") + "}"
 	}
 	return "~" + m.replaced(n, source)
 }
 
+func (m *Analyzer) reference(n *ast.Node) string {
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
+	if parent := n.Parent; parent != nil && parent.Kind == ast.KindShorthandPropertyAssignment && parent.Name() == n {
+		symbol = m.ctx.TypeChecker.GetShorthandAssignmentValueSymbol(parent)
+	}
+	if symbol != nil && symbol.Flags&ast.SymbolFlagsAlias != 0 {
+		symbol = m.ctx.TypeChecker.GetAliasedSymbol(symbol)
+	}
+	if symbol == nil {
+		return fmt.Sprintf("unresolved:%p", n)
+	}
+	return fmt.Sprintf("symbol:%p", symbol)
+}
+
 func propertyKey(name *ast.Node) string {
+	if name == nil {
+		return ""
+	}
 	switch name.Kind {
 	case ast.KindIdentifier, ast.KindStringLiteral, ast.KindNumericLiteral, ast.KindNoSubstitutionTemplateLiteral:
 		return name.Text()
@@ -70,19 +113,35 @@ func propertyKey(name *ast.Node) string {
 	return written(name)
 }
 
-// replaced returns n's written text with each read of source replaced by $.
 func (m *Analyzer) replaced(n *ast.Node, source Value) string {
-	text := ast.GetSourceFileOfNode(n).Text()
+	file := ast.GetSourceFileOfNode(n)
+	text := file.Text()
 	at := scanner.SkipTrivia(text, n.Pos())
 	var b strings.Builder
+	replace := func(c *ast.Node, value string) {
+		b.WriteString(text[at:scanner.SkipTrivia(text, c.Pos())])
+		b.WriteString(value)
+		at = c.End()
+	}
 	var walk func(*ast.Node) bool
 	walk = func(c *ast.Node) bool {
 		switch c.Kind {
 		case ast.KindIdentifier, ast.KindThisKeyword, ast.KindPropertyAccessExpression, ast.KindElementAccessExpression:
 			if source.Named() && m.ValueOf(c).Same(source) {
-				b.WriteString(text[at:scanner.SkipTrivia(text, c.Pos())])
-				b.WriteString("$")
-				at = c.End()
+				replace(c, "$")
+				return false
+			}
+		}
+		if c.Kind == ast.KindIdentifier {
+			p := c.Parent
+			if p != nil && p.Name() == c && (p.Kind == ast.KindPropertyAccessExpression || p.Kind == ast.KindPropertyAssignment || ast.IsFunctionLike(p) || p.Kind == ast.KindParameter || p.Kind == ast.KindVariableDeclaration || p.Kind == ast.KindMethodDeclaration) {
+				return false
+			}
+			symbol := m.ctx.TypeChecker.GetSymbolAtLocation(c)
+			if symbol != nil && !slices.ContainsFunc(symbol.Declarations, func(d *ast.Node) bool {
+				return ast.GetSourceFileOfNode(d) == file && d.Pos() >= n.Pos() && d.End() <= n.End()
+			}) {
+				replace(c, m.reference(c))
 				return false
 			}
 		}

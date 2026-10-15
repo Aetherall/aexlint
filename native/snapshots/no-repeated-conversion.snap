@@ -80,3 +80,97 @@ Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversio
      |          ~~~~~~~~~~
    7 | }
 ---
+
+[TestSemanticForms/invalid-0 - 1]
+Diagnostic 1: repeatedConversion (2:38 - 2:46)
+Message: This conversion of `item.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   1 | type Item = { kind: "a" | "b"; nested?: { value: string } };
+   2 | export const first = (item: Item) => item.kind === "a" ? { value: item.nested?.value } : {};
+     |                                      ~~~~~~~~~
+   3 | export const second = (other: Item) => other.kind === "a" ? { value: other.nested?.value } : {};
+
+Diagnostic 2: repeatedConversion (3:40 - 3:49)
+Message: This conversion of `other.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | export const first = (item: Item) => item.kind === "a" ? { value: item.nested?.value } : {};
+   3 | export const second = (other: Item) => other.kind === "a" ? { value: other.nested?.value } : {};
+     |                                        ~~~~~~~~~~
+---
+
+[TestSemanticForms/invalid-1 - 1]
+Diagnostic 1: repeatedConversion (3:38 - 3:46)
+Message: This conversion of `item.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:4. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | const extra = { value: "override" };
+   3 | export const first = (item: Item) => item.kind === "a" ? { ...extra, value: item.value } : {};
+     |                                      ~~~~~~~~~
+   4 | export const second = (other: Item) => other.kind === "a" ? { ...extra, value: other.value } : {};
+
+Diagnostic 2: repeatedConversion (4:40 - 4:49)
+Message: This conversion of `other.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   3 | export const first = (item: Item) => item.kind === "a" ? { ...extra, value: item.value } : {};
+   4 | export const second = (other: Item) => other.kind === "a" ? { ...extra, value: other.value } : {};
+     |                                        ~~~~~~~~~~
+---
+
+[TestSemanticForms/invalid-2 - 1]
+Diagnostic 1: repeatedConversion (2:40 - 2:49)
+Message: This conversion of `other.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/copy.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   1 | import { convert as renamed, type Item } from "./shared.js";
+   2 | export const second = (other: Item) => other.kind === "a" ? { value: renamed(other.value) } : {};
+     |                                        ~~~~~~~~~~
+---
+
+[TestSemanticForms/invalid-3 - 1]
+Diagnostic 1: repeatedConversion (3:38 - 3:46)
+Message: This conversion of `item.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:4. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | const extra = "prefix";
+   3 | export const first = (item: Item) => item.kind === "a" ? { value: extra + item.value } : {};
+     |                                      ~~~~~~~~~
+   4 | export const second = (other: Item) => other.kind === "a" ? { value: extra + other.value } : {};
+
+Diagnostic 2: repeatedConversion (4:40 - 4:49)
+Message: This conversion of `other.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   3 | export const first = (item: Item) => item.kind === "a" ? { value: extra + item.value } : {};
+   4 | export const second = (other: Item) => other.kind === "a" ? { value: extra + other.value } : {};
+     |                                        ~~~~~~~~~~
+---
+
+[TestSemanticForms/invalid-4 - 1]
+Diagnostic 1: repeatedConversion (2:38 - 2:46)
+Message: This conversion of `item.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   1 | type Item = { kind: "a" | "b"; value: string; label: string };
+   2 | export const first = (item: Item) => item.kind === "a" ? { value: item.value, label: item.label } : {};
+     |                                      ~~~~~~~~~
+   3 | export const second = (other: Item) => other.kind === "a" ? { value: other["value"], label: other.label } : {};
+
+Diagnostic 2: repeatedConversion (3:40 - 3:49)
+Message: This conversion of `other.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | export const first = (item: Item) => item.kind === "a" ? { value: item.value, label: item.label } : {};
+   3 | export const second = (other: Item) => other.kind === "a" ? { value: other["value"], label: other.label } : {};
+     |                                        ~~~~~~~~~~
+---
+
+[TestSemanticForms/invalid-5 - 1]
+Diagnostic 1: repeatedConversion (2:38 - 2:46)
+Message: This conversion of `item.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   1 | type Item = { kind: "a" | "b"; nested?: { value: string }; label: string };
+   2 | export const first = (item: Item) => item.kind === "a" ? { value: item.nested?.value, label: item.label } : {};
+     |                                      ~~~~~~~~~
+   3 | export const second = (other: Item) => other.kind === "a" ? { value: other.nested?.["value"], label: other.label } : {};
+
+Diagnostic 2: repeatedConversion (3:40 - 3:49)
+Message: This conversion of `other.kind` is written identically in another place.
+Help: Other copies, nearest first: ../../fixtures/file.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+   2 | export const first = (item: Item) => item.kind === "a" ? { value: item.nested?.value, label: item.label } : {};
+   3 | export const second = (other: Item) => other.kind === "a" ? { value: other.nested?.["value"], label: other.label } : {};
+     |                                        ~~~~~~~~~~
+---

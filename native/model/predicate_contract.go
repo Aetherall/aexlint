@@ -64,6 +64,15 @@ func (m *Analyzer) pure(n *ast.Node) bool {
 		return !accessor(m.ctx.TypeChecker.GetSymbolAtLocation(n.Name())) &&
 			known(m.ctx.TypeChecker.GetTypeAtLocation(n)) && m.pure(n.Expression()) &&
 			(n.QuestionDotToken() != nil || m.holds(m.ctx.TypeChecker.GetTypeAtLocation(n.Expression()))&(AbsentNull|AbsentUndefined) == 0)
+	case ast.KindElementAccessExpression:
+		key := ast.SkipParentheses(n.AsElementAccessExpression().ArgumentExpression)
+		t := m.ctx.TypeChecker.GetTypeAtLocation(n.Expression())
+		if !ast.IsStringLiteralLike(key) || !known(t) {
+			return false
+		}
+		property := m.ctx.TypeChecker.GetPropertyOfType(m.ctx.TypeChecker.GetNonNullableType(t), key.Text())
+		return property != nil && !accessor(property) && known(m.ctx.TypeChecker.GetTypeAtLocation(n)) && m.pure(n.Expression()) &&
+			(n.QuestionDotToken() != nil || m.holds(t)&(AbsentNull|AbsentUndefined) == 0)
 	case ast.KindPrefixUnaryExpression:
 		unary := n.AsPrefixUnaryExpression()
 		return unary.Operator == ast.KindExclamationToken && m.pure(unary.Operand)

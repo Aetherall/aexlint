@@ -45,7 +45,7 @@ type Construction struct {
 // fields of the dispatch's receiver, by their form relative to the receiver, with where each one goes.
 func (m *Analyzer) Constructions(d *Decision) map[string][]Construction {
 	out := map[string][]Construction{}
-	if d.Receiver == nil {
+	if d.Receiver == nil || slices.ContainsFunc(d.Arms, func(a Branch) bool { return !a.Complete }) {
 		return out
 	}
 	source := m.ValueOf(d.Receiver)

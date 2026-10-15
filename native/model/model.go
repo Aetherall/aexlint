@@ -34,11 +34,12 @@ type Outcome struct {
 
 // Branch is an arm of a decision: Claim holds where it runs. Tested is false for the arm reached when no test holds.
 type Branch struct {
-	Claim   Claim
-	Tested  bool
-	Body    []*ast.Node
-	Outcome Outcome
-	Logic   []*ast.Node
+	Claim    Claim
+	Complete bool
+	Tested   bool
+	Body     []*ast.Node
+	Outcome  Outcome
+	Logic    []*ast.Node
 }
 
 type Decision struct {
@@ -398,11 +399,12 @@ func (md *builder) record(root, subjectNode *ast.Node, first *Leaf, arms []arm, 
 	for _, a := range arms {
 		p := a.condition == nil || md.m.classifier.Test(a.condition) != nil
 		pure = pure && p
+		complete := pure && len(within(covered, a.accepted)) == 0
 		covered = append(covered, a.accepted...)
-		d.Arms = append(d.Arms, Branch{Claim: Claim{Domain: a.vocabulary.Values, Accepted: a.accepted, Vocabulary: a.vocabulary}, Tested: true, Body: a.body, Outcome: md.outcomeOf(a.body, receiver, tag), Logic: logic(a.body)})
+		d.Arms = append(d.Arms, Branch{Claim: Claim{Domain: a.vocabulary.Values, Accepted: a.accepted, Vocabulary: a.vocabulary}, Complete: complete, Tested: true, Body: a.body, Outcome: md.outcomeOf(a.body, receiver, tag), Logic: logic(a.body)})
 	}
 	if alternative != nil && pure {
-		d.Arms = append(d.Arms, Branch{Claim: Claim{Domain: first.Vocabulary.Values, Accepted: complement(first.Vocabulary.Values, covered), Vocabulary: first.Vocabulary}, Body: alternative, Outcome: md.outcomeOf(alternative, receiver, tag), Logic: logic(alternative)})
+		d.Arms = append(d.Arms, Branch{Claim: Claim{Domain: first.Vocabulary.Values, Accepted: complement(first.Vocabulary.Values, covered), Vocabulary: first.Vocabulary}, Complete: true, Body: alternative, Outcome: md.outcomeOf(alternative, receiver, tag), Logic: logic(alternative)})
 	}
 	work := 0
 	for _, a := range d.Arms {
@@ -1004,7 +1006,7 @@ func (md *builder) mapping(d *Decision) map[string][]string {
 	}
 	out := map[string][]string{}
 	for _, a := range d.Arms {
-		if a.Outcome.Kind != "lookup" {
+		if !a.Complete || a.Outcome.Kind != "lookup" {
 			return nil
 		}
 		for _, v := range a.Claim.Accepted {
