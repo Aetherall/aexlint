@@ -47,7 +47,7 @@ func (o Outcome) Lookup() bool { return !o.Effects && o.Source == ConstantResult
 // or "" when it tests value itself.
 func (m *Analyzer) OutcomeOf(body []*ast.Node, value Value, tag string) Outcome {
 	if len(body) == 1 && body[0] != nil && ast.IsExpression(body[0]) {
-		return m.result(body[0], value, tag, false)
+		return m.result([]*ast.Node{body[0]}, value, tag, false)
 	}
 	statements := []*ast.Node{}
 	for _, n := range body {
@@ -59,34 +59,78 @@ func (m *Analyzer) OutcomeOf(body []*ast.Node, value Value, tag string) Outcome 
 			statements = append(statements, n)
 		}
 	}
-	for len(statements) > 0 && statements[len(statements)-1].Kind == ast.KindBreakStatement {
-		statements = statements[:len(statements)-1]
-	}
-	if len(statements) == 0 {
-		return Outcome{Source: NoResult}
-	}
-	last := statements[len(statements)-1]
-	effects := len(statements) > 1
-	switch {
-	case last.Kind == ast.KindReturnStatement && last.Expression() != nil:
-		return m.result(last.Expression(), value, tag, effects)
-	case !effects && (last.Kind == ast.KindReturnStatement || last.Kind == ast.KindThrowStatement || last.Kind == ast.KindContinueStatement):
-		return Outcome{Source: NoResult}
-	}
-	return Outcome{Source: NoResult, Effects: true}
+	return m.result(returned(statements), value, tag, effectful(statements))
 }
 
-func (m *Analyzer) result(e *ast.Node, value Value, tag string, effects bool) Outcome {
-	if empty(e) {
-		return Outcome{Source: EmptyResult, Effects: effects}
+// returned lists the expressions return statements return, outside the functions the statements declare.
+func returned(statements []*ast.Node) []*ast.Node {
+	found := []*ast.Node{}
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		if ast.IsFunctionLike(n) || ast.IsClassLike(n) {
+			return false
+		}
+		if n.Kind == ast.KindReturnStatement && n.Expression() != nil {
+			found = append(found, n.Expression())
+			return false
+		}
+		n.ForEachChild(walk)
+		return false
 	}
-	if u := Unwrap(e); u.Kind == ast.KindCallExpression || u.Kind == ast.KindNewExpression || u.Kind == ast.KindAwaitExpression {
-		if t := m.ctx.TypeChecker.GetTypeAtLocation(u); t != nil && t.Flags()&(checker.TypeFlagsVoid|checker.TypeFlagsUndefined) != 0 {
-			return Outcome{Source: NoResult, Effects: true}
+	for _, statement := range statements {
+		walk(statement)
+	}
+	return found
+}
+
+// effectful reports whether statements run an expression statement, such as a call or an assignment, outside the
+// functions they declare: what it does, rather than any value, is why it runs. Calls inside declarations and conditions
+// compute values; whether they also have effects is not known.
+func effectful(statements []*ast.Node) bool {
+	found := false
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		if found || ast.IsFunctionLike(n) || ast.IsClassLike(n) {
+			return found
+		}
+		if n.Kind == ast.KindExpressionStatement {
+			found = true
+			return true
+		}
+		n.ForEachChild(walk)
+		return found
+	}
+	for _, statement := range statements {
+		walk(statement)
+	}
+	return found
+}
+
+// result reads what an arm produces from the expressions it can result in: nothing new when each is empty, the
+// data they read together, or the constants they pick. A call returning void or undefined is an effect, not a result.
+func (m *Analyzer) result(expressions []*ast.Node, value Value, tag string, effects bool) Outcome {
+	produced, emptied := []*ast.Node{}, false
+	for _, e := range expressions {
+		switch u := Unwrap(e); {
+		case empty(e):
+			emptied = true
+		case (u.Kind == ast.KindCallExpression || u.Kind == ast.KindNewExpression || u.Kind == ast.KindAwaitExpression) && m.void(u):
+			effects = true
+		default:
+			produced = append(produced, e)
 		}
 	}
-	reads := m.ReadsOf(e, value, tag)
-	whole, parts, other := reads.Whole, len(reads.Fields) > 0, reads.Other
+	if len(produced) == 0 {
+		if emptied {
+			return Outcome{Source: EmptyResult, Effects: effects}
+		}
+		return Outcome{Source: NoResult, Effects: effects}
+	}
+	whole, parts, other := false, false, false
+	for _, e := range produced {
+		reads := m.ReadsOf(e, value, tag)
+		whole, parts, other = whole || reads.Whole, parts || len(reads.Fields) > 0, other || reads.Other
+	}
 	switch {
 	case (whole || parts) && other:
 		return Outcome{Source: MixedResult, Effects: effects}
@@ -98,10 +142,19 @@ func (m *Analyzer) result(e *ast.Node, value Value, tag string, effects bool) Ou
 		return Outcome{Source: OtherResult, Effects: effects}
 	}
 	values := []string{}
-	if !literals(e, &values) {
-		values = []string{m.Form(e, value)}
+	for _, e := range produced {
+		if !literals(e, &values) {
+			if form := m.Form(e, value); !slices.Contains(values, form) {
+				values = append(values, form)
+			}
+		}
 	}
 	return Outcome{Source: ConstantResult, Effects: effects, Values: values}
+}
+
+func (m *Analyzer) void(n *ast.Node) bool {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(n)
+	return t != nil && t.Flags()&(checker.TypeFlagsVoid|checker.TypeFlagsUndefined) != 0
 }
 
 // empty reports whether n is nothing new: a trivial value, or an object or array literal holding only missing or empty

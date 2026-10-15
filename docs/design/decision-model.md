@@ -89,7 +89,7 @@ A **selector** is a function whose whole result is a boolean made of tests of li
 
 ## Outcome
 
-An **outcome** is what an arm produces when it runs: the data its result depends on, and whether it has **effects**, doing more than producing it. The result is the arm's expression, or the value its last statement returns; an arm whose result is a call returning `void` or `undefined` has effects and no result. Relative to the value its decision tests, or to the receiver when it tests a property, the result depends on:
+An **outcome** is what an arm produces when it runs: the data its result depends on, and whether it has **effects**, doing more than producing it. The result is the arm's expression, or the values its `return` statements return, outside the functions it declares; a returned call typed `void` or `undefined` is an effect, not a result. An arm has effects when it runs an expression statement, such as a call or an assignment, outside the functions it declares; calls inside declarations and conditions compute values, and whether they also have effects is not known. Relative to the value its decision tests, or to the receiver when it tests a property, the result depends on:
 
 - **none**: there is no result, as with `return`, `throw`, `continue` or statements only;
 - **empty**: nothing new, as with `undefined`, `null`, a boolean, `""`, `0`, `-1`, or object and array literals holding only missing or empty values;
@@ -158,5 +158,6 @@ The parts combine into the structures rules query:
 - Selectors and handlers are related only inside one object literal or class.
 - Field identity across files relies on property declarations; aliases through mapped or generic types are unverified.
 - An array declared with an array type, even `readonly`, only says which values it may hold, so `includes` on it is not a test; write the array `as const`. Earlier exits narrow a decision only from the same statement list, and a value reassigned in between is not noticed.
+- A property read of a local that holds a call's result carries no data: the call's data has no known paths, and carrying an unknown part of it for every property would make different properties of a loaded value overlap.
 - Flows do not read checks made in callbacks a function passes on, such as a `throw` inside a `filter` callback: functions written in code do not run with it.
 - A type alone cannot tell code from data, since an instance of `Promise` or `Map` has only methods too, so values declared only in declaration files count as code: data they hold, such as `process.env`, is not counted. A read with a computed key counts as reading the whole value.
