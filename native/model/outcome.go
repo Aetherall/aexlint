@@ -59,11 +59,12 @@ func (m *Analyzer) OutcomeOf(body []*ast.Node, value Value, tag string) Outcome 
 			statements = append(statements, n)
 		}
 	}
-	return m.result(returned(statements), value, tag, m.effectful(statements))
+	return m.result(m.returned(statements), value, tag, m.effectful(statements))
 }
 
-// returned lists the expressions return statements return, outside the functions the statements declare.
-func returned(statements []*ast.Node) []*ast.Node {
+// returned lists the expressions return statements return, and the values assignments to a local of the arm's function
+// declared outside the arm leave in it, outside the functions the statements declare.
+func (m *Analyzer) returned(statements []*ast.Node) []*ast.Node {
 	found := []*ast.Node{}
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
@@ -72,6 +73,10 @@ func returned(statements []*ast.Node) []*ast.Node {
 		}
 		if n.Kind == ast.KindReturnStatement && n.Expression() != nil {
 			found = append(found, n.Expression())
+			return false
+		}
+		if value := m.kept(n, statements); value != nil {
+			found = append(found, value)
 			return false
 		}
 		n.ForEachChild(walk)
@@ -83,9 +88,41 @@ func returned(statements []*ast.Node) []*ast.Node {
 	return found
 }
 
+// kept returns the value an expression statement assigns to a local variable of its function declared outside
+// statements, which they leave as their result, or nil.
+func (m *Analyzer) kept(n *ast.Node, statements []*ast.Node) *ast.Node {
+	if n.Kind != ast.KindExpressionStatement {
+		return nil
+	}
+	e := Unwrap(n.Expression())
+	if e.Kind != ast.KindBinaryExpression || e.AsBinaryExpression().OperatorToken.Kind != ast.KindEqualsToken || Unwrap(e.AsBinaryExpression().Left).Kind != ast.KindIdentifier {
+		return nil
+	}
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(Unwrap(e.AsBinaryExpression().Left))
+	if symbol == nil || symbol.ValueDeclaration == nil || symbol.ValueDeclaration.Kind != ast.KindVariableDeclaration {
+		return nil
+	}
+	declaration := symbol.ValueDeclaration
+	function := enclosingFunction(declaration)
+	if function == nil || function != enclosingFunction(n) || slices.ContainsFunc(statements, func(s *ast.Node) bool { return encloses(s, declaration) }) {
+		return nil
+	}
+	return e.AsBinaryExpression().Right
+}
+
+func enclosingFunction(n *ast.Node) *ast.Node {
+	for p := n.Parent; p != nil; p = p.Parent {
+		if ast.IsFunctionLike(p) {
+			return p
+		}
+	}
+	return nil
+}
+
 // effectful reports whether statements run an expression statement, such as a call or an assignment, outside the
 // functions they declare: what it does, rather than any value, is why it runs. Calls inside declarations and conditions
-// compute values; whether they also have effects is not known. A call returning never leaves, like a throw.
+// compute values; whether they also have effects is not known. A call returning never leaves, like a throw, and an
+// assignment leaving a result in a local produces it.
 func (m *Analyzer) effectful(statements []*ast.Node) bool {
 	found := false
 	var walk func(*ast.Node) bool
@@ -93,7 +130,7 @@ func (m *Analyzer) effectful(statements []*ast.Node) bool {
 		if found || ast.IsFunctionLike(n) || ast.IsClassLike(n) {
 			return found
 		}
-		if n.Kind == ast.KindExpressionStatement && !m.exits(n) {
+		if n.Kind == ast.KindExpressionStatement && !m.exits(n) && m.kept(n, statements) == nil {
 			found = true
 			return true
 		}

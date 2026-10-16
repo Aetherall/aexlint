@@ -122,6 +122,20 @@ export class View {
   local(item: Item) { return item.kind === "text" ? [1, 2].map((n) => n * 2) : JSON.stringify(item.sku); }
   wrap(item: Item) { return item; }
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 5)},
+			{Code: `import { type Item, log } from "./items.js";
+let last = "";
+export function label(item: Item) {
+  let text = "";
+  switch (item.kind) {
+    case "text": text = "Text"; break;
+    case "stock": text = item.sku; log(text); break;
+  }
+  return text;
+}
+export function remember(item: Item) {
+  if (item.kind === "text") last = "Text";
+  else last = item.sku;
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 2)},
 			{Code: `import type { Box, Size } from "./items.js";
 export function f(size: Size, ready: boolean) {
   if (size === "S" || (size === "M" && ready)) return 1;
