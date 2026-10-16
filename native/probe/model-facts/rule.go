@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "conflict", "guard", "entry", "boundary", "flow", "contract"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "conflict", "guard", "entry", "boundary", "flow", "check", "contract"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -295,6 +295,7 @@ func (p *probe) flow(fn *ast.Node) {
 			owned = " owned"
 		}
 		checks = append(checks, fmt.Sprintf("%s checks %s reads %s%s", model.Text(c.Node, 40), values(c.Checked), values(c.Read), owned))
+		p.report("check", c.Node, fmt.Sprintf("check; checks %s reads %s%s", values(c.Checked), values(c.Read), owned))
 	}
 	calls := []string{}
 	for _, c := range f.Calls {

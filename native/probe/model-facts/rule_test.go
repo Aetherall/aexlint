@@ -260,6 +260,13 @@ export class Account {
     this.balance += amount;
   }
 }`, Options: only("flow"), Errors: facts("flow", 3)},
+			{Code: `declare function validate(value: string): void;
+export function parse(input: string, limit: number) {
+  if (input.length > limit) throw new Error("long");
+  if (Date.now() > 0) throw new Error("late");
+  try { if (!input) throw new Error("empty"); } catch {}
+  return input;
+}`, Options: only("check"), Errors: facts("check", 1)},
 			{Code: `type Pet = { kind: "cat"; lives: number } | { kind: "dog"; good: boolean };
 export function isCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat"; }
 export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }

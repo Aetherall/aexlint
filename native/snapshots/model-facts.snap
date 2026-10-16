@@ -488,6 +488,15 @@ Message: flow; checks [throw new Error("positive"); checks [amount] reads [amoun
 ---
 
 [TestModelFacts/invalid-18 - 1]
+Diagnostic 1: check (3:29 - 3:52)
+Message: check; checks [input.length, limit] reads [input.length, limit]
+   2 | export function parse(input: string, limit: number) {
+   3 |   if (input.length > limit) throw new Error("long");
+     |                             ~~~~~~~~~~~~~~~~~~~~~~~~
+   4 |   if (Date.now() > 0) throw new Error("late");
+---
+
+[TestModelFacts/invalid-19 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -495,7 +504,7 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-19 - 1]
+[TestModelFacts/invalid-20 - 1]
 Diagnostic 1: function (3:12 - 3:45)
 Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; domains []
    2 | export const view = {
@@ -518,7 +527,7 @@ Message: gate matches -> render
    4 |   render(item: Item) {
 ---
 
-[TestModelFacts/invalid-20 - 1]
+[TestModelFacts/invalid-21 - 1]
 Diagnostic 1: conflict (4:13 - 4:23)
 Message: conflicts with line 5: s:done: [dim] vs [success]; purpose argument paint(color)
    3 | export function row(node: Node) {
