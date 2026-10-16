@@ -161,7 +161,7 @@ The parts combine into the structures rules query:
 - Field identity across files relies on property declarations; aliases through mapped or generic types are unverified.
 - An array declared with an array type, even `readonly`, only says which values it may hold, so `includes` on it is not a test; write the array `as const`. Earlier exits narrow a decision only from the same statement list, and a value changed in between through a call or an alias is not noticed.
 - A property read of a local that holds a call's result carries no data: the call's data has no known paths, and carrying an unknown part of it for every property would make different properties of a loaded value overlap.
-- A `throw` inside a `try` block of its function is not a check, even when the `catch` clause throws again: whether it leaves the function depends on the handler.
+- A `throw` inside a `try` block with a `catch` clause is not a check, even when the clause throws again: whether it leaves the function depends on the handler. A `try` with only `finally` lets it leave, so it is a check.
 - A truthiness test of a `boolean` counts `false` as a missing value, so `isEditing && <Editor value={value} />`, with both props destructured from one parameter, is a guard rejecting a missing `isEditing` although `false` is a value of the flag.
 - A variable is read as the data it names from its declaration on: a later change to that data through another path, or a variable assigned in another function, is not noticed.
 - Flows do not read checks made in callbacks a function passes on, such as a `throw` inside a `filter` callback: functions written in code do not run with it.

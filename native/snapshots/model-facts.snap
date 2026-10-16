@@ -588,6 +588,13 @@ Message: check; checks [input.length, limit] reads [input.length, limit]
    3 |   if (input.length > limit) throw new Error("long");
      |                             ~~~~~~~~~~~~~~~~~~~~~~~~
    4 |   if (Date.now() > 0) throw new Error("late");
+
+Diagnostic 2: check (6:28 - 6:55)
+Message: check; checks [input] reads [input]
+   5 |   try { if (!input) throw new Error("empty"); } catch {}
+   6 |   try { if (input === "x") throw new Error("reserved"); } finally { validate(input); }
+     |                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   7 |   return input;
 ---
 
 [TestModelFacts/invalid-24 - 1]

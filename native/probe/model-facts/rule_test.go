@@ -318,8 +318,9 @@ export function parse(input: string, limit: number) {
   if (input.length > limit) throw new Error("long");
   if (Date.now() > 0) throw new Error("late");
   try { if (!input) throw new Error("empty"); } catch {}
+  try { if (input === "x") throw new Error("reserved"); } finally { validate(input); }
   return input;
-}`, Options: only("check"), Errors: facts("check", 1)},
+}`, Options: only("check"), Errors: facts("check", 2)},
 			{Code: `type Pet = { kind: "cat"; lives: number } | { kind: "dog"; good: boolean };
 export function isCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat"; }
 export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }

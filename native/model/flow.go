@@ -694,7 +694,7 @@ func (a *flowAnalysis) visit(n *ast.Node, guards []*ast.Node, inTry bool) {
 		return
 	case ast.KindTryStatement:
 		statement := n.AsTryStatement()
-		a.visit(statement.TryBlock, guards, true)
+		a.visit(statement.TryBlock, guards, inTry || statement.CatchClause != nil)
 		a.visit(statement.CatchClause, guards, inTry)
 		a.visit(statement.FinallyBlock, guards, inTry)
 		return
