@@ -301,7 +301,7 @@ func (m *Analyzer) ReadsOf(e *ast.Node, value Value, tag string) Reads {
 			}
 			v := m.ValueOf(n)
 			if p := n.Parent; n.Kind == ast.KindIdentifier && p != nil && p.Kind == ast.KindShorthandPropertyAssignment {
-				v = Value{Node: n, Root: tc.GetShorthandAssignmentValueSymbol(p), Path: []string{}}
+				v = m.through(Value{Node: n, Root: tc.GetShorthandAssignmentValueSymbol(p), Path: []string{}})
 			}
 			if v.Base == nil {
 				read(n, v)

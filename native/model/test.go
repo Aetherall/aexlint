@@ -191,20 +191,28 @@ func outer(n *ast.Node) *ast.Node {
 	return n
 }
 
-// retested reports whether n is read to be tested: compared, switched on, looked up with includes, or used as a
-// condition.
-func retested(n *ast.Node) bool {
+// retested reports whether n is read to be tested: compared with a literal or a missing value, switched on, looked up
+// with includes in an array whose values are known exactly, or used as a condition. Comparing it with other data uses it.
+func (m *Analyzer) retested(n *ast.Node) bool {
 	child, p := parent(n)
 	switch p.Kind {
 	case ast.KindSwitchStatement:
 		return p.Expression() == child
 	case ast.KindBinaryExpression:
-		if comparison, _ := equality(p.AsBinaryExpression().OperatorToken.Kind); comparison {
-			return true
+		b := p.AsBinaryExpression()
+		if comparison, _ := equality(b.OperatorToken.Kind); comparison {
+			other := b.Left
+			if other == child {
+				other = b.Right
+			}
+			_, unit := m.Unit(other)
+			_, absent := missingLiteral(other)
+			return unit || absent
 		}
 	case ast.KindCallExpression:
-		if _, ok := includes(p); ok {
-			return true
+		if receiver, ok := includes(p); ok && p.Arguments()[0] == child {
+			_, known := m.elements(receiver)
+			return known
 		}
 	}
 	return Condition(n)

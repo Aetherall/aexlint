@@ -21,11 +21,12 @@ type Analyzer struct {
 	htmlAllResolved bool
 	flows           map[*ast.Node]*Flow
 	stored          map[storedKey]bool
+	aliases         map[*ast.Symbol]*Value
 }
 
 // NewAnalyzer reads one invocation's program with its checker.
 func NewAnalyzer(ctx rule.RuleContext) *Analyzer {
-	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}}
+	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}, aliases: map[*ast.Symbol]*Value{}}
 }
 
 // DecisionForm is how many arms of a decision do work: at most one for a guard, several for a dispatch.
@@ -309,14 +310,12 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 	}
 	field := md.m.FieldOf(subjectNode)
 	var receiver *ast.Node
-	tag := ""
 	if u := Unwrap(subjectNode); u.Kind == ast.KindPropertyAccessExpression {
 		receiver = Unwrap(u.Expression())
-		tag = u.Name().Text()
 	}
 	value, tested := md.m.ValueOf(subjectNode), ""
-	if receiver != nil {
-		value, tested = md.m.ValueOf(receiver), tag
+	if n := len(value.Path); n > 0 {
+		value, tested = Value{Node: value.Node, Root: value.Root, This: value.This, Base: value.Base, Path: value.Path[:n-1]}, value.Path[n-1]
 	}
 	d := &Decision{Node: Unwrap(subjectNode), Line: md.line(subjectNode), Function: md.enclosing(root), Field: field, Vocabulary: vocabulary}
 	left := md.left(root, Test{Value: md.m.ValueOf(subjectNode), Claim: Claim{Domain: vocabulary.Values, Vocabulary: vocabulary}})

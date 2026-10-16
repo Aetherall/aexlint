@@ -122,8 +122,8 @@ func (m *Analyzer) Rechecks(b Boundary, t Test, c Claim) []Guard {
 	return guards
 }
 
-// Guard is a test after which code does Work only where Claim holds, and otherwise leaves without using the tested
-// variable.
+// Guard is a test after which code does Work only where Claim holds, and otherwise leaves without using what the test
+// is about: the tested value for a presence test, or the object whose field a test of literal values tests.
 type Guard struct {
 	Test  Test
 	Claim Claim
@@ -140,8 +140,15 @@ func (m *Analyzer) guard(n *ast.Node, exits, whole bool, exit *ast.Node, work []
 	if !ok || !t.Value.Named() {
 		return Guard{}, false
 	}
-	variable := Value{Node: t.Value.Node, Root: t.Value.Root, This: t.Value.This}
-	if exit != nil && m.usesBeyond(exit, variable, t.Value, true) || !slices.ContainsFunc(work, func(w *ast.Node) bool { return m.usesBeyond(w, variable, t.Value, false) }) {
+	object := t.Value
+	if n := len(t.Value.Path); n > 0 {
+		object.Path = t.Value.Path[:n-1]
+	}
+	rejected, mentions := object, true
+	if t.Claim.Presence() {
+		rejected, mentions = t.Value, false
+	}
+	if exit != nil && m.usesBeyond(exit, rejected, t.Value, mentions) || !slices.ContainsFunc(work, func(w *ast.Node) bool { return m.usesBeyond(w, object, t.Value, false) }) {
 		return Guard{}, false
 	}
 	claim := t.Claim
@@ -291,18 +298,9 @@ func entryExpression(body *ast.Node) (*ast.Node, bool) {
 }
 
 func (m *Analyzer) parameterOf(fn, n *ast.Node) (*ast.Node, bool) {
-	for c := Unwrap(n); c != nil; c = Unwrap(c.Expression()) {
-		switch c.Kind {
-		case ast.KindPropertyAccessExpression, ast.KindElementAccessExpression:
-			continue
-		case ast.KindIdentifier:
-			symbol := m.ctx.TypeChecker.GetSymbolAtLocation(c)
-			if symbol == nil || symbol.ValueDeclaration == nil || symbol.ValueDeclaration.Kind != ast.KindParameter || symbol.ValueDeclaration.Parent != fn {
-				return nil, false
-			}
-			return symbol.ValueDeclaration, true
-		}
+	v := m.ValueOf(n)
+	if v.Root == nil || v.Root.ValueDeclaration == nil || v.Root.ValueDeclaration.Kind != ast.KindParameter || v.Root.ValueDeclaration.Parent != fn {
 		return nil, false
 	}
-	return nil, false
+	return v.Root.ValueDeclaration, true
 }

@@ -291,6 +291,52 @@ Message: dispatch on size; field size @ ../../fixtures/file.ts:8; owner none; ar
 ---
 
 [TestModelFacts/invalid-9 - 1]
+Diagnostic 1: decision (5:7 - 5:10)
+Message: guard on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner none; arms {"text"} of {"stock" | "text"} complete tested -> constant 1, logic 0, built 0; constructions []
+   4 |   const { kind } = item;
+   5 |   if (kind === "text") return 1;
+     |       ~~~~
+   6 |   return item.kind === "stock" ? 2 : 3;
+
+Diagnostic 2: decision (6:10 - 6:18)
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"stock"} of {"stock" | "text"} complete tested -> constant 2, logic 0, built 0 / {nothing} of {"stock" | "text"} complete -> constant 3, logic 0, built 0; constructions []
+   5 |   if (kind === "text") return 1;
+   6 |   return item.kind === "stock" ? 2 : 3;
+     |          ~~~~~~~~~
+   7 | }
+
+Diagnostic 3: entry (8:46 - 8:52)
+Message: entry on pond.id; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "undefined"; work 1
+   7 | }
+   8 | export const current = ({ pond }: Ponds) => (pond.id ? pond.names[pond.id] : undefined);
+     |                                              ~~~~~~~
+   9 | export function first([head]: [string | undefined, number]) {
+
+Diagnostic 4: entry (10:7 - 10:11)
+Message: entry on head; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "0"; work 1
+   9 | export function first([head]: [string | undefined, number]) {
+  10 |   if (!head) return 0;
+     |       ~~~~~
+  11 |   return head.length;
+
+Diagnostic 5: entry (13:83 - 13:97)
+Message: entry on z; holds {`null` | other falsy values | present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback ""; work 1
+  12 | }
+  13 | export const point = ([x, y, z]: [number, number] | [number, number, number]) => (z === undefined ? [x, y] : [x, y, z]);
+     |                                                                                   ~~~~~~~~~~~~~~~
+  14 | export function moved({ pond }: Ponds) {
+---
+
+[TestModelFacts/invalid-10 - 1]
+Diagnostic 1: check (3:26 - 3:49)
+Message: check; checks [id.length] reads [id.length]
+   2 |   const short = id;
+   3 |   if (short.length > 10) throw new Error("long");
+     |                          ~~~~~~~~~~~~~~~~~~~~~~~~
+   4 |   return name;
+---
+
+[TestModelFacts/invalid-11 - 1]
 Diagnostic 1: test (6:7 - 6:28)
 Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ ../../fixtures/file.ts:4
    5 |   if (declared.includes(size)) return 1;
@@ -299,7 +345,7 @@ Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ .
    7 |   return 0;
 ---
 
-[TestModelFacts/invalid-10 - 1]
+[TestModelFacts/invalid-12 - 1]
 Diagnostic 1: decision (4:10 - 4:13)
 Message: guard on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner none; arms {"text"} of {"stock" | "text"} tested -> other, logic 0, built 0; constructions []
    3 | export function f({ kind }: Item, { title, ...rest }: Panel) {
@@ -343,7 +389,7 @@ Message: test value panel.size; claim {"L"} of {"L" | "S"}; field size @ ../../f
    8 | }
 ---
 
-[TestModelFacts/invalid-11 - 1]
+[TestModelFacts/invalid-13 - 1]
 Diagnostic 1: decision (5:10 - 5:13)
 Message: dispatch on size; field size @ ../../fixtures/file.ts:4; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant symbol:Labels@file.ts:45["of"]("small"), logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> other, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> value, logic 0, built 0; constructions []
    4 | export function f(size: Size) {
@@ -352,7 +398,7 @@ Message: dispatch on size; field size @ ../../fixtures/file.ts:4; owner none; ar
    6 | }
 ---
 
-[TestModelFacts/invalid-12 - 1]
+[TestModelFacts/invalid-14 - 1]
 Diagnostic 1: test (4:20 - 4:41)
 Message: test value this.#state; claim {"open"} of {"open" | "shut"}; field #state @ ../../fixtures/file.ts:2; named "open"; property #state; declared {"open"} of {"open" | "shut"}; answered by none
    3 |   #lock?: string;
@@ -368,7 +414,7 @@ Message: test value this.#lock; claim {present} of {`null` | `undefined` | other
    5 | }
 ---
 
-[TestModelFacts/invalid-13 - 1]
+[TestModelFacts/invalid-15 - 1]
 Diagnostic 1: decision (4:20 - 4:28)
 Message: dispatch on this.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside yes; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 10, logic 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 20, logic 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> constant 30, logic 0, built 0; constructions []
    3 |   constructor(readonly size: Size) {}
@@ -384,7 +430,7 @@ Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Pa
    8 | }
 ---
 
-[TestModelFacts/invalid-14 - 1]
+[TestModelFacts/invalid-16 - 1]
 Diagnostic 1: guard (3:40 - 3:59)
 Message: guard on item.kind; holds {"text"} of {"stock" | "text"}; whole yes; fallback "\"\""; work 1
    2 | declare function show(text: string): string;
@@ -412,7 +458,23 @@ Message: guard on item.kind; holds {"stock"} of {"stock" | "text"}; whole no; fa
      |                                                                          ~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-15 - 1]
+[TestModelFacts/invalid-17 - 1]
+Diagnostic 1: guard (3:78 - 3:82)
+Message: guard on limit; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback ""; work 1
+   2 | type Row = { id: string };
+   3 | export const label = ({ limit, text }: { limit?: number; text: string }) => (limit ? cut(text, limit) : text);
+     |                                                                              ~~~~~
+   4 | export const rows = (list: Row[], id: string | undefined) => (id !== undefined ? list.filter((row) => row.id === id) : []);
+
+Diagnostic 2: guard (4:63 - 4:78)
+Message: guard on id; holds {`null` | other falsy values | present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "[]"; work 1
+   3 | export const label = ({ limit, text }: { limit?: number; text: string }) => (limit ? cut(text, limit) : text);
+   4 | export const rows = (list: Row[], id: string | undefined) => (id !== undefined ? list.filter((row) => row.id === id) : []);
+     |                                                               ~~~~~~~~~~~~~~~~
+   5 | export const known = (id: "a" | "b" | undefined) => (id !== undefined ? ["a", "b"].includes(id) : false);
+---
+
+[TestModelFacts/invalid-18 - 1]
 Diagnostic 1: entry (3:7 - 3:11)
 Message: entry on text; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "[]"; work 1
    2 | export function f(text: string | undefined) {
@@ -441,7 +503,7 @@ Message: entry on text; holds {`undefined` | other falsy values | present} of {`
      |                                           ~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-16 - 1]
+[TestModelFacts/invalid-19 - 1]
 Diagnostic 1: boundary (8:27 - 8:30)
 Message: boundary into text of strict; keeps yes; rechecks []
    7 | export function f(text: string | undefined) {
@@ -464,7 +526,7 @@ Message: boundary into text of fallback; keeps no; rechecks []
   11 |   return a + b + c;
 ---
 
-[TestModelFacts/invalid-17 - 1]
+[TestModelFacts/invalid-20 - 1]
 Diagnostic 1: flow (2:32 - 2:66)
 Message: flow; checks []; calls [super(input) with [] after 0 checks]; results []; carried []; checked {}; read {}
    1 | declare function validate(value: string): void;
@@ -487,7 +549,7 @@ Message: flow; checks [throw new Error("positive"); checks [amount] reads [amoun
   12 |     if (amount <= 0) throw new Error("positive");
 ---
 
-[TestModelFacts/invalid-18 - 1]
+[TestModelFacts/invalid-21 - 1]
 Diagnostic 1: check (3:29 - 3:52)
 Message: check; checks [input.length, limit] reads [input.length, limit]
    2 | export function parse(input: string, limit: number) {
@@ -496,7 +558,7 @@ Message: check; checks [input.length, limit] reads [input.length, limit]
    4 |   if (Date.now() > 0) throw new Error("late");
 ---
 
-[TestModelFacts/invalid-19 - 1]
+[TestModelFacts/invalid-22 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -504,7 +566,7 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-20 - 1]
+[TestModelFacts/invalid-23 - 1]
 Diagnostic 1: function (3:12 - 3:45)
 Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; domains []
    2 | export const view = {
@@ -527,7 +589,7 @@ Message: gate matches -> render
    4 |   render(item: Item) {
 ---
 
-[TestModelFacts/invalid-21 - 1]
+[TestModelFacts/invalid-24 - 1]
 Diagnostic 1: conflict (4:13 - 4:23)
 Message: conflicts with line 5: s:done: [dim] vs [success]; purpose argument paint(color)
    3 | export function row(node: Node) {

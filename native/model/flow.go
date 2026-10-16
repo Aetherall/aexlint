@@ -3,6 +3,7 @@ package model
 import (
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
@@ -123,8 +124,8 @@ func (a *flowAnalysis) taint(name *ast.Node) {
 }
 
 // declare records the data a binding name holds: base when it is initialized by an access chain, otherwise sources,
-// otherwise its own root. Object pattern elements extend base by their property name; array pattern elements hold all
-// of base.
+// otherwise its own root. Object pattern elements extend base by their property name, and array pattern elements of an
+// array or tuple by their position; other elements, such as a rest element, hold part of base.
 func (a *flowAnalysis) declare(name *ast.Node, base *Value, sources []Value) {
 	if name == nil {
 		return
@@ -143,28 +144,34 @@ func (a *flowAnalysis) declare(name *ast.Node, base *Value, sources []Value) {
 		return
 	}
 	keyed := name.Kind == ast.KindObjectBindingPattern
-	name.ForEachChild(func(element *ast.Node) bool {
+	indexed := !keyed && a.m.positional(name)
+	for position, element := range name.AsBindingPattern().Elements.Nodes {
 		if element.Kind != ast.KindBindingElement || element.Name() == nil {
-			return false
+			continue
 		}
-		var key *ast.Node
-		if keyed {
-			key = element.PropertyName()
-			if key == nil && element.Name().Kind == ast.KindIdentifier {
-				key = element.Name()
+		var key string
+		switch {
+		case keyed:
+			name := element.PropertyName()
+			if name == nil && element.Name().Kind == ast.KindIdentifier {
+				name = element.Name()
 			}
+			if name != nil && (name.Kind == ast.KindIdentifier || ast.IsStringOrNumericLiteralLike(name)) {
+				key = name.Text()
+			}
+		case indexed:
+			key = strconv.Itoa(position)
 		}
 		switch {
-		case base != nil && key != nil && (key.Kind == ast.KindIdentifier || ast.IsStringOrNumericLiteralLike(key)):
-			child := base.extend(key.Text())
+		case base != nil && key != "" && element.AsBindingElement().DotDotDotToken == nil:
+			child := base.extend(key)
 			a.declare(element.Name(), &child, nil)
 		case base != nil:
-			a.declare(element.Name(), nil, []Value{*base})
+			a.declare(element.Name(), nil, partial([]Value{*base}))
 		default:
 			a.declare(element.Name(), nil, sources)
 		}
-		return false
-	})
+	}
 }
 
 func (a *flowAnalysis) reads(expression *ast.Node) bool {
@@ -737,7 +744,13 @@ func (m *Analyzer) Flow(fn *ast.Node) *Flow {
 	a := &flowAnalysis{m: m, fn: fn, input: map[*ast.Symbol]bool{}, aliases: map[*ast.Symbol]Value{}, locals: map[*ast.Symbol][]Value{},
 		stored: map[*ast.Symbol][]storage{}, params: map[*ast.Symbol]int{}, direct: map[*ast.Symbol]bool{}}
 	for index, parameter := range fn.Parameters() {
-		a.declare(parameter.Name(), nil, nil)
+		if symbol := parameter.Symbol(); ast.IsBindingPattern(parameter.Name()) && symbol != nil {
+			root := Value{Root: symbol, Path: []string{}}
+			a.declare(parameter.Name(), &root, nil)
+			a.input[symbol], a.params[symbol], a.direct[symbol] = true, index, true
+		} else {
+			a.declare(parameter.Name(), nil, nil)
+		}
 		a.taint(parameter.Name())
 		for _, symbol := range a.names(parameter.Name()) {
 			a.params[symbol] = index

@@ -70,4 +70,4 @@ Deserializers that translate every variant may contain per-variant logic. Turn t
 - Any nested decision makes a branch procedural, including a short ternary or optional default. The rule does not measure how much work a branch does.
 - Logical `&&`, `||` and `??` inside a branch are not control flow for this rule.
 - Dispatches written as object lookups, maps of handlers, `switch (true)` or tests of different subjects are not recognized.
-- Subjects are compared as values: the same variable or `this` and the same property path, written with `.`, `?.` or a literal key. `a.type` and a local alias of it are different subjects, and so are two calls written alike.
+- Subjects are compared as values: the same variable or `this` and the same property path, written with `.`, `?.` or a literal key. A variable that only names a value, such as `const { type } = a`, is that value, so `type` and `a.type` are one subject; two calls written alike are different subjects.

@@ -2,6 +2,7 @@ package model
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
@@ -22,7 +23,7 @@ type Value struct {
 }
 
 // ValueOf reads n as a value: a root followed by property reads, optional or not, and element reads with a literal
-// key.
+// key. A variable that only names other data is read as that data.
 func (m *Analyzer) ValueOf(n *ast.Node) Value {
 	n = Unwrap(n)
 	v := Value{Node: n, Path: []string{}}
@@ -46,11 +47,172 @@ func (m *Analyzer) ValueOf(n *ast.Node) Value {
 		v.This = ast.GetThisContainer(c, false, false)
 	case ast.KindIdentifier:
 		v.Root = m.ctx.TypeChecker.GetSymbolAtLocation(c)
+		if p := c.Parent; p != nil && p.Kind == ast.KindShorthandPropertyAssignment && p.Name() == c {
+			v.Root = m.ctx.TypeChecker.GetShorthandAssignmentValueSymbol(p)
+		}
 	}
 	if v.Root == nil && v.This == nil {
 		v.Base = c
 	}
+	return m.through(v)
+}
+
+// through returns v read through the variable at its root when that variable only names other data (see alias).
+func (m *Analyzer) through(v Value) Value {
+	if v.Root == nil {
+		return v
+	}
+	if named, ok := m.alias(v.Root); ok {
+		v.Root, v.This, v.Path = named.Root, named.This, append(slices.Clone(named.Path), v.Path...)
+	}
 	return v
+}
+
+// alias returns the value a variable only names, so reading the variable reads that value: a const initialized with a
+// read of a variable or this, or a binding destructured without a default from such a read or from a parameter, by
+// property name or, from an array or tuple, by position, and never assigned.
+func (m *Analyzer) alias(symbol *ast.Symbol) (Value, bool) {
+	if found, ok := m.aliases[symbol]; ok {
+		if found == nil {
+			return Value{}, false
+		}
+		return *found, true
+	}
+	m.aliases[symbol] = nil
+	v, ok := m.aliasOf(symbol)
+	if ok {
+		m.aliases[symbol] = &v
+	}
+	return v, ok
+}
+
+func (m *Analyzer) aliasOf(symbol *ast.Symbol) (Value, bool) {
+	d := symbol.ValueDeclaration
+	if d == nil || symbol.Flags&ast.SymbolFlagsVariable == 0 {
+		return Value{}, false
+	}
+	path := []string{}
+	for d.Kind == ast.KindBindingElement {
+		element := d.AsBindingElement()
+		if element.DotDotDotToken != nil || element.Initializer != nil {
+			return Value{}, false
+		}
+		pattern := d.Parent
+		switch pattern.Kind {
+		case ast.KindObjectBindingPattern:
+			key := d.PropertyName()
+			if key == nil {
+				key = d.Name()
+			}
+			if key.Kind != ast.KindIdentifier && !ast.IsStringOrNumericLiteralLike(key) {
+				return Value{}, false
+			}
+			path = append(path, key.Text())
+		case ast.KindArrayBindingPattern:
+			if !m.positional(pattern) {
+				return Value{}, false
+			}
+			path = append(path, strconv.Itoa(slices.Index(pattern.AsBindingPattern().Elements.Nodes, d)))
+		default:
+			return Value{}, false
+		}
+		d = pattern.Parent
+	}
+	slices.Reverse(path)
+	var base Value
+	switch {
+	case d.Kind == ast.KindParameter && len(path) > 0 && d.Symbol() != nil:
+		if m.assigned(symbol) {
+			return Value{}, false
+		}
+		base = Value{Root: d.Symbol(), Path: []string{}}
+	case d.Kind == ast.KindVariableDeclaration && ast.IsVarConst(d) && d.Initializer() != nil && !m.computed(d.Initializer()):
+		base = m.ValueOf(d.Initializer())
+		if base.Base != nil || base.Root == symbol || base.Root != nil && base.Root.Flags&ast.SymbolFlagsVariable == 0 {
+			return Value{}, false
+		}
+	default:
+		return Value{}, false
+	}
+	base.Node = nil
+	base.Path = append(slices.Clone(base.Path), path...)
+	return base, true
+}
+
+// positional reports whether n's type, without null and undefined, holds arrays or tuples only, whose elements are
+// read by position.
+func (m *Analyzer) positional(n *ast.Node) bool {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(n)
+	if t == nil {
+		return false
+	}
+	t = m.ctx.TypeChecker.GetNonNullableType(t)
+	return !slices.ContainsFunc(members(t), func(member *checker.Type) bool {
+		return !checker.IsTupleType(member) && !checker.Checker_isArrayType(m.ctx.TypeChecker, member)
+	})
+}
+
+// computed reports whether a read goes through an accessor, which computes its value on each read.
+func (m *Analyzer) computed(n *ast.Node) bool {
+	for c := Unwrap(n); c.Kind == ast.KindPropertyAccessExpression || c.Kind == ast.KindElementAccessExpression; c = Unwrap(c.Expression()) {
+		name := c
+		if c.Kind == ast.KindPropertyAccessExpression {
+			name = c.Name()
+		}
+		if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name); symbol != nil && symbol.Flags&ast.SymbolFlagsAccessor != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// assigned reports whether code in the function declaring symbol assigns it, by assignment, increment, decrement,
+// destructuring assignment or as the variable of a for-in or for-of loop.
+func (m *Analyzer) assigned(symbol *ast.Symbol) bool {
+	scope := enclosingFunction(symbol.ValueDeclaration)
+	if scope == nil {
+		return false
+	}
+	tc := m.ctx.TypeChecker
+	found := false
+	var target func(*ast.Node)
+	target = func(n *ast.Node) {
+		n = Unwrap(n)
+		switch n.Kind {
+		case ast.KindIdentifier:
+			found = found || tc.GetSymbolAtLocation(n) == symbol
+		case ast.KindShorthandPropertyAssignment:
+			found = found || tc.GetShorthandAssignmentValueSymbol(n) == symbol
+		case ast.KindArrayLiteralExpression, ast.KindObjectLiteralExpression, ast.KindPropertyAssignment, ast.KindSpreadElement, ast.KindSpreadAssignment:
+			n.ForEachChild(func(c *ast.Node) bool {
+				if n.Kind != ast.KindPropertyAssignment || c == n.Initializer() {
+					target(c)
+				}
+				return found
+			})
+		}
+	}
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		switch {
+		case ast.IsAssignmentExpression(n, false):
+			target(n.AsBinaryExpression().Left)
+		case n.Kind == ast.KindPrefixUnaryExpression && (n.AsPrefixUnaryExpression().Operator == ast.KindPlusPlusToken || n.AsPrefixUnaryExpression().Operator == ast.KindMinusMinusToken):
+			target(n.AsPrefixUnaryExpression().Operand)
+		case n.Kind == ast.KindPostfixUnaryExpression:
+			target(n.AsPostfixUnaryExpression().Operand)
+		case n.Kind == ast.KindForInStatement || n.Kind == ast.KindForOfStatement:
+			if initializer := n.AsForInOrOfStatement().Initializer; initializer.Kind != ast.KindVariableDeclarationList {
+				target(initializer)
+			}
+		}
+		if !found {
+			n.ForEachChild(walk)
+		}
+		return found
+	}
+	walk(scope)
+	return found
 }
 
 // Named reports whether v can be read again by name: its root is a variable or this.
@@ -106,18 +268,56 @@ func Exact(values []Value) []Value {
 
 // String describes a value as written: its root and path, prefixed with "part of" when partial.
 func (v Value) String() string {
-	root := "this"
+	root, path := "this", v.Path
 	switch {
 	case v.Root != nil:
 		root = v.Root.Name
+		if d := v.Root.ValueDeclaration; d != nil && d.Kind == ast.KindParameter && ast.IsBindingPattern(d.Name()) {
+			root, path = bound(d.Name(), path)
+		}
 	case v.Base != nil:
 		root = Text(v.Base, 40)
 	}
-	text := strings.Join(append([]string{root}, v.Path...), ".")
+	text := strings.Join(append([]string{root}, path...), ".")
 	if v.Partial {
 		return "part of " + text
 	}
 	return text
+}
+
+// bound names the data at path in a destructured parameter by the variable the pattern binds to it, as written, or by
+// the pattern when it binds none.
+func bound(pattern *ast.Node, path []string) (string, []string) {
+	for current, rest := pattern, path; len(rest) > 0 && ast.IsBindingPattern(current); {
+		var next *ast.Node
+		for position, element := range current.AsBindingPattern().Elements.Nodes {
+			if element.Kind != ast.KindBindingElement || element.Name() == nil {
+				continue
+			}
+			key := strconv.Itoa(position)
+			if current.Kind == ast.KindObjectBindingPattern {
+				name := element.PropertyName()
+				if name == nil {
+					name = element.Name()
+				}
+				if name.Kind != ast.KindIdentifier && !ast.IsStringOrNumericLiteralLike(name) {
+					continue
+				}
+				key = name.Text()
+			}
+			if key == rest[0] {
+				next = element.Name()
+			}
+		}
+		if next == nil {
+			break
+		}
+		current, rest = next, rest[1:]
+		if current.Kind == ast.KindIdentifier {
+			return current.Text(), rest
+		}
+	}
+	return Text(pattern, 40), path
 }
 
 // Same reports whether two values are the same data.
@@ -153,8 +353,8 @@ func (m *Analyzer) Uses(n *ast.Node, v Value) bool {
 	return m.usesBeyond(n, v, Value{}, false)
 }
 
-// usesBeyond reports whether evaluating n reads v other than by reading tested, a value within v that a test examines,
-// to test it again, or at all when mentions is true.
+// usesBeyond reports whether evaluating n reads v, or data v is read from, other than by reading tested, a value within
+// v that a test examines, to test it again, or at all when mentions is true.
 func (m *Analyzer) usesBeyond(n *ast.Node, v Value, tested Value, mentions bool) bool {
 	found := false
 	var walk func(*ast.Node) bool
@@ -163,26 +363,21 @@ func (m *Analyzer) usesBeyond(n *ast.Node, v Value, tested Value, mentions bool)
 			return true
 		}
 		if c.Kind == ast.KindIdentifier || c.Kind == ast.KindThisKeyword {
-			if m.ValueOf(c).Within(v) {
-				r := m.reread(c, tested)
-				found = r == nil || !mentions && !retested(r)
-				return found
+			read := c
+			for p := read.Parent; p != nil && (p.Kind == ast.KindPropertyAccessExpression || p.Kind == ast.KindElementAccessExpression && ast.IsStringOrNumericLiteralLike(Unwrap(p.AsElementAccessExpression().ArgumentExpression))) && p.Expression() == read; p = read.Parent {
+				read = p
 			}
+			value := m.ValueOf(read)
+			if value.Within(v) || v.Within(value) {
+				found = !value.Same(tested) || !mentions && !m.retested(read)
+			}
+			return found
 		}
 		c.ForEachChild(walk)
 		return found
 	}
 	walk(n)
 	return found
-}
-
-func (m *Analyzer) reread(root *ast.Node, tested Value) *ast.Node {
-	for c := root; c.Parent != nil && (c.Parent.Kind == ast.KindPropertyAccessExpression || c.Parent.Kind == ast.KindElementAccessExpression) && c.Parent.Expression() == c; c = c.Parent {
-		if m.ValueOf(c.Parent).Same(tested) {
-			return c.Parent
-		}
-	}
-	return nil
 }
 
 // Field is what a value names across code: the declarations of the property it ends at, or of the variable it is.

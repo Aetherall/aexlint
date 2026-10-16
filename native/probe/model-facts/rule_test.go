@@ -178,6 +178,31 @@ export function g(size: Size, mode: "a" | "b") {
   }
   return size === "L" ? 3 : 4;
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 6)},
+			{Code: `import type { Item } from "./items.js";
+type Ponds = { pond: { id?: string; names: Record<string, string> } };
+export function pick(item: Item) {
+  const { kind } = item;
+  if (kind === "text") return 1;
+  return item.kind === "stock" ? 2 : 3;
+}
+export const current = ({ pond }: Ponds) => (pond.id ? pond.names[pond.id] : undefined);
+export function first([head]: [string | undefined, number]) {
+  if (!head) return 0;
+  return head.length;
+}
+export const point = ([x, y, z]: [number, number] | [number, number, number]) => (z === undefined ? [x, y] : [x, y, z]);
+export function moved({ pond }: Ponds) {
+  if (!pond.id) return undefined;
+  pond = { names: {} };
+  return pond.names;
+}`, Files: files, Options: only("decision", "entry"), Errors: []rule_tester.InvalidTestCaseError{
+				{MessageId: "decision"}, {MessageId: "decision"}, {MessageId: "entry"}, {MessageId: "entry"}, {MessageId: "entry"},
+			}},
+			{Code: `export function save({ id, name }: { id: string; name: string }) {
+  const short = id;
+  if (short.length > 10) throw new Error("long");
+  return name;
+}`, Options: only("check"), Errors: facts("check", 1)},
 			{Code: `import type { Size } from "./items.js";
 const declared: readonly Size[] = ["S", "M"];
 const literal = ["S", "M"] as const;
@@ -220,6 +245,11 @@ declare function show(text: string): string;
 export function f(item: Item) { return item.kind === "text" ? show(item.text) : ""; }
 export function g(text: string | undefined) { return text ? show(text) : ""; }
 export function h(item: Item | undefined) { return item !== undefined && item.kind === "stock" && show(item.sku); }`, Files: files, Options: only("guard"), Errors: facts("guard", 4)},
+			{Code: `declare function cut(text: string, limit: number): string;
+type Row = { id: string };
+export const label = ({ limit, text }: { limit?: number; text: string }) => (limit ? cut(text, limit) : text);
+export const rows = (list: Row[], id: string | undefined) => (id !== undefined ? list.filter((row) => row.id === id) : []);
+export const known = (id: "a" | "b" | undefined) => (id !== undefined ? ["a", "b"].includes(id) : false);`, Options: only("guard"), Errors: facts("guard", 2)},
 			{Code: `import type { Item } from "./items.js";
 export function f(text: string | undefined) {
   if (!text) return [];
