@@ -70,22 +70,28 @@ func (m *Analyzer) named(test *ast.Node, vocabulary *Vocabulary) string {
 }
 
 // Property returns the project property t tests as resolved where it is read, so on a narrowed receiver it is the
-// narrowed member's, whose type is what the read can hold; it is nil when t tests something else. Field identity
-// across code uses FieldOf instead.
+// narrowed member's, whose type is what the read can hold, or, for a variable that only names the property, where it is
+// destructured or copied; it is nil when t tests something else. Field identity across code uses FieldOf instead.
 func (m *Analyzer) Property(t Test) *ast.Symbol {
-	n := t.Value.Node
-	if n.Kind != ast.KindPropertyAccessExpression || n.Name().Kind != ast.KindIdentifier && n.Name().Kind != ast.KindPrivateIdentifier {
-		return nil
+	var symbol *ast.Symbol
+	switch n := t.Value.Node; n.Kind {
+	case ast.KindPropertyAccessExpression:
+		if n.Name().Kind == ast.KindIdentifier || n.Name().Kind == ast.KindPrivateIdentifier {
+			symbol = m.ctx.TypeChecker.GetSymbolAtLocation(n.Name())
+		}
+	case ast.KindIdentifier:
+		if variable := m.ctx.TypeChecker.GetSymbolAtLocation(n); variable != nil && m.objectNode(n) != nil {
+			symbol = m.FieldOf(n).Symbol
+		}
 	}
-	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n.Name())
 	if symbol == nil || symbol.Flags&(ast.SymbolFlagsProperty|ast.SymbolFlagsGetAccessor) == 0 || !ProjectSymbol(symbol) {
 		return nil
 	}
 	return symbol
 }
 
-// Receiver returns the object whose field t tests.
-func (t Test) Receiver() *ast.Node { return Unwrap(t.Value.Node.Expression()) }
+// Receiver returns the object whose field t tests (see objectNode), or nil when t tests no field.
+func (m *Analyzer) Receiver(t Test) *ast.Node { return m.objectNode(t.Value.Node) }
 
 // FieldTest reads n as a test of a project property that rules out a value the property's declared type can hold.
 func (m *Analyzer) FieldTest(n *ast.Node) (Test, bool) {

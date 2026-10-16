@@ -359,8 +359,9 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 }
 
 // objectNode returns the expression or binding pattern whose type holds the field subject reads: the object of a
-// property or literal-key element read, the pattern a destructured variable is bound from, or the object a const copies
-// the field from. It returns nil when subject reads no field.
+// property or literal-key element read, the object a variable is destructured from when it is a plain read, or else the
+// pattern it is bound in, as for a parameter or a cast, or the object a const copies the field from. It returns nil when
+// subject reads no field.
 func (m *Analyzer) objectNode(subject *ast.Node) *ast.Node {
 	switch u := Unwrap(subject); u.Kind {
 	case ast.KindPropertyAccessExpression, ast.KindElementAccessExpression:
@@ -375,6 +376,11 @@ func (m *Analyzer) objectNode(subject *ast.Node) *ast.Node {
 		}
 		switch d := symbol.ValueDeclaration; d.Kind {
 		case ast.KindBindingElement:
+			if declaration := d.Parent.Parent; declaration.Kind == ast.KindVariableDeclaration && declaration.Initializer() != nil {
+				if object := ast.SkipParentheses(declaration.Initializer()); object.Kind == ast.KindIdentifier || object.Kind == ast.KindThisKeyword || object.Kind == ast.KindPropertyAccessExpression {
+					return object
+				}
+			}
 			return d.Parent
 		case ast.KindVariableDeclaration:
 			return m.objectNode(d.Initializer())

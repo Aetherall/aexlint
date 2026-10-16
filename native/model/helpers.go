@@ -126,7 +126,7 @@ func (m *Analyzer) helper(h Helper) (Predicate, bool) {
 		}
 	}
 	t, ok := m.FieldTest(e)
-	if !ok || t.Receiver().Kind != ast.KindIdentifier || m.ctx.TypeChecker.GetSymbolAtLocation(t.Receiver()) != parameter {
+	if !ok || m.Receiver(t).Kind != ast.KindIdentifier || m.ctx.TypeChecker.GetSymbolAtLocation(m.Receiver(t)) != parameter {
 		return Predicate{}, false
 	}
 	narrows := declaresPredicate(fn)

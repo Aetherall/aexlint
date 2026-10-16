@@ -40,7 +40,7 @@ func (m *Analyzer) predicate(name string, declaration *ast.Node) (Predicate, boo
 		return Predicate{}, false
 	}
 	t, ok := m.FieldTest(e)
-	if !ok || t.Receiver().Kind != ast.KindThisKeyword {
+	if !ok || m.Receiver(t) == nil || m.Receiver(t).Kind != ast.KindThisKeyword {
 		return Predicate{}, false
 	}
 	narrows := declaresPredicate(fn)
@@ -175,7 +175,7 @@ type Answers struct {
 // when that type is any, unknown or never.
 func (m *Analyzer) AnswersOf(t Test) (Answers, bool) {
 	tc := m.ctx.TypeChecker
-	receiver := tc.GetTypeAtLocation(t.Receiver())
+	receiver := tc.GetTypeAtLocation(m.Receiver(t))
 	if receiver == nil {
 		return Answers{}, false
 	}
@@ -195,7 +195,7 @@ func (m *Analyzer) AnswersOf(t Test) (Answers, bool) {
 // Accepts reports whether helper, a helper predicate, accepts the receiver t tests as it is typed where t reads it.
 func (m *Analyzer) Accepts(helper Predicate, t Test) bool {
 	tc := m.ctx.TypeChecker
-	actual := tc.GetTypeAtLocation(t.Receiver())
+	actual := tc.GetTypeAtLocation(m.Receiver(t))
 	return actual != nil && checker.Checker_isTypeAssignableTo(tc, actual, tc.GetTypeOfSymbol(helper.Declaration.Parameters()[0].Symbol()))
 }
 

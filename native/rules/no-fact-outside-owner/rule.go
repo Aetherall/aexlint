@@ -23,7 +23,11 @@ func (r *checkRun) declares(field *ast.Symbol) bool {
 
 func (r *checkRun) check(test, reported *ast.Node) bool {
 	fact, ok := r.a.FieldTest(test)
-	if !ok || fact.Receiver().Kind == ast.KindThisKeyword {
+	if !ok {
+		return false
+	}
+	object := r.a.Receiver(fact)
+	if object.Kind == ast.KindThisKeyword || ast.IsBindingPattern(object) {
 		return false
 	}
 	answers, ok := r.a.AnswersOf(fact)
@@ -53,7 +57,7 @@ func (r *checkRun) check(test, reported *ast.Node) bool {
 	if r.a.Opposite(fact, p.Test) {
 		negation = "!"
 	}
-	receiver := model.Text(fact.Receiver(), 60)
+	receiver := model.Text(object, 60)
 	description := fmt.Sprintf("`%s` rewrites `%s`, which its type already provides.", model.Text(reported, 60), p.Name)
 	definition := "the type's definition stays the only one"
 	present := receiver + "." + p.Name
@@ -74,8 +78,8 @@ func (r *checkRun) check(test, reported *ast.Node) bool {
 		}
 	}
 	help := fmt.Sprintf("Use `%s%s` so %s.", negation, present, definition)
-	if held, ok := r.a.Holds(fact.Receiver()); ok && held&(model.AbsentUndefined|model.AbsentNull) != 0 {
-		result, ok := r.a.WhenMissing(reported, fact.Receiver())
+	if held, ok := r.a.Holds(object); ok && held&(model.AbsentUndefined|model.AbsentNull) != 0 {
+		result, ok := r.a.WhenMissing(reported, object)
 		same := known && ok && result == (expected != (negation != ""))
 		if same && !model.Boolean(reported) {
 			same, missing = r.stored(reported, p, negation, missing)
@@ -115,7 +119,7 @@ func (r *checkRun) cover(n *ast.Node) {
 }
 
 func (r *checkRun) visit(n *ast.Node) {
-	if n.Name().Kind != ast.KindIdentifier {
+	if n.Kind == ast.KindPropertyAccessExpression && n.Name().Kind != ast.KindIdentifier || n.Kind == ast.KindIdentifier && n.Parent.Kind == ast.KindPropertyAccessExpression {
 		return
 	}
 	whole := r.a.WholeTest(n)
@@ -301,6 +305,6 @@ var Rule = rule.Rule{
 		limit := model.ParseMax("no-fact-outside-owner", options, 4)
 		r := &checkRun{ctx: ctx, a: model.NewAnalyzer(ctx), places: model.NewPlaces(ctx), covered: map[*ast.Node]bool{}}
 		r.unanswered(limit)
-		return rule.RuleListeners{ast.KindPropertyAccessExpression: r.visit}
+		return rule.RuleListeners{ast.KindPropertyAccessExpression: r.visit, ast.KindIdentifier: r.visit}
 	},
 }

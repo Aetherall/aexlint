@@ -393,14 +393,14 @@ Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:2; owner Pa
    8 | }
 
 Diagnostic 3: test (4:10 - 4:24)
-Message: test value kind; claim {"text"} of {"stock" | "text"}; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; named "text"
+Message: test value kind; claim {"text"} of {"stock" | "text"}; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; named "text"; property kind; declared {"text"} of {"stock" | "text"}; answered by none
    3 | export function f({ kind }: Item, { title, ...rest }: Panel) {
    4 |   return kind === "text" && title ? rest.size : undefined;
      |          ~~~~~~~~~~~~~~~
    5 | }
 
 Diagnostic 4: test (4:29 - 4:33)
-Message: test value title; claim {present} of {`null` | `undefined` | other falsy values | present}; field title @ ../../fixtures/file.ts:2; held other falsy values | present; relied no
+Message: test value title; claim {present} of {`null` | `undefined` | other falsy values | present}; field title @ ../../fixtures/file.ts:2; held other falsy values | present; relied no; property title; declared {present} of {other falsy values | present}; answered by none
    3 | export function f({ kind }: Item, { title, ...rest }: Panel) {
    4 |   return kind === "text" && title ? rest.size : undefined;
      |                             ~~~~~

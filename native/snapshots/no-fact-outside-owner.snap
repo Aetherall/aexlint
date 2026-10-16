@@ -108,6 +108,15 @@ Help: Use `f.isDraft()` so the type's definition stays the only one.
 ---
 
 [TestRule/invalid-12 - 1]
+Diagnostic 1: bypassedPredicate (2:69 - 2:84)
+Message: `kind === "final"` rewrites `isFinal`, which its type already provides.
+Help: Use `folder.isFinal()` so the type's definition stays the only one.
+   1 | import { Folder } from "./folder.js";
+   2 | export function f(folder: Folder) { const { kind } = folder; return kind === "final"; }
+     |                                                                     ~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-13 - 1]
 Diagnostic 1: bypassedPredicate (2:35 - 2:44)
 Message: `f?.deleted` rewrites `isDeleted`, which its type already provides.
 Help: Use `f?.isDeleted()` so the type's definition stays the only one.
@@ -116,7 +125,7 @@ Help: Use `f?.isDeleted()` so the type's definition stays the only one.
      |                                   ~~~~~~~~~~
 ---
 
-[TestRule/invalid-13 - 1]
+[TestRule/invalid-14 - 1]
 Diagnostic 1: bypassedPredicate (2:34 - 2:54)
 Message: `f?.memo !== undefined` rewrites `noMemo`, which its type already provides.
 Help: Check that `f` is present, then use `!f.noMemo()`, so the type's definition stays the only one.
@@ -125,7 +134,7 @@ Help: Check that `f` is present, then use `!f.noMemo()`, so the type's definitio
      |                                  ~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-14 - 1]
+[TestRule/invalid-15 - 1]
 Diagnostic 1: bypassedPredicate (2:53 - 2:106)
 Message: `f.contentType === "image" || f.contentType === "video"` rewrites `isVisual`, which its type already provides.
 Help: Use `f.isVisual()` so the type's definition stays the only one.
@@ -134,7 +143,7 @@ Help: Use `f.isVisual()` so the type's definition stays the only one.
      |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-15 - 1]
+[TestRule/invalid-16 - 1]
 Diagnostic 1: bypassedPredicate (2:33 - 2:86)
 Message: `f.contentType !== "image" && f.contentType !== "video"` rewrites `isVisual`, which its type already provides.
 Help: Use `!f.isVisual()` so the type's definition stays the only one.
@@ -143,7 +152,7 @@ Help: Use `!f.isVisual()` so the type's definition stays the only one.
      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-16 - 1]
+[TestRule/invalid-17 - 1]
 Diagnostic 1: bypassedPredicate (2:51 - 2:68)
 Message: `f.kind === "draft"` rewrites `isDraft`, which its type already provides.
 Help: Use `f.isDraft()` so the type's definition stays the only one.
@@ -152,7 +161,7 @@ Help: Use `f.isDraft()` so the type's definition stays the only one.
      |                                                   ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-17 - 1]
+[TestRule/invalid-18 - 1]
 Diagnostic 1: bypassedPredicate (9:42 - 9:60)
 Message: `s.kind === "circle"` rewrites `isCircle`, which its type already provides.
 Help: Use `s.isCircle()` so the type's definition stays the only one.
@@ -161,7 +170,7 @@ Help: Use `s.isCircle()` so the type's definition stays the only one.
      |                                          ~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-18 - 1]
+[TestRule/invalid-19 - 1]
 Diagnostic 1: bypassedPredicate (2:35 - 2:55)
 Message: `item.kind === "stock"` rewrites `isNonStock`, which `../../fixtures/helpers.ts` already provides.
 Help: Use `!isNonStock(item)` so its definition stays the only one.
@@ -170,7 +179,7 @@ Help: Use `!isNonStock(item)` so its definition stays the only one.
      |                                   ~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-19 - 1]
+[TestRule/invalid-20 - 1]
 Diagnostic 1: bypassedPredicate (2:35 - 2:51)
 Message: `m.type === "text"` rewrites `LeafletGuards.isText`, which `../../fixtures/helpers.ts` already provides.
 Help: Use `LeafletGuards.isText(m)` so its definition stays the only one.
@@ -179,7 +188,7 @@ Help: Use `LeafletGuards.isText(m)` so its definition stays the only one.
      |                                   ~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-20 - 1]
+[TestRule/invalid-21 - 1]
 Diagnostic 1: bypassedPredicate (2:35 - 2:55)
 Message: `seat.kind === "taken"` rewrites `SeatUtils.isTaken`, which `../../fixtures/helpers.ts` already provides.
 Help: Use `SeatUtils.isTaken(seat)` so its definition stays the only one.
@@ -188,7 +197,7 @@ Help: Use `SeatUtils.isTaken(seat)` so its definition stays the only one.
      |                                   ~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-21 - 1]
+[TestRule/invalid-22 - 1]
 Diagnostic 1: bypassedPredicate (2:60 - 2:75)
 Message: `!task.finishedAt` rewrites `isDone`, which `../../fixtures/helpers.ts` already provides.
 Help: Use `!isDone(task)` so its definition stays the only one.
@@ -197,7 +206,7 @@ Help: Use `!isDone(task)` so its definition stays the only one.
      |                                                            ~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-22 - 1]
+[TestRule/invalid-23 - 1]
 Diagnostic 1: bypassedPredicate (2:36 - 2:57)
 Message: `seat?.kind === "taken"` rewrites `SeatUtils.isTaken`, which `../../fixtures/helpers.ts` already provides.
 Help: Check that `seat` is present, then use `SeatUtils.isTaken(seat)`, so its definition stays the only one.
@@ -206,7 +215,7 @@ Help: Check that `seat` is present, then use `SeatUtils.isTaken(seat)`, so its d
      |                                    ~~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-23 - 1]
+[TestRule/invalid-24 - 1]
 Diagnostic 1: bypassedPredicate (2:36 - 2:53)
 Message: `m?.type === "text"` rewrites `LeafletGuards.isText`, which `../../fixtures/helpers.ts` already provides.
 Help: Use `LeafletGuards.isText(m)` so its definition stays the only one.
@@ -215,7 +224,7 @@ Help: Use `LeafletGuards.isText(m)` so its definition stays the only one.
      |                                    ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-24 - 1]
+[TestRule/invalid-25 - 1]
 Diagnostic 1: bypassedPredicate (2:36 - 2:53)
 Message: `m?.type !== "text"` rewrites `LeafletGuards.isText`, which `../../fixtures/helpers.ts` already provides.
 Help: Use `!LeafletGuards.isText(m)` so its definition stays the only one.
@@ -224,7 +233,7 @@ Help: Use `!LeafletGuards.isText(m)` so its definition stays the only one.
      |                                    ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-25 - 1]
+[TestRule/invalid-26 - 1]
 Diagnostic 1: bypassedPredicate (2:33 - 2:50)
 Message: `f.kind !== "draft"` rewrites `isNotDraft`, which its type already provides.
 Help: Use `f.isNotDraft()` so the type's definition stays the only one.
@@ -233,7 +242,7 @@ Help: Use `f.isNotDraft()` so the type's definition stays the only one.
      |                                 ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-26 - 1]
+[TestRule/invalid-27 - 1]
 Diagnostic 1: bypassedPredicate (5:43 - 5:51)
 Message: `box.value` rewrites `isEmpty`, which its type already provides.
 Help: Use `!box.isEmpty()` so the type's definition stays the only one.
@@ -242,7 +251,7 @@ Help: Use `!box.isEmpty()` so the type's definition stays the only one.
      |                                           ~~~~~~~~~
 ---
 
-[TestRule/invalid-27 - 1]
+[TestRule/invalid-28 - 1]
 Diagnostic 1: bypassedPredicate (2:43 - 2:66)
 Message: `f?.deleted !== undefined` rewrites `isDeleted`, which its type already provides.
 Help: Use `f?.isDeleted() ?? false` so the type's definition stays the only one.
@@ -251,7 +260,7 @@ Help: Use `f?.isDeleted() ?? false` so the type's definition stays the only one.
      |                                           ~~~~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-28 - 1]
+[TestRule/invalid-29 - 1]
 Diagnostic 1: unansweredFact (2:3 - 2:10)
 Message: `postedAt` is checked for `undefined` in 2 files outside `Leaflet`, which has no predicate for it.
 Help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Leaflet`, or an exported function in its module, would hold the answer in one place. Files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts.
@@ -261,7 +270,7 @@ Help: Each of those files decides on its own what this test means, so changing t
    3 |   status: "draft" | "sent" | "failed";
 ---
 
-[TestRule/invalid-29 - 1]
+[TestRule/invalid-30 - 1]
 Diagnostic 1: unansweredFact (3:3 - 3:8)
 Message: `status` is compared with "draft" in 2 files outside `Leaflet`, which has no predicate for it.
 Help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Leaflet`, or an exported function in its module, would hold the answer in one place. Files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts.
@@ -271,7 +280,7 @@ Help: Each of those files decides on its own what this test means, so changing t
    4 |   archived?: boolean;
 ---
 
-[TestRule/invalid-30 - 1]
+[TestRule/invalid-31 - 1]
 Diagnostic 1: unansweredFact (2:3 - 2:11)
 Message: `cancelled` is checked for `undefined` in 2 files outside `Order`, which has no predicate for it.
 Help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Order`, or an exported function in its module, would hold the answer in one place. Files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts.
@@ -281,7 +290,7 @@ Help: Each of those files decides on its own what this test means, so changing t
    3 | }
 ---
 
-[TestRule/invalid-31 - 1]
+[TestRule/invalid-32 - 1]
 Diagnostic 1: unansweredFact (1:27 - 1:30)
 Message: `kind` is compared with "stock" in 2 files outside `StockItem`, which has no predicate for it.
 Help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `StockItem`, or an exported function in its module, would hold the answer in one place. Files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts.
@@ -290,7 +299,7 @@ Help: Each of those files decides on its own what this test means, so changing t
    2 | export type Note = { kind: "note"; body: string };
 ---
 
-[TestRule/invalid-32 - 1]
+[TestRule/invalid-33 - 1]
 Diagnostic 1: unansweredFact (1:38 - 1:41)
 Message: `file` is checked for `undefined` in 2 files outside `Image`, which has no predicate for it. The same tests also ask about `file` of `Video`.
 Help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Image`, or an exported function in its module, would hold the answer in one place. Files, nearest first: ../../fixtures/a.ts, ../../fixtures/b.ts.

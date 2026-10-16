@@ -156,7 +156,7 @@ func (p *probe) test(n *ast.Node) {
 		parts = append(parts, "relied "+yes(p.a.Relied(t)))
 	}
 	if property := p.a.Property(t); property != nil {
-		parts = append(parts, "property "+t.Value.Node.Name().Text(), "declared "+claim(p.a.DeclaredClaim(t)))
+		parts = append(parts, "property "+p.a.FieldOf(t.Value.Node).Name, "declared "+claim(p.a.DeclaredClaim(t)))
 	}
 	if fact, ok := p.a.FieldTest(n); ok {
 		parts = append(parts, "answered by "+p.answered(fact))

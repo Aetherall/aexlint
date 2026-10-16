@@ -117,6 +117,7 @@ export const f = (box: Box<string[]>) => (box.value ? "full" : "empty");`
 	alias := `import type { Folder as Entry } from "./folder.js";
 export const f = (entry: Entry) => entry.kind === "draft";`
 	generic := header + `export const f = <T extends Folder>(f: T) => f.kind === "draft";`
+	destructured := header + `export function f(folder: Folder) { const { kind } = folder; return kind === "final"; }`
 	optional := header + `export const f = (f?: Folder) => (f?.deleted ? "gone" : "here");`
 	missingMemo := header + `export const f = (f?: Folder) => f?.memo !== undefined;`
 	nested := header + `export const f = (f: Folder, on: boolean) => on && (f.contentType === "image" || f.contentType === "video");`
@@ -264,6 +265,8 @@ export const isPosted = (m: Leaflet) => m.postedAt !== undefined;`}, askers), Op
 			// Tests in the owner's module do not count, and different facts do not add up.
 			{Code: message + "\nexport const g = (m: Leaflet) => !!m.postedAt;", Files: map[string]string{"a.ts": asked("!!m.postedAt")}, Options: one},
 			{Code: message, Files: map[string]string{"a.ts": asked(`m.status === "draft"`), "b.ts": asked(`m.status === "failed"`)}, Options: one},
+			// A field destructured from a parameter has no expression naming its object to call the predicate on.
+			{Code: header + `export const f = ({ kind }: Folder) => kind === "final";`, Files: files},
 			// Tests on any are not facts about the type.
 			{Code: message, Files: map[string]string{"a.ts": `export const f = (m: any) => [!!m.postedAt];`, "b.ts": `export const f = (m: any) => [!!m.postedAt];`}, Options: one},
 		},
@@ -280,6 +283,7 @@ export const isPosted = (m: Leaflet) => m.postedAt !== undefined;`}, askers), Op
 			invalid(alias, `entry.kind === "draft"`, 1),
 			invalid(includes, `["image", "video"].includes(f.contentType)`, 1),
 			invalid(generic, `f.kind === "draft"`, 1),
+			invalid(destructured, `kind === "final"`, 1),
 			invalid(optional, "f?.deleted", 1),
 			invalid(missingMemo, "f?.memo !== undefined", 1),
 			invalid(nested, `f.contentType === "image" || f.contentType === "video"`, 1),
