@@ -141,6 +141,14 @@ export function h(size: Size) {
   else return 2;
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 4)},
 			{Code: `import type { Size } from "./items.js";
+declare function next(): Size;
+export function f(size: Size, other: { size: Size } | undefined) {
+  if (size === "S") return 0;
+  size = next();
+  if (size === "S") return 1;
+  return other?.size === "M" || other!.size === "L" ? 2 : 3;
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 3)},
+			{Code: `import type { Size } from "./items.js";
 const declared: readonly Size[] = ["S", "M"];
 const literal = ["S", "M"] as const;
 export function f(size: Size) {

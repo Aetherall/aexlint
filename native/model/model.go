@@ -320,7 +320,8 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 }
 
 // left returns the values of subject a decision at root can still see: earlier statements of the list holding root
-// that leave when their whole condition, a test of subject, holds have already taken their values.
+// that leave when their whole condition, a test of subject, holds have already taken their values, unless a statement
+// after them assigns the subject or a value it is read from.
 func (md *builder) left(root *ast.Node, subject Test) Claim {
 	left := Claim{Domain: subject.Claim.Domain, Accepted: subject.Claim.Domain, Vocabulary: subject.Claim.Vocabulary}
 	statement := root
@@ -330,18 +331,47 @@ func (md *builder) left(root *ast.Node, subject Test) Claim {
 	if statement.Parent == nil || statementList(statement.Parent) == nil {
 		return left
 	}
-	for _, earlier := range statementList(statement.Parent) {
+	list := statementList(statement.Parent)
+	for i, earlier := range list {
 		if earlier == statement {
 			break
 		}
 		if earlier.Kind != ast.KindIfStatement || earlier.AsIfStatement().ElseStatement != nil || !exits(earlier.AsIfStatement().ThenStatement) {
 			continue
 		}
-		if t, ok := md.m.literalTest(earlier.AsIfStatement().Expression); ok && SameSubject(t, subject) {
+		if t, ok := md.m.literalTest(earlier.AsIfStatement().Expression); ok && SameSubject(t, subject) && !md.m.assigns(list[i+1:slices.Index(list, statement)], subject.Value) {
 			left = left.And(t.Claim.Not())
 		}
 	}
 	return left
+}
+
+// assigns reports whether nodes assign v, or a value v is read from, by assignment, increment or decrement.
+func (m *Analyzer) assigns(nodes []*ast.Node, v Value) bool {
+	found := false
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		var target *ast.Node
+		switch {
+		case ast.IsAssignmentExpression(n, false):
+			target = n.AsBinaryExpression().Left
+		case n.Kind == ast.KindPrefixUnaryExpression && (n.AsPrefixUnaryExpression().Operator == ast.KindPlusPlusToken || n.AsPrefixUnaryExpression().Operator == ast.KindMinusMinusToken):
+			target = n.AsPrefixUnaryExpression().Operand
+		case n.Kind == ast.KindPostfixUnaryExpression:
+			target = n.AsPostfixUnaryExpression().Operand
+		}
+		found = found || target != nil && v.Within(m.ValueOf(target))
+		if !found {
+			n.ForEachChild(walk)
+		}
+		return found
+	}
+	for _, n := range nodes {
+		if walk(n) {
+			break
+		}
+	}
+	return found
 }
 
 // matching returns the first test of literal values in condition, or the first on the same subject as first, whose

@@ -355,9 +355,9 @@ func negate(e *expr) *expr {
 	return &expr{opaque: "!" + e.opaque, node: e.node, negated: !e.negated}
 }
 
-// SameSubject reports whether two tests of literal values test the same vocabulary on the same expression text.
+// SameSubject reports whether two tests of literal values test the same vocabulary on the same value.
 func SameSubject(a, b Test) bool {
-	return slices.Equal(a.Claim.Vocabulary.Values, b.Claim.Vocabulary.Values) && written(a.Value.Node) == written(b.Value.Node)
+	return slices.Equal(a.Claim.Vocabulary.Values, b.Claim.Vocabulary.Values) && a.Value.Same(b.Value)
 }
 
 func normalize(e *expr) *expr {
