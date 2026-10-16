@@ -35,7 +35,7 @@ The model can also work out a test's result when a value is **missing**, from `&
 
 ## Test
 
-A **test** is a place where code learns a claim about a value: the claim holds where the test's expression is true. It is a comparison with literal values, a membership test with `includes` on an array whose values are known exactly (an array literal, or a tuple of literal types such as an array written `as const`), or a presence test. A bare read is a test only where its value is used as a **condition**: by `if`, a loop, a conditional expression, `!`, or as an operand of `&&` and `||` that decides. A value used **only as a boolean** is a condition whose value never escapes, so `a !== undefined && b`, whose result is used, is a condition but not only a boolean.
+A **test** is a place where code learns a claim about a value: the claim holds where the test's expression is true. It is a comparison with literal values, other than of a `typeof` result, which tests a type, a membership test with `includes` on an array whose values are known exactly (an array literal, or a tuple of literal types such as an array written `as const`), or a presence test. A bare read is a test only where its value is used as a **condition**: by `if`, a loop, a conditional expression, `!`, or as an operand of `&&` and `||` that decides. A value used **only as a boolean** is a condition whose value never escapes, so `a !== undefined && b`, whose result is used, is a condition but not only a boolean.
 
 A **check** is a place that rejects input without the model reading what it establishes: a `throw` under conditions that read input, or a call to a function that checks what it receives. It is known by the data its conditions read. Tests that only establish what TypeScript keeps in a narrowed type (presence, `typeof`, `instanceof`, `in`, type guards) are not checks.
 
@@ -148,7 +148,7 @@ The parts combine into the structures rules query:
 - **Conflicts are not a rule yet.** The relation stays in the model; its usefulness and generality remain unestablished.
 - **One reading of conditions.** Sites, decision arms, guards, entry tests and selector answers are all built from tests: a value and a claim. A claim about presence ranges over its own vocabulary, so every claim has one.
 - **Kept apart on purpose.** A site's outcome is written text, because the shared index that keys it is built without a checker. A type predicate's contract compares with its target type, including open `string`, which no finite claim can range over. A check's claim is not read; it is known by its data.
-- **Grouping is by written expression.** The arms of one decision, and the tests merged in one site, test the same written expression: `getKind() === "a" || getKind() === "b"` is one question about values, although two calls are two pieces of data.
+- **Grouping is by value.** The arms of one decision, and the tests merged in one site, test the same value: `x.kind` and `x?.kind` are one subject, while `getKind() === "a" || getKind() === "b"` tests two, since two calls are two pieces of data.
 
 ## Limitations
 
@@ -161,5 +161,7 @@ The parts combine into the structures rules query:
 - Field identity across files relies on property declarations; aliases through mapped or generic types are unverified.
 - An array declared with an array type, even `readonly`, only says which values it may hold, so `includes` on it is not a test; write the array `as const`. Earlier exits narrow a decision only from the same statement list, and a value changed in between through a call or an alias is not noticed.
 - A property read of a local that holds a call's result carries no data: the call's data has no known paths, and carrying an unknown part of it for every property would make different properties of a loaded value overlap.
+- A `throw` inside a `try` block of its function is not a check, even when the `catch` clause throws again: whether it leaves the function depends on the handler.
+- An entry test must test a parameter or a property read from it; a variable destructured from a parameter, as in `({ pond }: State) => pond.id ? … : undefined`, is not followed, although it names its property.
 - Flows do not read checks made in callbacks a function passes on, such as a `throw` inside a `filter` callback: functions written in code do not run with it.
 - A type alone cannot tell code from data, since an instance of `Promise` or `Map` has only methods too, so values declared only in declaration files count as code: data they hold, such as `process.env`, is not counted. A read with a computed key counts as reading the whole value.
