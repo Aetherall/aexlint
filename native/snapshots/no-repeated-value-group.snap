@@ -9,6 +9,15 @@ Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. Whe
 ---
 
 [TestRule/invalid-1 - 1]
+Diagnostic 1: repeatedValueGroup (2:43 - 2:85)
+Message: `n.channel` is tested against the value group "push" | "sms", which is also written elsewhere.
+Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:4. When the group changes, every copy has to be found and changed the same way.
+   1 | import type { Notice } from "./channel.js";
+   2 | export function route(n: Notice) { return n.channel === "sms" || n.channel === "push" ? n.to : ""; }
+     |                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---
+
+[TestRule/invalid-2 - 1]
 Diagnostic 1: repeatedValueGroup (5:7 - 5:35)
 Message: `t` is tested against the value group "push" | "sms", which is also written elsewhere.
 Help: Written in 4 places. Others, nearest first: ../../fixtures/file.ts:7, ../../fixtures/file.ts:14, ../../fixtures/file.ts:15. When the group changes, every copy has to be found and changed the same way.
@@ -43,7 +52,7 @@ Help: Written in 4 places. Others, nearest first: ../../fixtures/file.ts:5, ../.
      |      ~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-2 - 1]
+[TestRule/invalid-3 - 1]
 Diagnostic 1: repeatedValueGroup (2:37 - 2:94)
 Message: `n?.channel` is tested against the value group "push" | "sms", which is also written elsewhere.
 Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. Already named by isInstant (../../fixtures/named.ts:2). When the group changes, every copy has to be found and changed the same way.
@@ -52,7 +61,7 @@ Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. Alr
      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-3 - 1]
+[TestRule/invalid-4 - 1]
 Diagnostic 1: repeatedValueGroup (4:7 - 4:45)
 Message: `l` is tested against the value group Level.High | Level.Max, which is also written elsewhere.
 Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:5. When the group changes, every copy has to be found and changed the same way.
@@ -70,7 +79,7 @@ Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:4. When
    6 |   return 0;
 ---
 
-[TestRule/invalid-4 - 1]
+[TestRule/invalid-5 - 1]
 Diagnostic 1: repeatedValueGroup (2:51 - 2:105)
 Message: `props.n.channel` is tested against the value group "push" | "sms", which is also written elsewhere.
 Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. When the group changes, every copy has to be found and changed the same way.
@@ -79,7 +88,7 @@ Help: Written in 2 places. Others, nearest first: ../../fixtures/other.ts:2. Whe
      |                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestRule/invalid-5 - 1]
+[TestRule/invalid-6 - 1]
 Diagnostic 1: repeatedValueGroup (4:7 - 4:54)
 Message: `shape.kind` is tested against the value group "line" | "square", which is also written elsewhere.
 Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:5. When the group changes, every copy has to be found and changed the same way.
@@ -97,7 +106,7 @@ Help: Written in 2 places. Others, nearest first: ../../fixtures/file.ts:4. When
    6 | }
 ---
 
-[TestRule/invalid-6 - 1]
+[TestRule/invalid-7 - 1]
 Diagnostic 1: repeatedValueGroup (2:37 - 2:58)
 Message: `k` is tested against the value group "a" | "b", which is also written elsewhere.
 Help: Written in 2 places. Others, nearest first: ../../fixtures/a.ts:2. When the group changes, every copy has to be found and changed the same way.

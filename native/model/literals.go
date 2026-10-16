@@ -599,7 +599,7 @@ func (m *Analyzer) question(n *ast.Node) *Site {
 	if len(tests) == 0 {
 		return nil
 	}
-	return &Site{Root: n, Pos: scanner.SkipTrivia(text, n.Pos()), End: n.End(), Tests: tests, Canon: canon(e), Named: predicateName(n), Outcome: OutcomeText(n)}
+	return &Site{Root: n, Pos: scanner.SkipTrivia(text, n.Pos()), End: n.End(), Tests: tests, Canon: canon(e), Named: m.predicateName(n), Outcome: OutcomeText(n)}
 }
 
 // Classify returns the site a root asks, or nil when it tests no vocabulary.

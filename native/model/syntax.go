@@ -232,12 +232,11 @@ func indexOf(nodes []*ast.Node, n *ast.Node) int {
 	return -1
 }
 
-func wrapper(call *ast.Node) bool {
-	callee := Unwrap(call.AsCallExpression().Expression)
-	if callee.Kind == ast.KindIdentifier {
-		return true
-	}
-	return callee.Kind == ast.KindPropertyAccessExpression && Unwrap(callee.Expression()).Kind == ast.KindIdentifier && Unwrap(callee.Expression()).Text() == "React"
+// wrapper reports whether call wraps the function passed to it: its result is callable too, as for memo or useCallback,
+// so the declaration it initializes names that function.
+func (m *Analyzer) wrapper(call *ast.Node) bool {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(call)
+	return t != nil && m.ctx.TypeChecker.TypeHasCallOrConstructSignatures(m.ctx.TypeChecker.GetNonNullableType(t))
 }
 
 func identifier(n *ast.Node) string {
@@ -247,7 +246,7 @@ func identifier(n *ast.Node) string {
 	return ""
 }
 
-func functionName(fn *ast.Node) string {
+func (m *Analyzer) functionName(fn *ast.Node) string {
 	switch fn.Kind {
 	case ast.KindFunctionDeclaration:
 		return identifier(fn.Name())
@@ -259,7 +258,7 @@ func functionName(fn *ast.Node) string {
 		return name
 	case ast.KindArrowFunction, ast.KindFunctionExpression:
 		p := fn.Parent
-		for p != nil && (p.Kind == ast.KindParenthesizedExpression || p.Kind == ast.KindAsExpression || p.Kind == ast.KindCallExpression && wrapper(p)) {
+		for p != nil && (p.Kind == ast.KindParenthesizedExpression || p.Kind == ast.KindAsExpression || p.Kind == ast.KindCallExpression && m.wrapper(p)) {
 			p = p.Parent
 		}
 		if p != nil && (p.Kind == ast.KindVariableDeclaration || p.Kind == ast.KindPropertyAssignment || p.Kind == ast.KindPropertyDeclaration) {
@@ -269,15 +268,15 @@ func functionName(fn *ast.Node) string {
 	return ""
 }
 
-func predicateName(n *ast.Node) string {
+func (m *Analyzer) predicateName(n *ast.Node) string {
 	child, p := parent(n)
 	switch {
 	case p.Kind == ast.KindArrowFunction && p.Body() == child:
-		return functionName(p)
+		return m.functionName(p)
 	case p.Kind == ast.KindReturnStatement:
 		block := p.Parent
 		if block.Kind == ast.KindBlock && len(block.Statements()) == 1 && block.Parent != nil && ast.IsFunctionLike(block.Parent) && block.Parent.Body() == block {
-			return functionName(block.Parent)
+			return m.functionName(block.Parent)
 		}
 	}
 	return ""

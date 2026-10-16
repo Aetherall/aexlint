@@ -95,6 +95,10 @@ export function isInstant(n: Notice) { return n.channel === "sms" || n.channel =
 export const instant = (n: Notice) => n.channel === "push" || n.channel === "sms";
 export const INSTANT: Channel[] = ["sms", "push"];
 export class Rules { static instant = (n: Notice) => ["sms", "push"].includes(n.channel); }`, Files: files("other.ts", instant)},
+			// A function passed to a call whose result is callable, such as memo, is named by the declaration it initializes.
+			{Code: instant, Files: files("other.ts", `import type { Notice } from "./channel.js";
+declare function memo<T extends Function>(fn: T): T;
+export const wrapped = memo((n: Notice) => n.channel === "push" || n.channel === "sms");`)},
 			// Single values and all-but-one tests partition off one value, not a group.
 			{Code: `import type { Notice } from "./channel.js";
 export function f(n: Notice) { if (n.channel === "sms" || n.channel !== "email") return 1; return n.channel !== "email" ? 2 : 3; }`, Files: files("other.ts", `import type { Notice } from "./channel.js";
@@ -118,6 +122,11 @@ export function loud(n: Notice) { return n.channel === "sms" || n.channel === "e
 		[]rule_tester.InvalidTestCase{
 			// The same group in another file, written in another order.
 			{Code: instant, Files: files("other.ts", elsewhere), Errors: []rule_tester.InvalidTestCaseError{group(instant, `n.channel === "sms" || n.channel === "push"`, 1)}},
+			// A callback passed to a call whose result is data is not named by the declaration the result initializes.
+			{Code: instant, Files: files("other.ts", `import type { Notice } from "./channel.js";
+declare function keep<T>(list: T[], test: (item: T) => boolean): T[];
+declare const all: Notice[];
+export const kept = keep(all, (n) => n.channel === "push" || n.channel === "sms");`), Errors: []rule_tester.InvalidTestCaseError{group(instant, `n.channel === "sms" || n.channel === "push"`, 1)}},
 			// Forms: complement, case group, list argument and generic list argument, all in one file.
 			{Code: mixed, Files: files(), Errors: []rule_tester.InvalidTestCaseError{
 				group(mixed, `t !== "email" && t !== "mail"`, 1),
