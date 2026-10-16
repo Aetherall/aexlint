@@ -149,6 +149,22 @@ export function f(size: Size, other: { size: Size } | undefined) {
   return other?.size === "M" || other!.size === "L" ? 2 : 3;
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 3)},
 			{Code: `import type { Size } from "./items.js";
+declare function fail(reason: string): never;
+export function f(size: Size, flag: boolean) {
+  if (size === "S") { fail("small"); }
+  if (size === "M") { if (flag) return 1; else throw new Error("m"); }
+  return size === "L" ? 2 : 3;
+}
+export function g(size: Size, mode: "a" | "b") {
+  if (size === "S") {
+    switch (mode) { case "a": return 1; case "b": throw new Error("b"); }
+  }
+  if (size === "M") {
+    switch (mode) { case "a": if (mode) break; return 1; default: return 2; }
+  }
+  return size === "L" ? 3 : 4;
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 6)},
+			{Code: `import type { Size } from "./items.js";
 const declared: readonly Size[] = ["S", "M"];
 const literal = ["S", "M"] as const;
 export function f(size: Size) {

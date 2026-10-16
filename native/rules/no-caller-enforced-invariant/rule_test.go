@@ -66,6 +66,17 @@ export function narrowed(command: { expiresAt?: Date }) {
   if (!command.expiresAt) throw new Error("missing");
   return Credential.create(command.expiresAt);
 }`, Files: map[string]string{"credential.ts": credential}},
+			// A check in a branch that leaves through a call returning never does not precede the hand-off.
+			{Code: `import { Credential } from "./credential.js";
+declare function reject(reason: string): never;
+export function retry(command: { expiresAt: string; retry: boolean }) {
+  const expiresAt = new Date(command.expiresAt);
+  if (command.retry) {
+    if (expiresAt <= new Date()) throw new Error("future");
+    reject("retry");
+  }
+  return Credential.create(expiresAt);
+}`, Files: map[string]string{"credential.ts": credential}},
 			// Plain functions, library classes, and members of the same class are not hand-offs.
 			{Code: `function store(value: string): string[] { return [value]; }
 export function plain(input: { name: string }) {

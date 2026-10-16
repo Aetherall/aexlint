@@ -59,7 +59,7 @@ func (m *Analyzer) OutcomeOf(body []*ast.Node, value Value, tag string) Outcome 
 			statements = append(statements, n)
 		}
 	}
-	return m.result(returned(statements), value, tag, effectful(statements))
+	return m.result(returned(statements), value, tag, m.effectful(statements))
 }
 
 // returned lists the expressions return statements return, outside the functions the statements declare.
@@ -85,15 +85,15 @@ func returned(statements []*ast.Node) []*ast.Node {
 
 // effectful reports whether statements run an expression statement, such as a call or an assignment, outside the
 // functions they declare: what it does, rather than any value, is why it runs. Calls inside declarations and conditions
-// compute values; whether they also have effects is not known.
-func effectful(statements []*ast.Node) bool {
+// compute values; whether they also have effects is not known. A call returning never leaves, like a throw.
+func (m *Analyzer) effectful(statements []*ast.Node) bool {
 	found := false
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
 		if found || ast.IsFunctionLike(n) || ast.IsClassLike(n) {
 			return found
 		}
-		if n.Kind == ast.KindExpressionStatement {
+		if n.Kind == ast.KindExpressionStatement && !m.exits(n) {
 			found = true
 			return true
 		}

@@ -52,11 +52,13 @@ A **guard** is a test after which code does work only where a claim holds, and o
 
 An **entry test** is a guard a function makes on a parameter, or on a property read from it, before its work. Its forms are:
 
-- a first statement `if (a || b) exit;` without `else`, where `exit` returns or throws: the function leaves when `a` or `b` holds;
+- a first statement `if (a || b) exit;` without `else`, where `exit` [leaves](#rejection): the function leaves when `a` or `b` holds;
 - a single statement `if (a && b) { work }` without `else`: the function leaves when `a` or `b` fails, and returns nothing;
 - a guard written as the body, the returned value, or the single expression statement.
 
 The **fallback** of an entry test is the constant the function returns when it leaves: the returned constant, the value a guard leaves with, or `undefined` when the function then returns nothing. A single expression statement returns nothing either way, so it leaves with `undefined` when its exit is a constant. There is none for async functions and generators, whose results are wrapped.
+
+Code **leaves** a statement list, written `exit` above, when it returns, throws, breaks or continues, calls a function returning `never`, or is a block ending so, an `if` both of whose branches leave, or a `switch` with a `default` clause or a case for every value whose clauses leave without a `break` out of it. Exits through loops and `try` are not followed.
 
 A later read **relies** on a presence test when its type there no longer holds a missing value the test splits off; the test then narrows for that read, and is not only a question. A check **precedes** a call when the statement holding it comes before the call in a statement list enclosing both, and no list between them ends by leaving it. Two places are **exclusive** when the `if` conditions guarding them below the statement list enclosing both make claims about the same value that no value satisfies together: tests joined by `&&` hold in a `then` branch, and the opposites of tests joined by `||` in an `else` branch. Two decisions are in **exclusive branches** when they sit on different sides of the same `if`, conditional expression, or `switch` clause, counting code after an `if` whose `then` always exits as its `else` side.
 
@@ -89,7 +91,7 @@ A **selector** is a function whose whole result is a boolean made of tests of li
 
 ## Outcome
 
-An **outcome** is what an arm produces when it runs: the data its result depends on, and whether it has **effects**, doing more than producing it. The result is the arm's expression, or the values its `return` statements return, outside the functions it declares; a returned call typed `void` or `undefined` is an effect, not a result. An arm has effects when it runs an expression statement, such as a call or an assignment, outside the functions it declares; calls inside declarations and conditions compute values, and whether they also have effects is not known. Relative to the value its decision tests, or to the receiver when it tests a property, the result depends on:
+An **outcome** is what an arm produces when it runs: the data its result depends on, and whether it has **effects**, doing more than producing it. The result is the arm's expression, or the values its `return` statements return, outside the functions it declares; a returned call typed `void` or `undefined` is an effect, not a result. An arm has effects when it runs an expression statement, such as a call or an assignment, outside the functions it declares, other than a call returning `never`, which leaves like a `throw`; calls inside declarations and conditions compute values, and whether they also have effects is not known. Relative to the value its decision tests, or to the receiver when it tests a property, the result depends on:
 
 - **none**: there is no result, as with `return`, `throw`, `continue` or statements only;
 - **empty**: nothing new, as with `undefined`, `null`, a boolean, `""`, `0`, `-1`, or object and array literals holding only missing or empty values;

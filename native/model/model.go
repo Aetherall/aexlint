@@ -211,7 +211,10 @@ func (md *builder) label(n *ast.Node) string {
 	return ""
 }
 
-func exits(n *ast.Node) bool {
+// exits reports whether n always leaves the statement list holding it: it returns, throws, breaks or continues, calls
+// a function returning never, or is a block ending so, an if both of whose branches do, or a switch with a default
+// clause or a case for every value whose clauses do without breaking out of it.
+func (m *Analyzer) exits(n *ast.Node) bool {
 	if n == nil {
 		return false
 	}
@@ -220,9 +223,46 @@ func exits(n *ast.Node) bool {
 		return true
 	case ast.KindBlock:
 		statements := n.Statements()
-		return len(statements) > 0 && exits(statements[len(statements)-1])
+		return len(statements) > 0 && m.exits(statements[len(statements)-1])
+	case ast.KindExpressionStatement:
+		e := skipOuter(n.Expression())
+		if e.Kind != ast.KindCallExpression {
+			return false
+		}
+		t := m.ctx.TypeChecker.GetTypeAtLocation(e)
+		return t != nil && t.Flags()&checker.TypeFlagsNever != 0
+	case ast.KindIfStatement:
+		s := n.AsIfStatement()
+		return s.ElseStatement != nil && m.exits(s.ThenStatement) && m.exits(s.ElseStatement)
+	case ast.KindSwitchStatement:
+		clauses := n.AsSwitchStatement().CaseBlock.AsCaseBlock().Clauses.Nodes
+		if len(clauses) == 0 || !slices.ContainsFunc(clauses, func(c *ast.Node) bool { return c.Kind == ast.KindDefaultClause }) && !m.Exhaustive(n) {
+			return false
+		}
+		for i, clause := range clauses {
+			statements := clause.Statements()
+			if len(statements) == 0 && i < len(clauses)-1 {
+				continue
+			}
+			if len(statements) == 0 || !m.exits(statements[len(statements)-1]) || slices.ContainsFunc(statements, breaks) {
+				return false
+			}
+		}
+		return true
 	}
 	return false
+}
+
+// breaks reports whether n holds a break without a label that leaves the statement holding n: one not inside a loop,
+// a switch or a function written in n.
+func breaks(n *ast.Node) bool {
+	switch {
+	case n.Kind == ast.KindBreakStatement:
+		return n.Label() == nil
+	case ast.IsFunctionLike(n) || ast.IsClassLike(n) || ast.IsIterationStatement(n, false) || n.Kind == ast.KindSwitchStatement:
+		return false
+	}
+	return n.ForEachChild(breaks)
 }
 
 func logic(nodes []*ast.Node) []*ast.Node {
@@ -336,7 +376,7 @@ func (md *builder) left(root *ast.Node, subject Test) Claim {
 		if earlier == statement {
 			break
 		}
-		if earlier.Kind != ast.KindIfStatement || earlier.AsIfStatement().ElseStatement != nil || !exits(earlier.AsIfStatement().ThenStatement) {
+		if earlier.Kind != ast.KindIfStatement || earlier.AsIfStatement().ElseStatement != nil || !md.m.exits(earlier.AsIfStatement().ThenStatement) {
 			continue
 		}
 		if t, ok := md.m.literalTest(earlier.AsIfStatement().Expression); ok && SameSubject(t, subject) && !md.m.assigns(list[i+1:slices.Index(list, statement)], subject.Value) {
@@ -917,7 +957,7 @@ func (md *builder) path(n *ast.Node) []side {
 				}
 				if before.Kind == ast.KindIfStatement {
 					s := before.AsIfStatement()
-					if s.ElseStatement == nil && exits(s.ThenStatement) {
+					if s.ElseStatement == nil && md.m.exits(s.ThenStatement) {
 						out = append(out, side{before, 2})
 					}
 				}

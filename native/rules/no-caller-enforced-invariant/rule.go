@@ -76,7 +76,7 @@ func (m *measure) check(fn *ast.Node) {
 			}
 			unchanged := model.Exact(call.Arguments[index])
 			for _, check := range call.Checks {
-				if !model.Definite(check.Read, unchanged) || !model.Precedes(check.Node, call.Node) || m.a.Exclusive(check.Node, call.Node) {
+				if !model.Definite(check.Read, unchanged) || !m.a.Precedes(check.Node, call.Node) || m.a.Exclusive(check.Node, call.Node) {
 					continue
 				}
 				m.report(argument, check, class, declaration, handed)

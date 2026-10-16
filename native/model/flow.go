@@ -799,22 +799,14 @@ func encloses(outer *ast.Node, inner *ast.Node) bool {
 
 // leaves reports whether a statement list ends by leaving it, through a statement that does not contain check: the
 // check's own throw ending its guard does not count.
-func leaves(list []*ast.Node, check *ast.Node) bool {
-	if len(list) == 0 {
-		return false
-	}
-	last := list[len(list)-1]
-	switch last.Kind {
-	case ast.KindReturnStatement, ast.KindThrowStatement, ast.KindBreakStatement, ast.KindContinueStatement:
-		return !encloses(last, check)
-	}
-	return false
+func (m *Analyzer) leaves(list []*ast.Node, check *ast.Node) bool {
+	return len(list) > 0 && m.exits(list[len(list)-1]) && !encloses(list[len(list)-1], check)
 }
 
 // Precedes reports whether a check can run before a call on the way to it: the statement holding the check comes
 // before the call in a statement list enclosing both, and no statement list between the check and that statement ends
 // by leaving it, as a branch that returns does. A check nested in conditions still precedes a call after them.
-func Precedes(check *ast.Node, call *ast.Node) bool {
+func (m *Analyzer) Precedes(check *ast.Node, call *ast.Node) bool {
 	for list := call.Parent; list != nil; list = list.Parent {
 		if statementList(list) == nil || !encloses(list, check) {
 			continue
@@ -827,7 +819,7 @@ func Precedes(check *ast.Node, call *ast.Node) bool {
 			return false
 		}
 		for n := check.Parent; n != nil && n != list; n = n.Parent {
-			if leaves(statementList(n), check) {
+			if m.leaves(statementList(n), check) {
 				return false
 			}
 		}

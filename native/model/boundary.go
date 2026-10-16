@@ -238,7 +238,7 @@ func (m *Analyzer) Entries(fn *ast.Node) []Guard {
 		s := first.AsIfStatement()
 		switch {
 		case s.ElseStatement != nil:
-		case exits(s.ThenStatement):
+		case m.exits(s.ThenStatement):
 			fallback, display := "", ""
 			if value, ok := returnedValue(s.ThenStatement); ok {
 				fallback, display = constant(value)
