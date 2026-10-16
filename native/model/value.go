@@ -394,7 +394,8 @@ func (f Field) Same(o Field) bool {
 }
 
 // FieldOf returns the field n reads. A property is looked up on its object's declared type, so narrowing the object
-// does not change it, or on the narrowed type when only some members of the declared type have it.
+// does not change it, or on the narrowed type when only some members of the declared type have it. A variable that only
+// names a property names its field.
 func (m *Analyzer) FieldOf(n *ast.Node) Field {
 	n = Unwrap(n)
 	tc := m.ctx.TypeChecker
@@ -419,6 +420,13 @@ func (m *Analyzer) FieldOf(n *ast.Node) Field {
 	if symbol := tc.GetSymbolAtLocation(n); symbol != nil && symbol.ValueDeclaration != nil {
 		if field, ok := m.bound(symbol.ValueDeclaration); ok {
 			return field
+		}
+		if d := symbol.ValueDeclaration; d.Kind == ast.KindVariableDeclaration && d.Initializer() != nil {
+			if _, ok := m.alias(symbol); ok && Unwrap(d.Initializer()).Kind == ast.KindPropertyAccessExpression {
+				if field := m.FieldOf(d.Initializer()); len(field.Declarations) > 0 {
+					return field
+				}
+			}
 		}
 		return Field{Name: symbol.Name, Declarations: []*ast.Node{symbol.ValueDeclaration}, Symbol: symbol}
 	}

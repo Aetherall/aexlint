@@ -25,13 +25,12 @@ func (m *measure) report(d *model.Decision) {
 	if len(arms) < 2 || !slices.ContainsFunc(arms, func(a model.Branch) bool { return a.Tested }) || d.Owner == nil || d.Inside {
 		return
 	}
-	subject, receiver, owner := d.Node, d.Receiver, d.Owner
-	tag := d.Field.Name
+	subject, owner := d.Node, d.Owner
 	fields := []string{}
 	destinations := []*ast.Symbol{}
 	for _, a := range arms {
 		for _, result := range m.model.Built(d, a) {
-			for _, field := range m.model.ConstructionFields(result, receiver, tag) {
+			for _, field := range m.model.ConstructionFields(result, d.Object, d.Tag) {
 				if !slices.Contains(fields, field) {
 					fields = append(fields, field)
 				}

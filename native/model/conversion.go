@@ -48,7 +48,7 @@ func (m *Analyzer) Constructions(d *Decision) map[string][]Construction {
 	if d.Receiver == nil || slices.ContainsFunc(d.Arms, func(a Branch) bool { return !a.Complete }) {
 		return out
 	}
-	source := m.ValueOf(d.Receiver)
+	source := d.Object
 	for _, arm := range d.Arms {
 		boundary := map[*ast.Node]bool{}
 		for _, n := range arm.Body {

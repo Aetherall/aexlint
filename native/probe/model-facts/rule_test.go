@@ -198,6 +198,29 @@ export function moved({ pond }: Ponds) {
 }`, Files: files, Options: only("decision", "entry"), Errors: []rule_tester.InvalidTestCaseError{
 				{MessageId: "decision"}, {MessageId: "decision"}, {MessageId: "entry"}, {MessageId: "entry"}, {MessageId: "entry"},
 			}},
+			{Code: `import type { Item } from "./items.js";
+export function render({ kind, ...rest }: Item) {
+  switch (kind) {
+    case "text": return { label: "text", parts: [rest] };
+    case "stock": return { label: "stock", parts: [rest] };
+  }
+}
+export function describe(item: Item) {
+  const tag = item.kind;
+  return tag === "text" ? { text: item.text } : { sku: item.sku, count: item.count };
+}
+export function plain(item: Item) {
+  const { kind } = item;
+  return kind === "text" ? { text: item.text } : { sku: item.sku };
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 3)},
+			{Code: `import type { Item } from "./items.js";
+export class Shelf {
+  constructor(readonly item: Item) {}
+  label() {
+    const { kind } = this.item;
+    return kind === "text" ? { text: this.item } : { stock: this.item };
+  }
+}`, Files: map[string]string{"items.ts": items}, Options: only("decision"), Errors: facts("decision", 1)},
 			{Code: `export function save({ id, name }: { id: string; name: string }) {
   const short = id;
   if (short.length > 10) throw new Error("long");

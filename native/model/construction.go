@@ -26,7 +26,8 @@ func (m *Analyzer) ObjectResult(n *ast.Node) bool {
 	return false
 }
 
-func (m *Analyzer) ConstructionFields(root, receiver *ast.Node, tag string) []string {
+// ConstructionFields returns the fields of object other than tag that the object and array literals in root read.
+func (m *Analyzer) ConstructionFields(root *ast.Node, object Value, tag string) []string {
 	fields := []string{}
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
@@ -34,7 +35,7 @@ func (m *Analyzer) ConstructionFields(root, receiver *ast.Node, tag string) []st
 			return false
 		}
 		if n.Kind == ast.KindObjectLiteralExpression || n.Kind == ast.KindArrayLiteralExpression {
-			for _, field := range m.ReadsOf(n, m.ValueOf(receiver), tag).Fields {
+			for _, field := range m.ReadsOf(n, object, tag).Fields {
 				if !slices.Contains(fields, field) {
 					fields = append(fields, field)
 				}
@@ -48,21 +49,21 @@ func (m *Analyzer) ConstructionFields(root, receiver *ast.Node, tag string) []st
 	return fields
 }
 
-// constructs reports whether n builds an object from fields of receiver other than tag.
-func (m *Analyzer) constructs(n, receiver *ast.Node, tag string) bool {
-	return receiver != nil && m.ObjectResult(n) && len(m.ConstructionFields(n, receiver, tag)) > 0
+// constructs reports whether n builds an object from fields of object other than tag.
+func (m *Analyzer) constructs(n *ast.Node, object Value, tag string) bool {
+	return object.root() && m.ObjectResult(n) && len(m.ConstructionFields(n, object, tag)) > 0
 }
 
 // Built returns the objects an arm of d builds from fields of d's receiver other than the one d tests: its value, and
 // what it returns, assigns or declares.
 func (m *Analyzer) Built(d *Decision, b Branch) []*ast.Node {
-	return m.Results(b.Body, d.Receiver, d.Field.Name)
+	return m.Results(b.Body, d.Object, d.Tag)
 }
 
-func (m *Analyzer) Results(nodes []*ast.Node, receiver *ast.Node, tag string) []*ast.Node {
+func (m *Analyzer) Results(nodes []*ast.Node, object Value, tag string) []*ast.Node {
 	results := []*ast.Node{}
 	add := func(expression *ast.Node) {
-		if expression != nil && m.constructs(expression, receiver, tag) {
+		if expression != nil && m.constructs(expression, object, tag) {
 			results = append(results, expression)
 		}
 	}

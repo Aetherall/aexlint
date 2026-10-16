@@ -64,16 +64,20 @@ type Branch struct {
 }
 
 type Decision struct {
-	ID          int
-	Node        *ast.Node
-	Line        int
-	Form        DecisionForm
-	Function    int
-	Field       Field
-	Vocabulary  *Vocabulary
-	Arms        []Branch
-	Purposes    []string
+	ID         int
+	Node       *ast.Node
+	Line       int
+	Form       DecisionForm
+	Function   int
+	Field      Field
+	Vocabulary *Vocabulary
+	Arms       []Branch
+	Purposes   []string
+	// Receiver is the expression or binding pattern whose type holds the tested field, Object the value it reads, and Tag
+	// the field's name.
 	Receiver    *ast.Node
+	Object      Value
+	Tag         string
 	Owner       *ast.Symbol
 	Inside      bool
 	Root        *ast.Node
@@ -309,10 +313,6 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		return
 	}
 	field := md.m.FieldOf(subjectNode)
-	var receiver *ast.Node
-	if u := Unwrap(subjectNode); u.Kind == ast.KindPropertyAccessExpression {
-		receiver = Unwrap(u.Expression())
-	}
 	value, tested := md.m.ValueOf(subjectNode), ""
 	if n := len(value.Path); n > 0 {
 		value, tested = Value{Node: value.Node, Root: value.Root, This: value.This, Base: value.Base, Path: value.Path[:n-1]}, value.Path[n-1]
@@ -349,13 +349,38 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 	d.path = md.path(root)
 	d.Root = root
 	d.Alternative = alternative
-	if receiver != nil {
-		d.Receiver = receiver
+	if receiver := md.m.objectNode(subjectNode); receiver != nil && tested != "" {
+		d.Receiver, d.Object, d.Tag = receiver, value, tested
 		if d.Owner = md.m.Owner(receiver); d.Owner != nil {
 			d.Inside = md.m.InsideOwner(Unwrap(subjectNode), d.Owner)
 		}
 	}
 	md.add(d)
+}
+
+// objectNode returns the expression or binding pattern whose type holds the field subject reads: the object of a
+// property or literal-key element read, the pattern a destructured variable is bound from, or the object a const copies
+// the field from. It returns nil when subject reads no field.
+func (m *Analyzer) objectNode(subject *ast.Node) *ast.Node {
+	switch u := Unwrap(subject); u.Kind {
+	case ast.KindPropertyAccessExpression, ast.KindElementAccessExpression:
+		return Unwrap(u.Expression())
+	case ast.KindIdentifier:
+		symbol := m.ctx.TypeChecker.GetSymbolAtLocation(u)
+		if symbol == nil {
+			return nil
+		}
+		if _, ok := m.alias(symbol); !ok {
+			return nil
+		}
+		switch d := symbol.ValueDeclaration; d.Kind {
+		case ast.KindBindingElement:
+			return d.Parent
+		case ast.KindVariableDeclaration:
+			return m.objectNode(d.Initializer())
+		}
+	}
+	return nil
 }
 
 // left returns the values of subject a decision at root can still see: earlier statements of the list holding root
