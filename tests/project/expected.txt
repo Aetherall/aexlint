@@ -650,372 +650,372 @@ max-held-context/reported.tsx:1:76 aexlint(max-held-context)
   ~ item.big
   This decision is made inside 3 open contexts (held-context depth 4); maximum is 3. A reader must keep the enclosing branches, loops, cases, handlers or callbacks in mind to follow it.
 
-max-interpretation-spread/default/over-limit/consumer0.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/default/over-limit/consumer0.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("equinox" | "solstice" | "thaw") is checked for particular values in more than 4 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 5 files. Other files, nearest first: max-interpretation-spread/default/over-limit/consumer1.ts, max-interpretation-spread/default/over-limit/consumer2.ts, max-interpretation-spread/default/over-limit/consumer3.ts, and 1 more. Declared as: Kind (max-interpretation-spread/default/over-limit/kinds.ts).
 
-max-interpretation-spread/default/over-limit/consumer1.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/default/over-limit/consumer1.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("equinox" | "solstice" | "thaw") is checked for particular values in more than 4 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 5 files. Other files, nearest first: max-interpretation-spread/default/over-limit/consumer0.ts, max-interpretation-spread/default/over-limit/consumer2.ts, max-interpretation-spread/default/over-limit/consumer3.ts, and 1 more. Declared as: Kind (max-interpretation-spread/default/over-limit/kinds.ts).
 
-max-interpretation-spread/default/over-limit/consumer2.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/default/over-limit/consumer2.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("equinox" | "solstice" | "thaw") is checked for particular values in more than 4 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 5 files. Other files, nearest first: max-interpretation-spread/default/over-limit/consumer0.ts, max-interpretation-spread/default/over-limit/consumer1.ts, max-interpretation-spread/default/over-limit/consumer3.ts, and 1 more. Declared as: Kind (max-interpretation-spread/default/over-limit/kinds.ts).
 
-max-interpretation-spread/default/over-limit/consumer3.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/default/over-limit/consumer3.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("equinox" | "solstice" | "thaw") is checked for particular values in more than 4 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 5 files. Other files, nearest first: max-interpretation-spread/default/over-limit/consumer0.ts, max-interpretation-spread/default/over-limit/consumer1.ts, max-interpretation-spread/default/over-limit/consumer2.ts, and 1 more. Declared as: Kind (max-interpretation-spread/default/over-limit/kinds.ts).
 
-max-interpretation-spread/default/over-limit/file.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/default/over-limit/file.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("equinox" | "solstice" | "thaw") is checked for particular values in more than 4 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 5 files. Other files, nearest first: max-interpretation-spread/default/over-limit/consumer0.ts, max-interpretation-spread/default/over-limit/consumer1.ts, max-interpretation-spread/default/over-limit/consumer2.ts, and 1 more. Declared as: Kind (max-interpretation-spread/default/over-limit/kinds.ts).
 
-max-interpretation-spread/max-1/as-const-object/a.ts:1:76 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/as-const-object/a.ts:1:76 aexlint(max-interpretation-spread)
   ~ s
   `Status` ("lightning" | "thunder") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/as-const-object/file.ts. Declared as: Status (max-interpretation-spread/max-1/as-const-object/file.ts).
 
-max-interpretation-spread/max-1/as-const-object/file.ts:2:33 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/as-const-object/file.ts:2:33 aexlint(max-interpretation-spread)
   ~ s
   `Status` ("lightning" | "thunder") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/as-const-object/a.ts. Declared as: Status (max-interpretation-spread/max-1/as-const-object/file.ts).
 
-max-interpretation-spread/max-1/call-and-constraint/consumer0.ts:2:47 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/call-and-constraint/consumer0.ts:2:47 aexlint(max-interpretation-spread)
   ~ kind
   `kind` ("altostratus" | "cumulonimbus" | "nimbus") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/call-and-constraint/file.ts. Declared as: Kind (max-interpretation-spread/max-1/call-and-constraint/kinds.ts), kind (max-interpretation-spread/max-1/call-and-constraint/consumer0.ts).
 
-max-interpretation-spread/max-1/call-and-constraint/file.ts:1:80 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/call-and-constraint/file.ts:1:80 aexlint(max-interpretation-spread)
   ~ mode()
   `Kind` ("altostratus" | "cumulonimbus" | "nimbus") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/call-and-constraint/consumer0.ts. Declared as: Kind (max-interpretation-spread/max-1/call-and-constraint/kinds.ts), kind (max-interpretation-spread/max-1/call-and-constraint/consumer0.ts).
 
-max-interpretation-spread/max-1/dependency-closed/a.ts:1:75 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/dependency-closed/a.ts:1:75 aexlint(max-interpretation-spread)
   ~ kind
   `Kind` ("graupel" | "hoarfrost") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/dependency-closed/file.ts. Declared as: Kind (max-interpretation-spread/max-1/dependency-closed/kinds2.ts).
 
-max-interpretation-spread/max-1/dependency-closed/file.ts:1:75 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/dependency-closed/file.ts:1:75 aexlint(max-interpretation-spread)
   ~ kind
   `Kind` ("graupel" | "hoarfrost") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/dependency-closed/a.ts. Declared as: Kind (max-interpretation-spread/max-1/dependency-closed/kinds2.ts).
 
-max-interpretation-spread/max-1/different-literal-set/consumer0.ts:2:82 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/different-literal-set/consumer0.ts:2:82 aexlint(max-interpretation-spread)
   ~ kind
   `kind` ("hurricane" | "tornado" | "waterspout" | "whirlwind") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/different-literal-set/consumer1.ts. Declared as: kind (max-interpretation-spread/max-1/different-literal-set/consumer0.ts), kind (max-interpretation-spread/max-1/different-literal-set/consumer1.ts).
 
-max-interpretation-spread/max-1/different-literal-set/consumer1.ts:2:82 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/different-literal-set/consumer1.ts:2:82 aexlint(max-interpretation-spread)
   ~ kind
   `kind` ("hurricane" | "tornado" | "waterspout" | "whirlwind") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/different-literal-set/consumer0.ts. Declared as: kind (max-interpretation-spread/max-1/different-literal-set/consumer0.ts), kind (max-interpretation-spread/max-1/different-literal-set/consumer1.ts).
 
-max-interpretation-spread/max-1/discriminated-union/consumer0.ts:2:33 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/discriminated-union/consumer0.ts:2:33 aexlint(max-interpretation-spread)
   ~ s.type
   `File.type` ("cloudy" | "overcast" | "sunny") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/discriminated-union/file.ts. Declared as: File.type (max-interpretation-spread/max-1/discriminated-union/kinds.ts), Folder.type (max-interpretation-spread/max-1/discriminated-union/kinds.ts).
 
-max-interpretation-spread/max-1/discriminated-union/file.ts:1:75 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/discriminated-union/file.ts:1:75 aexlint(max-interpretation-spread)
   ~ s.type
   `File.type` ("cloudy" | "overcast" | "sunny") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/discriminated-union/consumer0.ts. Declared as: File.type (max-interpretation-spread/max-1/discriminated-union/kinds.ts), Folder.type (max-interpretation-spread/max-1/discriminated-union/kinds.ts).
 
-max-interpretation-spread/max-1/each-vocabulary/consumer0.ts:2:45 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/each-vocabulary/consumer0.ts:2:45 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("corona" | "halo" | "sundog") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/each-vocabulary/file.ts. Declared as: Kind (max-interpretation-spread/max-1/each-vocabulary/kinds.ts).
 
-max-interpretation-spread/max-1/each-vocabulary/consumer0.ts:2:71 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/each-vocabulary/consumer0.ts:2:71 aexlint(max-interpretation-spread)
   ~ s.type
   `File.type` ("breeze" | "calm" | "doldrums") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/each-vocabulary/file.ts. Declared as: File.type (max-interpretation-spread/max-1/each-vocabulary/kinds.ts), Folder.type (max-interpretation-spread/max-1/each-vocabulary/kinds.ts).
 
-max-interpretation-spread/max-1/each-vocabulary/file.ts:2:45 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/each-vocabulary/file.ts:2:45 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("corona" | "halo" | "sundog") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/each-vocabulary/consumer0.ts. Declared as: Kind (max-interpretation-spread/max-1/each-vocabulary/kinds.ts).
 
-max-interpretation-spread/max-1/each-vocabulary/file.ts:2:95 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/each-vocabulary/file.ts:2:95 aexlint(max-interpretation-spread)
   ~ s.type
   `File.type` ("breeze" | "calm" | "doldrums") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/each-vocabulary/consumer0.ts. Declared as: File.type (max-interpretation-spread/max-1/each-vocabulary/kinds.ts), Folder.type (max-interpretation-spread/max-1/each-vocabulary/kinds.ts).
 
-max-interpretation-spread/max-1/enum/a.ts:1:93 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/enum/a.ts:1:93 aexlint(max-interpretation-spread)
   ~ l
   `Level` (Level.High | Level.Low) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/enum/file.ts. Declared as: Level (max-interpretation-spread/max-1/enum/level.ts).
 
-max-interpretation-spread/max-1/enum/file.ts:1:68 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/enum/file.ts:1:68 aexlint(max-interpretation-spread)
   ~ l
   `Level` (Level.High | Level.Low) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/enum/a.ts. Declared as: Level (max-interpretation-spread/max-1/enum/level.ts).
 
-max-interpretation-spread/max-1/many-values/a.ts:1:70 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/many-values/a.ts:1:70 aexlint(max-interpretation-spread)
   ~ big
   `Big` ("cloud" | "rain" | "snow" | "storm" | … (6 values)) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/many-values/file.ts. Declared as: Big (max-interpretation-spread/max-1/many-values/file.ts). Values: "cloud" | "rain" | "snow" | "storm" | "sun" | "wind".
 
-max-interpretation-spread/max-1/many-values/file.ts:1:104 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/many-values/file.ts:1:104 aexlint(max-interpretation-spread)
   ~ big
   `Big` ("cloud" | "rain" | "snow" | "storm" | … (6 values)) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/many-values/a.ts. Declared as: Big (max-interpretation-spread/max-1/many-values/file.ts). Values: "cloud" | "rain" | "snow" | "storm" | "sun" | "wind".
 
-max-interpretation-spread/max-1/narrowed-discriminated-union/consumer0.ts:2:33 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/narrowed-discriminated-union/consumer0.ts:2:33 aexlint(max-interpretation-spread)
   ~ s.type
   `File.type` ("icicle" | "permafrost" | "snowdrift") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/narrowed-discriminated-union/file.ts. Declared as: Folder.type (max-interpretation-spread/max-1/narrowed-discriminated-union/kinds.ts), File.type (max-interpretation-spread/max-1/narrowed-discriminated-union/kinds.ts).
 
-max-interpretation-spread/max-1/narrowed-discriminated-union/file.ts:2:36 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/narrowed-discriminated-union/file.ts:2:36 aexlint(max-interpretation-spread)
   ~ s.type
   `Folder.type` ("icicle" | "permafrost" | "snowdrift") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 2 such checks.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/narrowed-discriminated-union/consumer0.ts. Declared as: Folder.type (max-interpretation-spread/max-1/narrowed-discriminated-union/kinds.ts), File.type (max-interpretation-spread/max-1/narrowed-discriminated-union/kinds.ts).
 
-max-interpretation-spread/max-1/no-check-in-file/consumer0.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/no-check-in-file/consumer0.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("blizzard" | "flurry" | "slush") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/no-check-in-file/consumer1.ts, max-interpretation-spread/max-1/no-check-in-file/consumer2.ts. Declared as: Kind (max-interpretation-spread/max-1/no-check-in-file/kinds.ts).
 
-max-interpretation-spread/max-1/no-check-in-file/consumer1.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/no-check-in-file/consumer1.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("blizzard" | "flurry" | "slush") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/no-check-in-file/consumer0.ts, max-interpretation-spread/max-1/no-check-in-file/consumer2.ts. Declared as: Kind (max-interpretation-spread/max-1/no-check-in-file/kinds.ts).
 
-max-interpretation-spread/max-1/no-check-in-file/consumer2.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/no-check-in-file/consumer2.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("blizzard" | "flurry" | "slush") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/no-check-in-file/consumer0.ts, max-interpretation-spread/max-1/no-check-in-file/consumer1.ts. Declared as: Kind (max-interpretation-spread/max-1/no-check-in-file/kinds.ts).
 
-max-interpretation-spread/max-1/numbers/consumer0.ts:2:50 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/numbers/consumer0.ts:2:50 aexlint(max-interpretation-spread)
   ~ status
   `status` (9101 | 9102 | 9103) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/numbers/file.ts. Declared as: status (max-interpretation-spread/max-1/numbers/consumer0.ts), status (max-interpretation-spread/max-1/numbers/file.ts).
 
-max-interpretation-spread/max-1/numbers/file.ts:1:50 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/numbers/file.ts:1:50 aexlint(max-interpretation-spread)
   ~ status
   `status` (9101 | 9102 | 9103) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/numbers/consumer0.ts. Declared as: status (max-interpretation-spread/max-1/numbers/consumer0.ts), status (max-interpretation-spread/max-1/numbers/file.ts).
 
-max-interpretation-spread/max-1/object-literal-property/file.ts:2:24 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/object-literal-property/file.ts:2:24 aexlint(max-interpretation-spread)
   ~ entry.type
   `type` ("cloudburst" | "deluge") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/object-literal-property/other.ts. Declared as: type (max-interpretation-spread/max-1/object-literal-property/entry.ts).
 
-max-interpretation-spread/max-1/object-literal-property/other.ts:2:24 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/object-literal-property/other.ts:2:24 aexlint(max-interpretation-spread)
   ~ entry.type
   `type` ("cloudburst" | "deluge") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/object-literal-property/file.ts. Declared as: type (max-interpretation-spread/max-1/object-literal-property/entry.ts).
 
-max-interpretation-spread/max-1/own-declaration-named/consumer0.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/own-declaration-named/consumer0.ts:2:34 aexlint(max-interpretation-spread)
   ~ kind
   `Kind` ("chinook" | "mistral" | "zephyr") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/own-declaration-named/consumer1.ts, max-interpretation-spread/max-1/own-declaration-named/file.ts. Declared as: Kind (max-interpretation-spread/max-1/own-declaration-named/kinds.ts), Holder.kind (max-interpretation-spread/max-1/own-declaration-named/b.ts).
 
-max-interpretation-spread/max-1/own-declaration-named/consumer1.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/own-declaration-named/consumer1.ts:2:34 aexlint(max-interpretation-spread)
   ~ kind
   `Kind` ("chinook" | "mistral" | "zephyr") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/own-declaration-named/consumer0.ts, max-interpretation-spread/max-1/own-declaration-named/file.ts. Declared as: Kind (max-interpretation-spread/max-1/own-declaration-named/kinds.ts), Holder.kind (max-interpretation-spread/max-1/own-declaration-named/b.ts).
 
-max-interpretation-spread/max-1/own-declaration-named/file.ts:1:71 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-1/own-declaration-named/file.ts:1:71 aexlint(max-interpretation-spread)
   ~ holder.kind
   `Holder.kind` ("chinook" | "mistral" | "zephyr") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/own-declaration-named/consumer0.ts, max-interpretation-spread/max-1/own-declaration-named/consumer1.ts. Declared as: Kind (max-interpretation-spread/max-1/own-declaration-named/kinds.ts), Holder.kind (max-interpretation-spread/max-1/own-declaration-named/b.ts).
 
-max-interpretation-spread/max-2/includes-and-or/a.ts:2:60 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/includes-and-or/a.ts:2:60 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("dew" | "frost" | "rime") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/includes-and-or/b.ts, max-interpretation-spread/max-2/includes-and-or/file.ts. Declared as: Kind (max-interpretation-spread/max-2/includes-and-or/kinds.ts).
 
-max-interpretation-spread/max-2/includes-and-or/b.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/includes-and-or/b.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("dew" | "frost" | "rime") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/includes-and-or/a.ts, max-interpretation-spread/max-2/includes-and-or/file.ts. Declared as: Kind (max-interpretation-spread/max-2/includes-and-or/kinds.ts).
 
-max-interpretation-spread/max-2/includes-and-or/file.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/includes-and-or/file.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("dew" | "frost" | "rime") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/includes-and-or/a.ts, max-interpretation-spread/max-2/includes-and-or/b.ts. Declared as: Kind (max-interpretation-spread/max-2/includes-and-or/kinds.ts).
 
-max-interpretation-spread/max-2/redeclared-copies/a.ts:1:69 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/redeclared-copies/a.ts:1:69 aexlint(max-interpretation-spread)
   ~ kind
   `kind` ("cirrus" | "cumulus" | "stratus") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/redeclared-copies/c.ts, max-interpretation-spread/max-2/redeclared-copies/file.ts. Declared as: Kind (max-interpretation-spread/max-2/redeclared-copies/kinds.ts), Holder.kind (max-interpretation-spread/max-2/redeclared-copies/b.ts), kind (max-interpretation-spread/max-2/redeclared-copies/a.ts).
 
-max-interpretation-spread/max-2/redeclared-copies/c.ts:1:71 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/redeclared-copies/c.ts:1:71 aexlint(max-interpretation-spread)
   ~ holder.kind
   `Holder.kind` ("cirrus" | "cumulus" | "stratus") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/redeclared-copies/a.ts, max-interpretation-spread/max-2/redeclared-copies/file.ts. Declared as: Kind (max-interpretation-spread/max-2/redeclared-copies/kinds.ts), Holder.kind (max-interpretation-spread/max-2/redeclared-copies/b.ts), kind (max-interpretation-spread/max-2/redeclared-copies/a.ts).
 
-max-interpretation-spread/max-2/redeclared-copies/file.ts:2:59 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/redeclared-copies/file.ts:2:59 aexlint(max-interpretation-spread)
   ~ copy
   `Kind` ("cirrus" | "cumulus" | "stratus") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/redeclared-copies/a.ts, max-interpretation-spread/max-2/redeclared-copies/c.ts. Declared as: Kind (max-interpretation-spread/max-2/redeclared-copies/kinds.ts), Holder.kind (max-interpretation-spread/max-2/redeclared-copies/b.ts), kind (max-interpretation-spread/max-2/redeclared-copies/a.ts).
 
-max-interpretation-spread/max-2/reported-on-first-check/consumer0.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/reported-on-first-check/consumer0.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("gale" | "gust" | "squall") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/reported-on-first-check/consumer1.ts, max-interpretation-spread/max-2/reported-on-first-check/file.ts. Declared as: Kind (max-interpretation-spread/max-2/reported-on-first-check/kinds.ts).
 
-max-interpretation-spread/max-2/reported-on-first-check/consumer1.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/reported-on-first-check/consumer1.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("gale" | "gust" | "squall") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/reported-on-first-check/consumer0.ts, max-interpretation-spread/max-2/reported-on-first-check/file.ts. Declared as: Kind (max-interpretation-spread/max-2/reported-on-first-check/kinds.ts).
 
-max-interpretation-spread/max-2/reported-on-first-check/file.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-2/reported-on-first-check/file.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("gale" | "gust" | "squall") is checked for particular values in more than 2 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-2/reported-on-first-check/consumer0.ts, max-interpretation-spread/max-2/reported-on-first-check/consumer1.ts. Declared as: Kind (max-interpretation-spread/max-2/reported-on-first-check/kinds.ts).
 
-max-interpretation-spread/max-5/forms/a.ts:1:75 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-5/forms/a.ts:1:75 aexlint(max-interpretation-spread)
   ~ item?.kind
   `Kind` ("brume" | "smog" | "vapor") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 6 files. Other files, nearest first: max-interpretation-spread/max-5/forms/b.ts, max-interpretation-spread/max-5/forms/c.ts, max-interpretation-spread/max-5/forms/d.ts, and 2 more. Declared as: Kind (max-interpretation-spread/max-5/forms/kinds.ts).
 
-max-interpretation-spread/max-5/forms/b.ts:1:94 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-5/forms/b.ts:1:94 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("brume" | "smog" | "vapor") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 6 files. Other files, nearest first: max-interpretation-spread/max-5/forms/a.ts, max-interpretation-spread/max-5/forms/c.ts, max-interpretation-spread/max-5/forms/d.ts, and 2 more. Declared as: Kind (max-interpretation-spread/max-5/forms/kinds.ts).
 
-max-interpretation-spread/max-5/forms/c.ts:1:81 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-5/forms/c.ts:1:81 aexlint(max-interpretation-spread)
   ~ kind
   `Kind` ("brume" | "smog" | "vapor") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 6 files. Other files, nearest first: max-interpretation-spread/max-5/forms/a.ts, max-interpretation-spread/max-5/forms/b.ts, max-interpretation-spread/max-5/forms/d.ts, and 2 more. Declared as: Kind (max-interpretation-spread/max-5/forms/kinds.ts).
 
-max-interpretation-spread/max-5/forms/d.ts:1:93 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-5/forms/d.ts:1:93 aexlint(max-interpretation-spread)
   ~ kind
   `Kind` ("brume" | "smog" | "vapor") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 6 files. Other files, nearest first: max-interpretation-spread/max-5/forms/a.ts, max-interpretation-spread/max-5/forms/b.ts, max-interpretation-spread/max-5/forms/c.ts, and 2 more. Declared as: Kind (max-interpretation-spread/max-5/forms/kinds.ts).
 
-max-interpretation-spread/max-5/forms/e.tsx:1:91 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-5/forms/e.tsx:1:91 aexlint(max-interpretation-spread)
   ~ props.item.kind
   `Kind` ("brume" | "smog" | "vapor") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 6 files. Other files, nearest first: max-interpretation-spread/max-5/forms/a.ts, max-interpretation-spread/max-5/forms/b.ts, max-interpretation-spread/max-5/forms/c.ts, and 2 more. Declared as: Kind (max-interpretation-spread/max-5/forms/kinds.ts).
 
-max-interpretation-spread/max-5/forms/file.ts:2:34 aexlint-typed(max-interpretation-spread)
+max-interpretation-spread/max-5/forms/file.ts:2:34 aexlint(max-interpretation-spread)
   ~ item.kind
   `Kind` ("brume" | "smog" | "vapor") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 6 files. Other files, nearest first: max-interpretation-spread/max-5/forms/a.ts, max-interpretation-spread/max-5/forms/b.ts, max-interpretation-spread/max-5/forms/c.ts, and 2 more. Declared as: Kind (max-interpretation-spread/max-5/forms/kinds.ts).
 
-max-projection-spread/max-3/four-files/list.ts:2:63 aexlint-typed(max-projection-spread)
+max-projection-spread/max-3/four-files/list.ts:2:63 aexlint(max-projection-spread)
   ~ id
   This projection of `Site` restates 2 derivations, each found in more than 3 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 4 files, `shining` in 4 files. Other files, nearest first: max-projection-spread/max-3/four-files/more.ts, max-projection-spread/max-3/four-files/project.ts, max-projection-spread/max-3/four-files/search.ts.
 
-max-projection-spread/max-3/four-files/more.ts:2:40 aexlint-typed(max-projection-spread)
+max-projection-spread/max-3/four-files/more.ts:2:40 aexlint(max-projection-spread)
   ~ id
   This projection of `Site` restates 2 derivations, each found in more than 3 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 4 files, `shining` in 4 files. Other files, nearest first: max-projection-spread/max-3/four-files/list.ts, max-projection-spread/max-3/four-files/project.ts, max-projection-spread/max-3/four-files/search.ts.
 
-max-projection-spread/max-3/four-files/project.ts:4:5 aexlint-typed(max-projection-spread)
+max-projection-spread/max-3/four-files/project.ts:4:5 aexlint(max-projection-spread)
   ~ id
   This projection of `Site` restates 2 derivations, each found in more than 3 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 4 files, `shining` in 4 files. Other files, nearest first: max-projection-spread/max-3/four-files/list.ts, max-projection-spread/max-3/four-files/more.ts, max-projection-spread/max-3/four-files/search.ts.
 
-max-projection-spread/max-3/four-files/search.ts:2:48 aexlint-typed(max-projection-spread)
+max-projection-spread/max-3/four-files/search.ts:2:48 aexlint(max-projection-spread)
   ~ shining
   This projection of `Site` restates 2 derivations, each found in more than 3 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 4 files, `shining` in 4 files. Other files, nearest first: max-projection-spread/max-3/four-files/list.ts, max-projection-spread/max-3/four-files/more.ts, max-projection-spread/max-3/four-files/project.ts.
 
-max-projection-spread/reported/interface-owner/b.ts:1:79 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/interface-owner/b.ts:1:79 aexlint(max-projection-spread)
   ~ email
   This projection of `Account` restates 2 derivations, each found in more than 2 files: `email` (`getEmail().normalize()`), `paid` (`getPlan().is("frosty")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `email` in 3 files, `paid` in 3 files. Other files, nearest first: max-projection-spread/reported/interface-owner/c.ts, max-projection-spread/reported/interface-owner/file.ts.
 
-max-projection-spread/reported/interface-owner/c.ts:1:79 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/interface-owner/c.ts:1:79 aexlint(max-projection-spread)
   ~ paid
   This projection of `Account` restates 2 derivations, each found in more than 2 files: `email` (`getEmail().normalize()`), `paid` (`getPlan().is("frosty")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `email` in 3 files, `paid` in 3 files. Other files, nearest first: max-projection-spread/reported/interface-owner/b.ts, max-projection-spread/reported/interface-owner/file.ts.
 
-max-projection-spread/reported/interface-owner/file.ts:2:60 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/interface-owner/file.ts:2:60 aexlint(max-projection-spread)
   ~ email
   This projection of `Account` restates 2 derivations, each found in more than 2 files: `email` (`getEmail().normalize()`), `paid` (`getPlan().is("frosty")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `email` in 3 files, `paid` in 3 files. Other files, nearest first: max-projection-spread/reported/interface-owner/b.ts, max-projection-spread/reported/interface-owner/c.ts.
 
-max-projection-spread/reported/keyword-arguments/b.ts:1:75 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/keyword-arguments/b.ts:1:75 aexlint(max-projection-spread)
   ~ x
   This projection of `Flags` restates 2 derivations, each found in more than 2 files: `x` (`get(true).on()`), `y` (`get(null).on()`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `x` in 3 files, `y` in 3 files. Other files, nearest first: max-projection-spread/reported/keyword-arguments/c.ts, max-projection-spread/reported/keyword-arguments/file.ts.
 
-max-projection-spread/reported/keyword-arguments/c.ts:1:75 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/keyword-arguments/c.ts:1:75 aexlint(max-projection-spread)
   ~ x
   This projection of `Flags` restates 2 derivations, each found in more than 2 files: `x` (`get(true).on()`), `y` (`get(null).on()`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `x` in 3 files, `y` in 3 files. Other files, nearest first: max-projection-spread/reported/keyword-arguments/b.ts, max-projection-spread/reported/keyword-arguments/file.ts.
 
-max-projection-spread/reported/keyword-arguments/file.ts:2:39 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/keyword-arguments/file.ts:2:39 aexlint(max-projection-spread)
   ~ x
   This projection of `Flags` restates 2 derivations, each found in more than 2 files: `x` (`get(true).on()`), `y` (`get(null).on()`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `x` in 3 files, `y` in 3 files. Other files, nearest first: max-projection-spread/reported/keyword-arguments/b.ts, max-projection-spread/reported/keyword-arguments/c.ts.
 
-max-projection-spread/reported/three-files/list.ts:2:63 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/three-files/list.ts:2:63 aexlint(max-projection-spread)
   ~ id
   This projection of `Site` restates 2 derivations, each found in more than 2 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 3 files, `shining` in 3 files. Other files, nearest first: max-projection-spread/reported/three-files/project.ts, max-projection-spread/reported/three-files/search.ts.
 
-max-projection-spread/reported/three-files/project.ts:4:5 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/three-files/project.ts:4:5 aexlint(max-projection-spread)
   ~ id
   This projection of `Site` restates 2 derivations, each found in more than 2 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 3 files, `shining` in 3 files. Other files, nearest first: max-projection-spread/reported/three-files/list.ts, max-projection-spread/reported/three-files/search.ts.
 
-max-projection-spread/reported/three-files/search.ts:2:48 aexlint-typed(max-projection-spread)
+max-projection-spread/reported/three-files/search.ts:2:48 aexlint(max-projection-spread)
   ~ shining
   This projection of `Site` restates 2 derivations, each found in more than 2 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
   help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 3 files, `shining` in 3 files. Other files, nearest first: max-projection-spread/reported/three-files/list.ts, max-projection-spread/reported/three-files/project.ts.
 
-no-caller-enforced-invariant/reported/access-check-by-handed-site.ts:9:23 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/access-check-by-handed-site.ts:9:23 aexlint(no-caller-enforced-invariant)
   ~ { site, by: actor.userId }
   `{ site, by: actor.userId }` is checked at line 8, then handed to `Leaflet.send`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Leaflet` is not held to it. The check also reads part of `command.actor`, which `Leaflet.send` does not receive. This often means `Leaflet`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/check-reads-actor.ts:4:25 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/check-reads-actor.ts:4:25 aexlint(no-caller-enforced-invariant)
   ~ command.farmId
   `command.farmId` is checked at line 3, then handed to `Inspection.old`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Inspection` is not held to it. The check also reads `command.actor.root`, which `Inspection.old` does not receive. This often means `Inspection`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/constructor-and-state-change.ts:8:31 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/constructor-and-state-change.ts:8:31 aexlint(no-caller-enforced-invariant)
   ~ input.email
   `input.email` is checked at line 7, then handed to `new Account`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Account` is not held to it. The check reads only data `new Account` receives. This often means `Account`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/constructor-and-state-change.ts:10:18 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/constructor-and-state-change.ts:10:18 aexlint(no-caller-enforced-invariant)
   ~ input.name
   `input.name` is checked at line 9, then handed to `Account.rename`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Account` is not held to it. The check reads only data `Account.rename` receives. This often means `Account`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/documented-example/issue.ts:5:28 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/documented-example/issue.ts:5:28 aexlint(no-caller-enforced-invariant)
   ~ expiresAt
   `expiresAt` is checked at line 4, then handed to `Credential.create`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Credential` is not held to it. The check reads only data `Credential.create` receives. This often means `Credential`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/event-sourced-factory-and-method.ts:8:16 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/event-sourced-factory-and-method.ts:8:16 aexlint(no-caller-enforced-invariant)
   ~ input.expiresAt
   `input.expiresAt` is checked at line 7, then handed to `Token.extend`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Token` is not held to it. The check reads only data `Token.extend` receives. This often means `Token`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/event-sourced-factory-and-method.ts:9:22 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/event-sourced-factory-and-method.ts:9:22 aexlint(no-caller-enforced-invariant)
   ~ input.expiresAt
   `input.expiresAt` is checked at line 7, then handed to `Token.issue`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Token` is not held to it. The check reads only data `Token.issue` receives. This often means `Token`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/guards-both-holding.ts:4:36 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/guards-both-holding.ts:4:36 aexlint(no-caller-enforced-invariant)
   ~ owner
   `owner` is checked at line 3, then handed to `Item.create`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Item` is not held to it. The check also reads `existing.owner`, which `Item.create` does not receive. This often means `Item`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/injected-service-check.ts:6:26 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/injected-service-check.ts:6:26 aexlint(no-caller-enforced-invariant)
   ~ command.crewId
   `command.crewId` is checked at line 5, then handed to `Ranger.enlist`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Ranger` is not held to it. The check also reads part of `this.registrations`, which `Ranger.enlist` does not receive. This often means `Ranger`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/nested-check.ts:6:22 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/nested-check.ts:6:22 aexlint(no-caller-enforced-invariant)
   ~ query.owner
   `query.owner` is checked at line 4, then handed to `Response.of`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Response` is not held to it. The check also reads `query.root`, which `Response.of` does not receive. This often means `Response`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
-no-caller-enforced-invariant/reported/receiver-state-check.ts:5:23 aexlint-typed(no-caller-enforced-invariant)
+no-caller-enforced-invariant/reported/receiver-state-check.ts:5:23 aexlint(no-caller-enforced-invariant)
   ~ command.crewId
   `command.crewId` is checked at line 4, then handed to `Leaflet.send`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Leaflet` is not held to it. The check also reads part of `command.actor`, which `Leaflet.send` does not receive. This often means `Leaflet`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
@@ -1056,492 +1056,492 @@ no-else-if/script.js:2:11 aexlint(no-else-if)
   ~ else if
   This `else if` applies only when every earlier condition in its chain is false, so its meaning depends on the conditions above it.
 
-no-external-variant-behavior/conversions/declaration-file/consumer.ts:4:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/conversions/declaration-file/consumer.ts:4:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/conversions/reported/constructed.ts:4:10 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/conversions/reported/constructed.ts:4:10 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code does a semantic transformation that weakens ownership.
   help: Find a suitable owner that fits the model or reconsider the approach.
 
-no-external-variant-behavior/conversions/reported/declared-label.ts:4:7 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/conversions/reported/declared-label.ts:4:7 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code does a semantic transformation that weakens ownership.
   help: Find a suitable owner that fits the model or reconsider the approach.
 
-no-external-variant-behavior/conversions/reported/label.ts:4:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/conversions/reported/label.ts:4:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code does a semantic transformation that weakens ownership.
   help: Find a suitable owner that fits the model or reconsider the approach.
 
-no-external-variant-behavior/conversions/reported/many-owners.ts:6:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/conversions/reported/many-owners.ts:6:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code does a semantic transformation that weakens ownership.
   help: Find a suitable owner that fits the model or reconsider the approach.
 
-no-external-variant-behavior/conversions/reported/same-owner.ts:3:10 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/conversions/reported/same-owner.ts:3:10 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/module-owner/merged.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/module-owner/merged.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/inferred/inferred.ts:4:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/inferred/inferred.ts:4:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/interface/consumer.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/interface/consumer.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/namespace/consumer.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/namespace/consumer.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/alias-to-class.ts:18:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/alias-to-class.ts:18:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/class-outside.ts:18:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/class-outside.ts:18:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/consumer.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/consumer.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/generic.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/generic.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/local-alias.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/local-alias.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/namespace-outside.ts:12:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/namespace-outside.ts:12:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation on `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/property.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/property.ts:3:11 aexlint(no-external-variant-behavior)
   ~ holder.value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `holder.value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/runtime-outside.ts:12:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/runtime-outside.ts:12:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation on `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/sibling-namespace.ts:13:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/sibling-namespace.ts:13:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/modules/reported/through-barrel.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/modules/reported/through-barrel.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation in the module declaring `Token` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/aliased.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/aliased.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/array.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/array.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/asserted.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/asserted.ts:3:11 aexlint(no-external-variant-behavior)
   ~ (value as Figure).kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `(value as Figure).kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/assigned.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/assigned.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/declared-result.ts:3:7 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/declared-result.ts:3:7 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/default-case.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/default-case.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/else-branch.ts:3:7 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/else-branch.ts:3:7 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/embedded.ts:3:7 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/embedded.ts:3:7 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/generic.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/generic.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/local-constructor.ts:4:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/local-constructor.ts:4:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code does a semantic transformation that weakens ownership.
   help: Find a suitable owner that fits the model or reconsider the approach.
 
-no-external-variant-behavior/reported/negated.ts:2:44 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/negated.ts:2:44 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/same-name-class.ts:4:13 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/same-name-class.ts:4:13 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/single-ternary.ts:2:42 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/single-ternary.ts:2:42 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/switched.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/switched.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/reported/ternary.ts:2:42 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/reported/ternary.ts:2:42 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.
   help: Branches on `value.kind` construct results using center, start. Declare the operation on `Figure` instead of unpacking its variants in a caller.
 
-no-external-variant-behavior/runtime-owner/merged.ts:3:11 aexlint-typed(no-external-variant-behavior)
+no-external-variant-behavior/runtime-owner/merged.ts:3:11 aexlint(no-external-variant-behavior)
   ~ value.category
   This code reconstructs behavior for `Token` outside its owner.
   help: Branches on `value.category` construct results using amount, text. Declare the operation on `Token` instead of unpacking its variants in a caller.
 
-no-fact-outside-owner/directive-statement/postcard.ts:2:32 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/directive-statement/postcard.ts:2:32 aexlint(no-fact-outside-owner)
   ~ m.medium === "postcard"
   `m.medium === "postcard"` rewrites `isPostcard`, which `no-fact-outside-owner/directive-statement/helpers.ts` already provides.
   help: Use `isPostcard(m)` so its definition stays the only one.
 
-no-fact-outside-owner/empty-options/not-dispatched.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/empty-options/not-dispatched.ts:2:33 aexlint(no-fact-outside-owner)
   ~ f.stage !== "dispatched"
   `f.stage !== "dispatched"` rewrites `isNotDispatched`, which its type already provides.
   help: Use `f.isNotDispatched()` so the type's definition stays the only one.
 
-no-fact-outside-owner/helper-predicates/reported/collected.ts:2:68 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/helper-predicates/reported/collected.ts:2:68 aexlint(no-fact-outside-owner)
   ~ !pickup.collectedAt
   `!pickup.collectedAt` rewrites `isCollected`, which `no-fact-outside-owner/helper-predicates/helpers.ts` already provides.
   help: Use `!isCollected(pickup)` so its definition stays the only one.
 
-no-fact-outside-owner/helper-predicates/reported/maybe-not-telegram.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/helper-predicates/reported/maybe-not-telegram.ts:2:33 aexlint(no-fact-outside-owner)
   ~ m?.medium !== "telegram"
   `m?.medium !== "telegram"` rewrites `PostGuards.isTelegram`, which `no-fact-outside-owner/helper-predicates/helpers.ts` already provides.
   help: Use `!PostGuards.isTelegram(m)` so its definition stays the only one.
 
-no-fact-outside-owner/helper-predicates/reported/maybe-occupied.ts:2:40 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/helper-predicates/reported/maybe-occupied.ts:2:40 aexlint(no-fact-outside-owner)
   ~ locker?.door === "occupied"
   `locker?.door === "occupied"` rewrites `LockerUtils.isOccupied`, which `no-fact-outside-owner/helper-predicates/helpers.ts` already provides.
   help: Check that `locker` is present, then use `LockerUtils.isOccupied(locker)`, so its definition stays the only one.
 
-no-fact-outside-owner/helper-predicates/reported/maybe-telegram.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/helper-predicates/reported/maybe-telegram.ts:2:33 aexlint(no-fact-outside-owner)
   ~ m?.medium === "telegram"
   `m?.medium === "telegram"` rewrites `PostGuards.isTelegram`, which `no-fact-outside-owner/helper-predicates/helpers.ts` already provides.
   help: Use `PostGuards.isTelegram(m)` so its definition stays the only one.
 
-no-fact-outside-owner/helper-predicates/reported/non-bulk.ts:2:37 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/helper-predicates/reported/non-bulk.ts:2:37 aexlint(no-fact-outside-owner)
   ~ cargo.hold === "bulk"
   `cargo.hold === "bulk"` rewrites `isNonBulk`, which `no-fact-outside-owner/helper-predicates/helpers.ts` already provides.
   help: Use `!isNonBulk(cargo)` so its definition stays the only one.
 
-no-fact-outside-owner/helper-predicates/reported/occupied.ts:2:39 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/helper-predicates/reported/occupied.ts:2:39 aexlint(no-fact-outside-owner)
   ~ locker.door === "occupied"
   `locker.door === "occupied"` rewrites `LockerUtils.isOccupied`, which `no-fact-outside-owner/helper-predicates/helpers.ts` already provides.
   help: Use `LockerUtils.isOccupied(locker)` so its definition stays the only one.
 
-no-fact-outside-owner/helper-predicates/reported/telegram.ts:2:32 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/helper-predicates/reported/telegram.ts:2:32 aexlint(no-fact-outside-owner)
   ~ m.medium === "telegram"
   `m.medium === "telegram"` rewrites `PostGuards.isTelegram`, which `no-fact-outside-owner/helper-predicates/helpers.ts` already provides.
   help: Use `PostGuards.isTelegram(m)` so its definition stays the only one.
 
-no-fact-outside-owner/max-1/answered-by-helper-module/aliased.ts:2:42 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/answered-by-helper-module/aliased.ts:2:42 aexlint(no-fact-outside-owner)
   ~ m.heldAt !== undefined
   `m.heldAt !== undefined` rewrites `isHeld`, which `no-fact-outside-owner/max-1/answered-by-helper-module/helpers.ts` already provides.
   help: Use `isHeld(m)` so its definition stays the only one.
 
-no-fact-outside-owner/max-1/answered-by-helper-module/badge.ts:2:45 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/answered-by-helper-module/badge.ts:2:45 aexlint(no-fact-outside-owner)
   ~ !!m.heldAt
   `!!m.heldAt` rewrites `isHeld`, which `no-fact-outside-owner/max-1/answered-by-helper-module/helpers.ts` already provides.
   help: Use `isHeld(m)` so its definition stays the only one.
 
-no-fact-outside-owner/max-1/answered-by-owner-predicate/listed.ts:2:36 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/answered-by-owner-predicate/listed.ts:2:36 aexlint(no-fact-outside-owner)
   ~ o.refused === undefined
   `o.refused === undefined` rewrites `isRefused`, which its type already provides.
   help: Use `!o.isRefused()` so the type's definition stays the only one.
 
-no-fact-outside-owner/max-1/answered-by-owner-predicate/shown.ts:2:45 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/answered-by-owner-predicate/shown.ts:2:45 aexlint(no-fact-outside-owner)
   ~ o.refused
   `o.refused` rewrites `isRefused`, which its type already provides.
   help: Use `o.isRefused()` so the type's definition stays the only one.
 
-no-fact-outside-owner/max-1/held-unanswered/shipment.ts:2:3 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/held-unanswered/shipment.ts:2:3 aexlint(no-fact-outside-owner)
   ~ heldAt
   `heldAt` is checked for `undefined` in 2 files outside `Shipment`, which has no predicate for it.
   help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Shipment`, or an exported function in its module, would hold the answer in one place. Files, nearest first: no-fact-outside-owner/max-1/held-unanswered/aliased.ts, no-fact-outside-owner/max-1/held-unanswered/badge.ts.
 
-no-fact-outside-owner/max-1/owner-module-tests-not-counted/badge.ts:2:45 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/owner-module-tests-not-counted/badge.ts:2:45 aexlint(no-fact-outside-owner)
   ~ !!m.heldAt
   `!!m.heldAt` rewrites `g`, which `no-fact-outside-owner/max-1/owner-module-tests-not-counted/shipment.ts` already provides.
   help: Use `g(m)` so its definition stays the only one.
 
-no-fact-outside-owner/max-1/refused-unanswered/handover.ts:2:3 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/refused-unanswered/handover.ts:2:3 aexlint(no-fact-outside-owner)
   ~ refused
   `refused` is checked for `undefined` in 2 files outside `Handover`, which has no predicate for it.
   help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Handover`, or an exported function in its module, would hold the answer in one place. Files, nearest first: no-fact-outside-owner/max-1/refused-unanswered/listed.ts, no-fact-outside-owner/max-1/refused-unanswered/shown.ts.
 
-no-fact-outside-owner/max-1/status-unanswered/shipment.ts:3:3 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/status-unanswered/shipment.ts:3:3 aexlint(no-fact-outside-owner)
   ~ status
   `status` is compared with "dispatched" in 2 files outside `Shipment`, which has no predicate for it.
   help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Shipment`, or an exported function in its module, would hold the answer in one place. Files, nearest first: no-fact-outside-owner/max-1/status-unanswered/equal.ts, no-fact-outside-owner/max-1/status-unanswered/not-equal.ts.
 
-no-fact-outside-owner/max-1/union-members-unanswered/mail.ts:1:50 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/union-members-unanswered/mail.ts:1:50 aexlint(no-fact-outside-owner)
   ~ stamp
   `stamp` is checked for `undefined` in 2 files outside `Letterpost`, which has no predicate for it. The same tests also ask about `stamp` of `Smallpacket`.
   help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `Letterpost`, or an exported function in its module, would hold the answer in one place. Files, nearest first: no-fact-outside-owner/max-1/union-members-unanswered/listed.ts, no-fact-outside-owner/max-1/union-members-unanswered/shown.ts.
 
-no-fact-outside-owner/max-1/union-tag-unanswered/load.ts:1:28 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/max-1/union-tag-unanswered/load.ts:1:28 aexlint(no-fact-outside-owner)
   ~ load
   `load` is compared with "pallet" in 2 files outside `PalletLoad`, which has no predicate for it.
   help: Each of those files decides on its own what this test means, so changing that meaning means finding every copy. A predicate on `PalletLoad`, or an exported function in its module, would hold the answer in one place. Files, nearest first: no-fact-outside-owner/max-1/union-tag-unanswered/listed.ts, no-fact-outside-owner/max-1/union-tag-unanswered/shown.ts.
 
-no-fact-outside-owner/reported/boxed-chain.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/boxed-chain.ts:2:33 aexlint(no-fact-outside-owner)
   ~ f.packaging === "parcel" || f.packaging === "crate"
   `f.packaging === "parcel" || f.packaging === "crate"` rewrites `isBoxed`, which its type already provides.
   help: Use `f.isBoxed()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/boxed-includes.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/boxed-includes.ts:2:33 aexlint(no-fact-outside-owner)
   ~ ["parcel", "crate"].includes(f.packaging)
   `["parcel", "crate"].includes(f.packaging)` rewrites `isBoxed`, which its type already provides.
   help: Use `f.isBoxed()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/boxed-negated-chain.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/boxed-negated-chain.ts:2:33 aexlint(no-fact-outside-owner)
   ~ f.packaging !== "parcel" && f.packaging !== "crate"
   `f.packaging !== "parcel" && f.packaging !== "crate"` rewrites `isBoxed`, which its type already provides.
   help: Use `!f.isBoxed()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/boxed-nested.ts:2:63 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/boxed-nested.ts:2:63 aexlint(no-fact-outside-owner)
   ~ f.packaging === "parcel" || f.packaging === "crate"
   `f.packaging === "parcel" || f.packaging === "crate"` rewrites `isBoxed`, which its type already provides.
   help: Use `f.isBoxed()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/delivered-arrow-property.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/delivered-arrow-property.ts:2:33 aexlint(no-fact-outside-owner)
   ~ f.stage === "delivered"
   `f.stage === "delivered"` rewrites `isDelivered`, which its type already provides.
   help: Use `f.isDelivered()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/delivered-destructured.ts:2:70 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/delivered-destructured.ts:2:70 aexlint(no-fact-outside-owner)
   ~ stage === "delivered"
   `stage === "delivered"` rewrites `isDelivered`, which its type already provides.
   help: Use `parcel.isDelivered()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/dispatched-alias.ts:2:36 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/dispatched-alias.ts:2:36 aexlint(no-fact-outside-owner)
   ~ entry.stage === "dispatched"
   `entry.stage === "dispatched"` rewrites `isDispatched`, which its type already provides.
   help: Use `entry.isDispatched()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/dispatched-generic.ts:2:46 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/dispatched-generic.ts:2:46 aexlint(no-fact-outside-owner)
   ~ f.stage === "dispatched"
   `f.stage === "dispatched"` rewrites `isDispatched`, which its type already provides.
   help: Use `f.isDispatched()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/dispatched-guarded.ts:2:51 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/dispatched-guarded.ts:2:51 aexlint(no-fact-outside-owner)
   ~ f.stage === "dispatched"
   `f.stage === "dispatched"` rewrites `isDispatched`, which its type already provides.
   help: Use `f.isDispatched()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/generic-instantiated.ts:5:45 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/generic-instantiated.ts:5:45 aexlint(no-fact-outside-owner)
   ~ sack.contents
   `sack.contents` rewrites `isEmpty`, which its type already provides.
   help: Use `!sack.isEmpty()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/insurance-optional.ts:2:34 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/insurance-optional.ts:2:34 aexlint(no-fact-outside-owner)
   ~ f?.insurance !== undefined
   `f?.insurance !== undefined` rewrites `noInsurance`, which its type already provides.
   help: Check that `f` is present, then use `!f.noInsurance()`, so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/lost-boolean.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/lost-boolean.ts:2:33 aexlint(no-fact-outside-owner)
   ~ Boolean(f.lost)
   `Boolean(f.lost)` rewrites `isLost`, which its type already provides.
   help: Use `f.isLost()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/lost-compared.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/lost-compared.ts:2:33 aexlint(no-fact-outside-owner)
   ~ f.lost !== undefined
   `f.lost !== undefined` rewrites `isLost`, which its type already provides.
   help: Use `f.isLost()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/lost-filter.ts:2:63 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/lost-filter.ts:2:63 aexlint(no-fact-outside-owner)
   ~ !f.lost
   `!f.lost` rewrites `isLost`, which its type already provides.
   help: Use `!f.isLost()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/lost-guard.ts:2:64 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/lost-guard.ts:2:64 aexlint(no-fact-outside-owner)
   ~ parcel.lost
   `parcel.lost` rewrites `isLost`, which its type already provides.
   help: Use `parcel.isLost()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/lost-optional.ts:2:35 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/lost-optional.ts:2:35 aexlint(no-fact-outside-owner)
   ~ f?.lost
   `f?.lost` rewrites `isLost`, which its type already provides.
   help: Use `f?.isLost()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/lost-stored.ts:2:46 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/lost-stored.ts:2:46 aexlint(no-fact-outside-owner)
   ~ f?.lost !== undefined
   `f?.lost !== undefined` rewrites `isLost`, which its type already provides.
   help: Use `f?.isLost() ?? false` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/lost-unnarrowed.ts:2:42 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/lost-unnarrowed.ts:2:42 aexlint(no-fact-outside-owner)
   ~ f.lost !== undefined
   `f.lost !== undefined` rewrites `isLost`, which its type already provides.
   help: Use `f.isLost()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/not-dispatched.ts:2:33 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/not-dispatched.ts:2:33 aexlint(no-fact-outside-owner)
   ~ f.stage !== "dispatched"
   `f.stage !== "dispatched"` rewrites `isNotDispatched`, which its type already provides.
   help: Use `f.isNotDispatched()` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/tracking-label-getter.ts:2:34 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/tracking-label-getter.ts:2:34 aexlint(no-fact-outside-owner)
   ~ f.trackingLabel !== undefined
   `f.trackingLabel !== undefined` rewrites `hasTrackingLabel`, which its type already provides.
   help: Use `f.hasTrackingLabel` so the type's definition stays the only one.
 
-no-fact-outside-owner/reported/type-predicate-union.ts:9:44 aexlint-typed(no-fact-outside-owner)
+no-fact-outside-owner/reported/type-predicate-union.ts:9:44 aexlint(no-fact-outside-owner)
   ~ s.mode === "freight"
   `s.mode === "freight"` rewrites `isFreight`, which its type already provides.
   help: Use `s.isFreight()` so the type's definition stays the only one.
 
-no-forgeable-validated-result/dependency-throws/bind.ts:2:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/dependency-throws/bind.ts:2:17 aexlint(no-forgeable-validated-result)
   ~ bind
   `bind` rejects some inputs, then returns `Tool`, which other code can produce without that check.
   help: Code that receives a value of type `Tool` cannot tell whether it passed `bind`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `assertTool` (no-forgeable-validated-result/dependency-throws/policy.ts) at line 2.
 
-no-forgeable-validated-result/reported/branded-field.ts:2:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/branded-field.ts:2:17 aexlint(no-forgeable-validated-result)
   ~ named
   `named` rejects some inputs, then returns `{ id: Id; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ id: Id; }` cannot tell whether it passed `named`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 3.
 
-no-forgeable-validated-result/reported/checked-data-reaching-result.ts:3:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/checked-data-reaching-result.ts:3:17 aexlint(no-forgeable-validated-result)
   ~ order
   `order` rejects some inputs, then returns `Order`, which other code can produce without that check.
   help: Code that receives a value of type `Order` cannot tell whether it passed `order`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 5.
 
-no-forgeable-validated-result/reported/checked-data-reaching-result.ts:8:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/checked-data-reaching-result.ts:8:17 aexlint(no-forgeable-validated-result)
   ~ collect
   `collect` rejects some inputs, then returns `{ values: string[]; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ values: string[]; }` cannot tell whether it passed `collect`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 11.
 
-no-forgeable-validated-result/reported/destructuring.ts:2:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/destructuring.ts:2:17 aexlint(no-forgeable-validated-result)
   ~ pair
   `pair` rejects some inputs, then returns `Pair`, which other code can produce without that check.
   help: Code that receives a value of type `Pair` cannot tell whether it passed `pair`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 5.
 
-no-forgeable-validated-result/reported/documented-example.ts:5:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/documented-example.ts:5:17 aexlint(no-forgeable-validated-result)
   ~ applySettings
   `applySettings` rejects some inputs, then returns `Payload`, which other code can produce without that check.
   help: Code that receives a value of type `Payload` cannot tell whether it passed `applySettings`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 6.
 
-no-forgeable-validated-result/reported/equivalent-declarations.ts:5:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/equivalent-declarations.ts:5:17 aexlint(no-forgeable-validated-result)
   ~ a
   `a` rejects some inputs, then returns `A`, which other code can produce without that check.
   help: Code that receives a value of type `A` cannot tell whether it passed `a`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 5.
 
-no-forgeable-validated-result/reported/equivalent-declarations.ts:6:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/equivalent-declarations.ts:6:17 aexlint(no-forgeable-validated-result)
   ~ r
   `r` rejects some inputs, then returns `R`, which other code can produce without that check.
   help: Code that receives a value of type `R` cannot tell whether it passed `r`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 6.
 
-no-forgeable-validated-result/reported/equivalent-declarations.ts:7:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/equivalent-declarations.ts:7:17 aexlint(no-forgeable-validated-result)
   ~ i
   `i` rejects some inputs, then returns `I`, which other code can produce without that check.
   help: Code that receives a value of type `I` cannot tell whether it passed `i`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 7.
 
-no-forgeable-validated-result/reported/equivalent-declarations.ts:8:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/equivalent-declarations.ts:8:17 aexlint(no-forgeable-validated-result)
   ~ n
   `n` rejects some inputs, then returns `{ model: string; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ model: string; }` cannot tell whether it passed `n`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 8.
 
-no-forgeable-validated-result/reported/function-forms.ts:2:23 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/function-forms.ts:2:23 aexlint(no-forgeable-validated-result)
   ~ load
   `load` rejects some inputs, then returns `Summary`, which other code can produce without that check.
   help: Code that receives a value of type `Summary` cannot tell whether it passed `load`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 4.
 
-no-forgeable-validated-result/reported/function-forms.ts:7:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/function-forms.ts:7:17 aexlint(no-forgeable-validated-result)
   ~ tier
   `tier` rejects some inputs, then returns `Summary`, which other code can produce without that check.
   help: Code that receives a value of type `Summary` cannot tell whether it passed `tier`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 10.
 
-no-forgeable-validated-result/reported/function-forms.ts:13:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/function-forms.ts:13:17 aexlint(no-forgeable-validated-result)
   ~ named
   `named` rejects some inputs, then returns `Summary`, which other code can produce without that check.
   help: Code that receives a value of type `Summary` cannot tell whether it passed `named`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 13.
 
-no-forgeable-validated-result/reported/function-forms.ts:14:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/function-forms.ts:14:17 aexlint(no-forgeable-validated-result)
   ~ each
   `each` rejects some inputs, then returns `Summary`, which other code can produce without that check.
   help: Code that receives a value of type `Summary` cannot tell whether it passed `each`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 14.
 
-no-forgeable-validated-result/reported/function-forms.ts:15:14 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/function-forms.ts:15:14 aexlint(no-forgeable-validated-result)
   ~ arrow
   `arrow` rejects some inputs, then returns `Summary`, which other code can produce without that check.
   help: Code that receives a value of type `Summary` cannot tell whether it passed `arrow`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 15.
 
-no-forgeable-validated-result/reported/function-typed-parameter-response.ts:4:23 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/function-typed-parameter-response.ts:4:23 aexlint(no-forgeable-validated-result)
   ~ estimate
   `estimate` rejects some inputs, then returns `{ reading: string; gauge: Gauge; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ reading: string; gauge: Gauge; }` cannot tell whether it passed `estimate`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 8.
 
-no-forgeable-validated-result/reported/method-on-this-and-private-method.ts:3:3 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/method-on-this-and-private-method.ts:3:3 aexlint(no-forgeable-validated-result)
   ~ bind
   `bind` rejects some inputs, then returns `Tool`, which other code can produce without that check.
   help: Code that receives a value of type `Tool` cannot tell whether it passed `bind`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `assertCompatible` (no-forgeable-validated-result/reported/method-on-this-and-private-method.ts) at line 4.
 
-no-forgeable-validated-result/reported/method-on-this-and-private-method.ts:7:11 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/method-on-this-and-private-method.ts:7:11 aexlint(no-forgeable-validated-result)
   ~ settings
   `settings` rejects some inputs, then returns `Payload`, which other code can produce without that check.
   help: Code that receives a value of type `Payload` cannot tell whether it passed `settings`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 8.
 
-no-forgeable-validated-result/reported/presence-and-content-test.ts:3:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/presence-and-content-test.ts:3:17 aexlint(no-forgeable-validated-result)
   ~ get
   `get` rejects some inputs, then returns `Payload`, which other code can produce without that check.
   help: Code that receives a value of type `Payload` cannot tell whether it passed `get`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 3.
 
-no-forgeable-validated-result/reported/result-checks.ts:3:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/result-checks.ts:3:17 aexlint(no-forgeable-validated-result)
   ~ valid
   `valid` rejects some inputs, then returns `Named`, which other code can produce without that check.
   help: Code that receives a value of type `Named` cannot tell whether it passed `valid`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 3.
 
-no-forgeable-validated-result/reported/result-checks.ts:4:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/result-checks.ts:4:17 aexlint(no-forgeable-validated-result)
   ~ named
   `named` rejects some inputs, then returns `Named`, which other code can produce without that check.
   help: Code that receives a value of type `Named` cannot tell whether it passed `named`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `ensureNamed` (no-forgeable-validated-result/reported/result-checks.ts) at line 4.
 
-no-forgeable-validated-result/reported/type-and-content-test.ts:1:17 aexlint-typed(no-forgeable-validated-result)
+no-forgeable-validated-result/reported/type-and-content-test.ts:1:17 aexlint(no-forgeable-validated-result)
   ~ ranged
   `ranged` rejects some inputs, then returns `{ value: number; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ value: number; }` cannot tell whether it passed `ranged`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 2.
@@ -1602,581 +1602,581 @@ no-multiline-condition/reported.tsx:1:5 aexlint(no-multiline-condition)
   ~ open &&⏎  <div />
   This if condition spans 2 lines, so the decision cannot be read at a glance before the body.
 
-no-overbroad-type-predicate/dependency-reported/open/selected.ts:4:10 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/dependency-reported/open/selected.ts:4:10 aexlint(no-overbroad-type-predicate)
   ~ value?.category === "manuscript"
   This comparison rejects value?.category = "folio", which the declared predicate target "Product" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/dependency-reported/string/selected.ts:4:10 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/dependency-reported/string/selected.ts:4:10 aexlint(no-overbroad-type-predicate)
   ~ value?.category === "manuscript"
   This comparison rejects value?.category = "", which the declared predicate target "Product" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/project-loose-null-checks/selected.ts:1:1 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/project-loose-null-checks/selected.ts:1:1 aexlint(no-overbroad-type-predicate)
   ~ 
   no-overbroad-type-predicate requires strictNullChecks to be enabled.
 
-no-overbroad-type-predicate/reported/after-boolean-property.ts:2:71 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/after-boolean-property.ts:2:71 aexlint(no-overbroad-type-predicate)
   ~ value.kind === "archived"
   This comparison rejects value.kind = "lent", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/after-null-check.ts:2:98 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/after-null-check.ts:2:98 aexlint(no-overbroad-type-predicate)
   ~ value.category === "manuscript"
   This comparison rejects value.category = "folio", which the declared predicate target "Product" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/before-external-call.ts:3:56 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/before-external-call.ts:3:56 aexlint(no-overbroad-type-predicate)
   ~ value.kind === "archived"
   This comparison rejects value.kind = "lent", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/data-ready-first-optional.ts:4:78 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/data-ready-first-optional.ts:4:78 aexlint(no-overbroad-type-predicate)
   ~ v.kind === "archived"
   This comparison rejects v.kind = "lent", which the declared predicate target "Live" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/data-ready-first.ts:4:63 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/data-ready-first.ts:4:63 aexlint(no-overbroad-type-predicate)
   ~ v.kind === "archived"
   This comparison rejects v.kind = "lent", which the declared predicate target "Live" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/data-ready-intersection.ts:5:58 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/data-ready-intersection.ts:5:58 aexlint(no-overbroad-type-predicate)
   ~ v.kind === "archived"
   This comparison rejects v.kind = "lent", which the declared predicate target "Mixed" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/extracted-member-extra-check.ts:2:120 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/extracted-member-extra-check.ts:2:120 aexlint(no-overbroad-type-predicate)
   ~ value.sku === "vellum"
   This comparison rejects value.sku = "", which the declared predicate target "{ kind: \"catalogued\"; sku: string; }" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/function-and-arrow.ts:2:53 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/function-and-arrow.ts:2:53 aexlint(no-overbroad-type-predicate)
   ~ value.kind === "archived"
   This comparison rejects value.kind = "lent", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/function-and-arrow.ts:3:48 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/function-and-arrow.ts:3:48 aexlint(no-overbroad-type-predicate)
   ~ other.kind !== "lent"
   This comparison rejects other.kind = "lent", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/generic-any-argument.ts:2:84 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/generic-any-argument.ts:2:84 aexlint(no-overbroad-type-predicate)
   ~ value?.category === "manuscript"
   This comparison rejects value?.category = "folio", which the declared predicate target "Product<any>" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/literal-constant.ts:3:56 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/literal-constant.ts:3:56 aexlint(no-overbroad-type-predicate)
   ~ value.code === chosen
   This comparison rejects value.code = 9402, which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/literal-union-target.ts:1:86 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/literal-union-target.ts:1:86 aexlint(no-overbroad-type-predicate)
   ~ value === "archived"
   This comparison rejects value = "lent", which the declared predicate target "\"archived\" | \"lent\"" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/negated-reversed.ts:2:56 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/negated-reversed.ts:2:56 aexlint(no-overbroad-type-predicate)
   ~ "archived" !== value.kind
   This comparison rejects value.kind = "archived", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/normalizing-getter-after-optional.ts:4:64 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/normalizing-getter-after-optional.ts:4:64 aexlint(no-overbroad-type-predicate)
   ~ v?.kind === "archived"
   This comparison rejects v?.kind = "lent", which the declared predicate target "Live" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/normalizing-getter-after.ts:4:52 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/normalizing-getter-after.ts:4:52 aexlint(no-overbroad-type-predicate)
   ~ v.kind === "archived"
   This comparison rejects v.kind = "lent", which the declared predicate target "Live" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/numeric-arrow.ts:2:50 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/numeric-arrow.ts:2:50 aexlint(no-overbroad-type-predicate)
   ~ value.code === 9401
   This comparison rejects value.code = 9402, which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/object-method-empty-string.ts:2:71 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/object-method-empty-string.ts:2:71 aexlint(no-overbroad-type-predicate)
   ~ value.category === ""
   This comparison rejects value.category = "other", which the declared predicate target "Product" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/optional-chain.ts:2:74 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/optional-chain.ts:2:74 aexlint(no-overbroad-type-predicate)
   ~ value?.category === "manuscript"
   This comparison rejects value?.category = "folio", which the declared predicate target "Product" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/second-parameter.ts:2:75 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/second-parameter.ts:2:75 aexlint(no-overbroad-type-predicate)
   ~ value.kind === "archived"
   This comparison rejects value.kind = "lent", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/string-property-in-conjunction.ts:2:74 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/string-property-in-conjunction.ts:2:74 aexlint(no-overbroad-type-predicate)
   ~ value?.category === "manuscript"
   This comparison rejects value?.category = "", which the declared predicate target "Product" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-overbroad-type-predicate/reported/used-as-filter.ts:2:56 aexlint-typed(no-overbroad-type-predicate)
+no-overbroad-type-predicate/reported/used-as-filter.ts:2:56 aexlint(no-overbroad-type-predicate)
   ~ value.kind === "archived"
   This comparison rejects value.kind = "lent", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
-no-procedural-value-dispatch/dependency-closed/f.ts:4:11 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/dependency-closed/f.ts:4:11 aexlint(no-procedural-value-dispatch)
   ~ kind
   Branches on `kind` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "ibis". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-procedural-value-dispatch/reported/awaits-and-tries.ts:7:9 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/reported/awaits-and-tries.ts:7:9 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "otter". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-procedural-value-dispatch/reported/callback-decides.ts:5:11 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/reported/callback-decides.ts:5:11 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-procedural-value-dispatch/reported/constant-tests.ts:5:7 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/reported/constant-tests.ts:5:7 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-procedural-value-dispatch/reported/else-branch-loops.ts:4:7 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/reported/else-branch-loops.ts:4:7 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "lynx". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-procedural-value-dispatch/reported/narrowed-object.ts:4:7 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/reported/narrowed-object.ts:4:7 aexlint(no-procedural-value-dispatch)
   ~ shape.kind
   Branches on `shape.kind` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "teal". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-procedural-value-dispatch/reported/nested-ternary.ts:3:3 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/reported/nested-ternary.ts:3:3 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-procedural-value-dispatch/reported/switch-branch-decides.ts:4:11 aexlint-typed(no-procedural-value-dispatch)
+no-procedural-value-dispatch/reported/switch-branch-decides.ts:4:11 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
 
-no-repeated-conversion/aliased-import/aliased.ts:2:40 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/aliased-import/aliased.ts:2:40 aexlint(no-repeated-conversion)
   ~ other.kind
   This conversion of `other.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/aliased-import/copy.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/aliased-import/copy.ts:2:38 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/aliased-import/copy.ts:2:38 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/aliased-import/aliased.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/dependency-closed/copy.ts:3:10 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/dependency-closed/copy.ts:3:10 aexlint(no-repeated-conversion)
   ~ item.target
   This conversion of `item.target` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/dependency-closed/renamed.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/dependency-closed/renamed.ts:3:3 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/dependency-closed/renamed.ts:3:3 aexlint(no-repeated-conversion)
   ~ dragged.target
   This conversion of `dragged.target` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/dependency-closed/copy.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/narrowed/copy.ts:3:10 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/narrowed/copy.ts:3:10 aexlint(no-repeated-conversion)
   ~ item.target
   This conversion of `item.target` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/narrowed/narrowed.ts:4. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/narrowed/narrowed.ts:4:10 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/narrowed/narrowed.ts:4:10 aexlint(no-repeated-conversion)
   ~ item.target
   This conversion of `item.target` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/narrowed/copy.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/action.ts:5:7 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/action.ts:5:7 aexlint(no-repeated-conversion)
   ~ reminder.type
   This conversion of `reminder.type` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/action.ts:9. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/action.ts:9:7 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/action.ts:9:7 aexlint(no-repeated-conversion)
   ~ details.type
   This conversion of `details.type` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/action.ts:5. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/indexed.ts:2:38 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/indexed.ts:2:38 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/indexed.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/indexed.ts:3:40 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/indexed.ts:3:40 aexlint(no-repeated-conversion)
   ~ other.kind
   This conversion of `other.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/indexed.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/module-constant.ts:3:38 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/module-constant.ts:3:38 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/module-constant.ts:4. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/module-constant.ts:4:40 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/module-constant.ts:4:40 aexlint(no-repeated-conversion)
   ~ other.kind
   This conversion of `other.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/module-constant.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/optional-chain.ts:2:38 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/optional-chain.ts:2:38 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/optional-chain.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/optional-chain.ts:3:40 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/optional-chain.ts:3:40 aexlint(no-repeated-conversion)
   ~ other.kind
   This conversion of `other.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/optional-chain.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/optional-indexed.ts:2:38 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/optional-indexed.ts:2:38 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/optional-indexed.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/optional-indexed.ts:3:40 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/optional-indexed.ts:3:40 aexlint(no-repeated-conversion)
   ~ other.kind
   This conversion of `other.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/optional-indexed.ts:2. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/reordered-cases.ts:3:11 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/reordered-cases.ts:3:11 aexlint(no-repeated-conversion)
   ~ value.format
   This conversion of `value.format` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/reordered-cases.ts:10. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/reordered-cases.ts:10:11 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/reordered-cases.ts:10:11 aexlint(no-repeated-conversion)
   ~ value.format
   This conversion of `value.format` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/reordered-cases.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/shadowed-callback.ts:3:10 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/shadowed-callback.ts:3:10 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/shadowed-callback.ts:6. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/shadowed-callback.ts:6:10 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/shadowed-callback.ts:6:10 aexlint(no-repeated-conversion)
   ~ group.kind
   This conversion of `group.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/shadowed-callback.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/spread.ts:3:38 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/spread.ts:3:38 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/spread.ts:4. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/reported/spread.ts:4:40 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/reported/spread.ts:4:40 aexlint(no-repeated-conversion)
   ~ other.kind
   This conversion of `other.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/spread.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/template-literal/copy.ts:3:3 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/template-literal/copy.ts:3:3 aexlint(no-repeated-conversion)
   ~ dragged.target
   This conversion of `dragged.target` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/template-literal/labelled.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-conversion/template-literal/labelled.ts:3:3 aexlint-typed(no-repeated-conversion)
+no-repeated-conversion/template-literal/labelled.ts:3:3 aexlint(no-repeated-conversion)
   ~ item.target
   This conversion of `item.target` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/template-literal/copy.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
-no-repeated-presence-check/dependency-closed/read.ts:3:34 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/dependency-closed/read.ts:3:34 aexlint(no-repeated-presence-check)
   ~ h.value
   `h.value` is checked here and again by `only`.
   help: `only` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/empty-options/ternary.ts:2:54 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/empty-options/ternary.ts:2:54 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `values`.
   help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/alias.ts:3:51 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/alias.ts:3:51 aexlint(no-repeated-presence-check)
   ~ property !== undefined
   `property` is checked here and again by `read`.
   help: `read` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/cast.ts:2:55 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/cast.ts:2:55 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `required`.
   help: `required` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/chain.ts:2:73 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/chain.ts:2:73 aexlint(no-repeated-presence-check)
   ~ property !== undefined
   `property` is checked here and again by `ready`.
   help: `ready` already returns `false` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/conjunction.ts:2:73 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/conjunction.ts:2:73 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `guarded`.
   help: `guarded` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/either-check.ts:2:54 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/either-check.ts:2:54 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `nonEmpty`.
   help: `nonEmpty` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/generic.ts:2:40 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/generic.ts:2:40 aexlint(no-repeated-presence-check)
   ~ list
   `list` is checked here and again by `first`.
   help: `first` already returns `undefined` when `list` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/jsx.tsx:3:88 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/jsx.tsx:3:88 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `values`.
   help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/logical.ts:6:52 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/logical.ts:6:52 aexlint(no-repeated-presence-check)
   ~ address
   `address` is checked here and again by `toLabel`.
   help: `toLabel` already returns `undefined` when `c` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/loose-null.ts:6:57 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/loose-null.ts:6:57 aexlint(no-repeated-presence-check)
   ~ recipient != null
   `recipient` is checked here and again by `name`.
   help: `name` already returns `undefined` when `u` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/method.ts:11:12 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/method.ts:11:12 aexlint(no-repeated-presence-check)
   ~ leg.route
   `leg.route` is checked here and again by `this.parseRoute`.
   help: `this.parseRoute` already returns `undefined` when `c` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/negated.ts:2:54 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/negated.ts:2:54 aexlint(no-repeated-presence-check)
   ~ property === undefined
   `property` is checked here and again by `values`.
   help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/statement-and.ts:2:55 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/statement-and.ts:2:55 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `touch`.
   help: `touch` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/statement.ts:2:55 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/statement.ts:2:55 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `visit`.
   help: `visit` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/ternary.ts:2:54 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/ternary.ts:2:54 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `values`.
   help: `values` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/truthy-and.ts:2:55 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/truthy-and.ts:2:55 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `firstParcel`.
   help: `firstParcel` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/type-predicate.ts:7:44 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/type-predicate.ts:7:44 aexlint(no-repeated-presence-check)
   ~ m !== undefined
   `m` is checked here and again by `isTelegram`.
   help: `isTelegram` already returns `false` when `m` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/unknown.ts:2:39 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/unknown.ts:2:39 aexlint(no-repeated-presence-check)
   ~ value
   `value` is checked here and again by `show`.
   help: `show` already returns `undefined` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-presence-check/reported/void-this.ts:2:55 aexlint-typed(no-repeated-presence-check)
+no-repeated-presence-check/reported/void-this.ts:2:55 aexlint(no-repeated-presence-check)
   ~ property
   `property` is checked here and again by `bound`.
   help: `bound` already returns `[]` when `value` is missing, so this check changes nothing. Call it directly, or make its parameter required so only one side checks.
 
-no-repeated-selection/declared-catalog/ternary.ts:4:22 aexlint-typed(no-repeated-selection)
+no-repeated-selection/declared-catalog/ternary.ts:4:22 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Use a local selected-value adapter, or reuse a shared selection helper in `render`. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/aliased.ts:5:36 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/aliased.ts:5:36 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value into `render`, or reuse a shared selection helper instead of repeating its test. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/class-methods.ts:4:31 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/class-methods.ts:4:31 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value into `render`, or reuse a shared selection helper instead of repeating its test. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/forwarded-method.ts:5:23 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/forwarded-method.ts:5:23 aexlint(no-repeated-selection)
   ~ this.renderStock(item)
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/guard.ts:5:9 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/guard.ts:5:9 aexlint(no-repeated-selection)
   ~ item.kind !== "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/imported-helpers/imported-forward.ts:5:21 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/imported-helpers/imported-forward.ts:5:21 aexlint(no-repeated-selection)
   ~ renderStock(item)
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/imported-helpers/imported.ts:5:22 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/imported-helpers/imported.ts:5:22 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/local-helper.ts:5:22 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/local-helper.ts:5:22 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/logical.ts:4:30 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/logical.ts:4:30 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `label` receives the whole type and decides again. Carry the narrowed selected value into `label`, or reuse a shared selection helper instead of repeating its test. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/shorthand.ts:3:44 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/shorthand.ts:3:44 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/stored-renderer.ts:7:21 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/stored-renderer.ts:7:21 aexlint(no-repeated-selection)
   ~ renderers.stock(item)
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-selection/reported/ternary.ts:4:22 aexlint-typed(no-repeated-selection)
+no-repeated-selection/reported/ternary.ts:4:22 aexlint(no-repeated-selection)
   ~ item.kind === "bison"
   This repeats a decision already made by `matches`.
   help: `matches` selects values, but `render` receives the whole type and decides again. Carry the narrowed selected value through `CatalogView` into `render`, or reuse a shared selection helper. Use a type predicate only when false excludes every value of its target too.
 
-no-repeated-value-group/dependency-closed/f.ts:2:37 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/dependency-closed/f.ts:2:37 aexlint(no-repeated-value-group)
   ~ k === "gopher" || k === "ferret"
   `k` is tested against the value group "ferret" | "gopher", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/dependency-closed/g.ts:2. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/dependency-closed/g.ts:2:34 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/dependency-closed/g.ts:2:34 aexlint(no-repeated-value-group)
   ~ k === "ferret" || k === "gopher"
   `k` is tested against the value group "ferret" | "gopher", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/dependency-closed/f.ts:2. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/data-callback/kept.ts:4:38 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/data-callback/kept.ts:4:38 aexlint(no-repeated-value-group)
   ~ n.channel === "narwhal" || n.channel === "walrus"
   `n.channel` is tested against the value group "narwhal" | "walrus", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/data-callback/route.ts:2. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/data-callback/route.ts:2:43 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/data-callback/route.ts:2:43 aexlint(no-repeated-value-group)
   ~ n.channel === "walrus" || n.channel === "narwhal"
   `n.channel` is tested against the value group "narwhal" | "walrus", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/data-callback/kept.ts:4. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/enums/enums.ts:4:7 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/enums/enums.ts:4:7 aexlint(no-repeated-value-group)
   ~ HIGH.includes(l as typeof HIGH[number])
   `l` is tested against the value group Level.High | Level.Max, which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/enums/enums.ts:5. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/enums/enums.ts:5:7 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/enums/enums.ts:5:7 aexlint(no-repeated-value-group)
   ~ l === Level.Max || l === Level.High
   `l` is tested against the value group Level.High | Level.Max, which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/enums/enums.ts:4. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/forms/forms.ts:5:7 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/forms/forms.ts:5:7 aexlint(no-repeated-value-group)
   ~ t !== "kudu" && t !== "eland"
   `t` is tested against the value group "gazelle" | "impala", which is also written elsewhere.
   help: Written in 4 places. Others, nearest first: no-repeated-value-group/reported/forms/forms.ts:7, no-repeated-value-group/reported/forms/forms.ts:14, no-repeated-value-group/reported/forms/forms.ts:15. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/forms/forms.ts:7:5 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/forms/forms.ts:7:5 aexlint(no-repeated-value-group)
   ~ case "impala":⏎    case "gazelle"
   These cases group the values "gazelle" | "impala" of `n.channel`, a group also written elsewhere.
   help: Written in 4 places. Others, nearest first: no-repeated-value-group/reported/forms/forms.ts:5, no-repeated-value-group/reported/forms/forms.ts:14, no-repeated-value-group/reported/forms/forms.ts:15. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/forms/forms.ts:14:6 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/forms/forms.ts:14:6 aexlint(no-repeated-value-group)
   ~ ["gazelle", "impala"]
   This list spells out the value group "gazelle" | "impala", which is also written elsewhere.
   help: Written in 4 places. Others, nearest first: no-repeated-value-group/reported/forms/forms.ts:5, no-repeated-value-group/reported/forms/forms.ts:7, no-repeated-value-group/reported/forms/forms.ts:15. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/forms/forms.ts:15:6 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/forms/forms.ts:15:6 aexlint(no-repeated-value-group)
   ~ ["impala", "gazelle"]
   This list spells out the value group "gazelle" | "impala", which is also written elsewhere.
   help: Written in 4 places. Others, nearest first: no-repeated-value-group/reported/forms/forms.ts:5, no-repeated-value-group/reported/forms/forms.ts:7, no-repeated-value-group/reported/forms/forms.ts:14. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/jsx-guard/deliver.ts:2:42 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/jsx-guard/deliver.ts:2:42 aexlint(no-repeated-value-group)
   ~ n.channel === "denim" || n.channel === "cherry"
   `n.channel` is tested against the value group "cherry" | "denim", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/jsx-guard/guard.tsx:2. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/jsx-guard/guard.tsx:2:51 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/jsx-guard/guard.tsx:2:51 aexlint(no-repeated-value-group)
   ~ props.n.channel === "cherry" || props.n.channel === "denim"
   `props.n.channel` is tested against the value group "cherry" | "denim", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/jsx-guard/deliver.ts:2. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/named-elsewhere/nullable.ts:2:37 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/named-elsewhere/nullable.ts:2:37 aexlint(no-repeated-value-group)
   ~ n?.channel === "falcon" || (n?.channel as Channel) === "harrier"
   `n?.channel` is tested against the value group "falcon" | "harrier", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/named-elsewhere/other.ts:2. Already named by isInstant (no-repeated-value-group/reported/named-elsewhere/named.ts:2). When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/named-elsewhere/other.ts:2:42 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/named-elsewhere/other.ts:2:42 aexlint(no-repeated-value-group)
   ~ n.channel === "harrier" || n.channel === "falcon"
   `n.channel` is tested against the value group "falcon" | "harrier", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/named-elsewhere/nullable.ts:2. Already named by isInstant (no-repeated-value-group/reported/named-elsewhere/named.ts:2). When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/narrowed-object.ts:4:7 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/narrowed-object.ts:4:7 aexlint(no-repeated-value-group)
   ~ shape.kind === "peach" || shape.kind === "pearl"
   `shape.kind` is tested against the value group "peach" | "pearl", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/narrowed-object.ts:5. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/narrowed-object.ts:5:11 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/narrowed-object.ts:5:11 aexlint(no-repeated-value-group)
   ~ shape.kind === "pearl" || shape.kind === "peach"
   `shape.kind` is tested against the value group "peach" | "pearl", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/narrowed-object.ts:4. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/other-file/deliver.ts:2:42 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/other-file/deliver.ts:2:42 aexlint(no-repeated-value-group)
   ~ n.channel === "osprey" || n.channel === "gannet"
   `n.channel` is tested against the value group "gannet" | "osprey", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/other-file/route.ts:2. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/other-file/route.ts:2:43 aexlint-typed(no-repeated-value-group)
+no-repeated-value-group/reported/other-file/route.ts:2:43 aexlint(no-repeated-value-group)
   ~ n.channel === "gannet" || n.channel === "osprey"
   `n.channel` is tested against the value group "gannet" | "osprey", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/other-file/deliver.ts:2. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/dependency-closed/f.ts:2:37 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/dependency-closed/f.ts:2:37 aexlint(no-repeated-value-policy)
   ~ k === "a"
   Testing `k` for "a" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/dependency-closed/g.ts:2. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/dependency-closed/g.ts:2:37 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/dependency-closed/g.ts:2:37 aexlint(no-repeated-value-policy)
   ~ k === "a"
   Testing `k` for "a" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/dependency-closed/f.ts:2. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/badge.tsx:2:55 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/badge.tsx:2:55 aexlint(no-repeated-value-policy)
   ~ props.r.plan === "free"
   Testing `props.r.plan` for "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/row.tsx:2. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/open.ts:5:5 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/open.ts:5:5 aexlint(no-repeated-value-policy)
   ~ case "personal"
   Testing `account.plan` for "personal" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/visit.ts:3. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/pick.ts:4:7 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/pick.ts:4:7 aexlint(no-repeated-value-policy)
   ~ account.plan !== "free"
   Testing `account.plan` for anything but "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/select.ts:4. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/row.tsx:2:51 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/row.tsx:2:51 aexlint(no-repeated-value-policy)
   ~ r.plan === "free"
   Testing `r.plan` for "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/badge.tsx:2. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/rows.ts:3:57 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/rows.ts:3:57 aexlint(no-repeated-value-policy)
   ~ plan === "free"
   Testing `plan` for "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/summary.ts:3. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/select.ts:4:7 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/select.ts:4:7 aexlint(no-repeated-value-policy)
   ~ account.plan !== "free"
   Testing `account.plan` for anything but "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/pick.ts:4. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/summary.ts:3:48 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/summary.ts:3:48 aexlint(no-repeated-value-policy)
   ~ account.plan === "free"
   Testing `account.plan` for "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/rows.ts:3. When this rule changes, every copy has to be found and changed the same way.
 
-no-repeated-value-policy/reported/visit.ts:3:47 aexlint-typed(no-repeated-value-policy)
+no-repeated-value-policy/reported/visit.ts:3:47 aexlint(no-repeated-value-policy)
   ~ account.plan === "personal"
   Testing `account.plan` for "personal" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/open.ts:5. When this rule changes, every copy has to be found and changed the same way.
@@ -2493,158 +2493,158 @@ prefer-domain-predicate/validation/reported/work-before-check.ts:1:52 aexlint(pr
   ~ value < 0 || value > 10
   This expression reconstructs a classification of value without naming it. Name the result or category, or use a named predicate or validator.
 
-prefer-truthy-presence-check/dependency-closed/check.ts:1:46 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/dependency-closed/check.ts:1:46 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/empty-options/check.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/empty-options/check.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/project-loose/check.ts:1:1 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/project-loose/check.ts:1:1 aexlint(prefer-truthy-presence-check)
   ~ 
   prefer-truthy-presence-check requires strictNullChecks to be enabled.
 
-prefer-truthy-presence-check/reported/absence-conditions/negated-loose-equality.ts:1:67 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/absence-conditions/negated-loose-equality.ts:1:67 aexlint(prefer-truthy-presence-check)
   ~ value == undefined
   Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/absence-conditions/reversed-loose-equality.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/absence-conditions/reversed-loose-equality.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ undefined == value
   Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/absence-conditions/strict-equality.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/absence-conditions/strict-equality.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ value === undefined
   Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/alias.ts:1:74 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/alias.ts:1:74 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/branded-literal.ts:1:72 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/branded-literal.ts:1:72 aexlint(prefer-truthy-presence-check)
   ~ value === undefined
   Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/call-result.ts:1:58 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/call-result.ts:1:58 aexlint(prefer-truthy-presence-check)
   ~ find() === undefined
   Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/do-while.ts:1:63 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/do-while.ts:1:63 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/for.ts:1:57 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/for.ts:1:57 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/if.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/if.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/loose.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/loose.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ value != undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/narrowed-inner-check.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/narrowed-inner-check.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ value != undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/negated.ts:1:67 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/negated.ts:1:67 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/nested-logical.ts:1:63 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/nested-logical.ts:1:63 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/parenthesized.ts:1:55 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/parenthesized.ts:1:55 aexlint(prefer-truthy-presence-check)
   ~ (value) !== (undefined)
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/reversed.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/reversed.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ undefined !== value
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/ternary.ts:1:65 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/ternary.ts:1:65 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/conditions/while.ts:1:57 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/conditions/while.ts:1:57 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/constrained-generic.ts:1:66 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/constrained-generic.ts:1:66 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/intersection.ts:1:71 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/intersection.ts:1:71 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/jsx-ternary.tsx:1:68 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/jsx-ternary.tsx:1:68 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/nullable-loose.ts:1:61 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/nullable-loose.ts:1:61 aexlint(prefer-truthy-presence-check)
   ~ value != undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/nullable-reversed-loose-equality.ts:1:61 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/nullable-reversed-loose-equality.ts:1:61 aexlint(prefer-truthy-presence-check)
   ~ undefined == value
   Use a negated truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/record-entry.ts:1:99 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/record-entry.ts:1:99 aexlint(prefer-truthy-presence-check)
   ~ entries[key] !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/second-line.ts:2:5 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/second-line.ts:2:5 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/array.ts:1:48 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/array.ts:1:48 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/bigint-literal.ts:1:45 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/bigint-literal.ts:1:45 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/date.ts:1:44 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/date.ts:1:44 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/mixed-union.ts:1:90 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/mixed-union.ts:1:90 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/negative-bigint.ts:1:46 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/negative-bigint.ts:1:46 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/negative-number.ts:1:45 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/negative-number.ts:1:45 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/number-literal.ts:1:44 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/number-literal.ts:1:44 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/object.ts:1:54 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/object.ts:1:54 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/readonly-tuple.ts:1:57 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/readonly-tuple.ts:1:57 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/string-literal.ts:1:50 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/string-literal.ts:1:50 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/symbol.ts:1:46 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/symbol.ts:1:46 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.
 
-prefer-truthy-presence-check/reported/truthy-types/true.ts:1:44 aexlint-typed(prefer-truthy-presence-check)
+prefer-truthy-presence-check/reported/truthy-types/true.ts:1:44 aexlint(prefer-truthy-presence-check)
   ~ value !== undefined
   Use a truthiness check instead of comparing with undefined; every present value of this type is truthy.

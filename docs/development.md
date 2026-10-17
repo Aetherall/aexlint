@@ -29,7 +29,7 @@ The shell provides Node.js, pnpm, and Go. The first native build needs network a
 ## Adding a rule
 
 1. Check for an existing Oxlint rule. Define one general problem, not a list of special cases.
-2. Run `pnpm rule:new <name>` for syntax, or `pnpm rule:new:typed <name>` for types.
+2. Run `pnpm rule:new <name>` for syntax, or `pnpm rule:new:typed <name>` for types. Both create `rules/<name>/` and register the rule in `src/rules.ts`.
 3. Replace the generated placeholders with a short rule contract, real valid/invalid tests, and an implementation.
 4. Run focused tests, then `pnpm format` and `pnpm check`.
 
@@ -37,11 +37,11 @@ Every rule is tested by its folder in `tests/project/`: one TypeScript project t
 
 ## Package contents
 
-Ship only `dist/`, rule docs, README, license, and package metadata. `dist/native/` includes six binaries, their rule manifests, source pins, and third-party notices. No tests, contributor guides, caches, or development scripts belong in the tarball.
+Ship only `dist/`, rule `README.md` files, README, license, and package metadata. `dist/native/` includes six binaries, their rule manifests, source pins, and third-party notices. No tests, contributor guides, caches, or development scripts belong in the tarball.
 
-The `aexlint` executable uses the packaged, pinned Oxlint dependency and standalone rule defaults. Build before running `node dist/cli.js check` or `node --test tests/cli.test.ts`. CLI tests use real temporary projects without installing tools into them and verify that project files remain unchanged.
+The `aexlint` executable uses the packaged, pinned Oxlint dependency and standalone rule defaults. Build before running `node dist/src/cli.js check` or `node --test tests/cli.test.ts`. CLI tests use real temporary projects without installing tools into them and verify that project files remain unchanged.
 
-Package tests resolve and fetch dependencies in a temporary consumer, then install offline from its lockfile and exercise the installed CLI executable. CI runs the full suite on Linux x64 and smoke-tests both the plugins and CLI from the same release tarball on Linux, macOS, and Windows, each on x64 and arm64.
+Package tests resolve and fetch dependencies in a temporary consumer, then install offline from its lockfile and exercise the installed CLI executable. CI runs the full suite on Linux x64 and smoke-tests both the plugin and CLI from the same release tarball on Linux, macOS, and Windows, each on x64 and arm64.
 
 ## Releasing
 

@@ -38,11 +38,11 @@ try {
   writeFileSync(
     join(consumer, ".oxlintrc.json"),
     JSON.stringify({
-      jsPlugins: ["@aetherall/aexlint", "@aetherall/aexlint/typed-plugin"],
+      jsPlugins: ["@aetherall/aexlint"],
       categories: { correctness: "off" },
       rules: {
         "aexlint/max-expression-depth": ["error", { max: 2 }],
-        "aexlint-typed/prefer-truthy-presence-check": "error",
+        "aexlint/prefer-truthy-presence-check": "error",
       },
     }),
   );
@@ -59,14 +59,14 @@ try {
   const codes = JSON.parse(report).diagnostics.map((item: { code: string }) => item.code);
   assert.deepEqual(codes.toSorted(), [
     "aexlint(max-expression-depth)",
-    "aexlint-typed(prefer-truthy-presence-check)",
+    "aexlint(prefer-truthy-presence-check)",
   ]);
   const cliReport = run(
     [...pnpmCommand, "exec", "aexlint", "check", "--typed", "--format", "json", "input.ts"],
     1,
   );
   const cliCodes = JSON.parse(cliReport).diagnostics.map((item: { code: string }) => item.code);
-  assert.deepEqual(cliCodes, ["aexlint-typed(prefer-truthy-presence-check)"]);
+  assert.deepEqual(cliCodes, ["aexlint(prefer-truthy-presence-check)"]);
   console.log(`${tarballs[0]} runs both plugins on ${process.platform}-${process.arch}.`);
 } finally {
   rmSync(consumer, { recursive: true, force: true, maxRetries: 5 });

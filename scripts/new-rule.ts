@@ -2,26 +2,44 @@ import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { addProjectRule } from "./project.ts";
 
-export function newRule(root: string, name: string): void {
+export function ruleFolder(root: string, name: string): string {
   if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
     throw new Error("Expected a kebab-case rule name, e.g. no-unsafe-example.");
   }
-
-  const rulesDir = resolve(root, "src/rules");
-  const ruleDir = resolve(rulesDir, name);
-  const docsDir = resolve(root, "docs/rules");
-  const docPath = resolve(docsDir, `${name}.md`);
-  const typedRuleDir = resolve(root, "native/rules", name);
-  const fixtures = resolve(root, "tests/project", name);
-  if ([ruleDir, docPath, typedRuleDir, fixtures].some((path) => existsSync(path))) {
-    throw new Error(`Rule or documentation already exists: ${name}`);
+  const folder = resolve(root, "rules", name);
+  if (existsSync(folder) || existsSync(resolve(root, "tests/project", name))) {
+    throw new Error(`Rule already exists: ${name}`);
   }
+  mkdirSync(folder, { recursive: true });
+  return folder;
+}
 
-  mkdirSync(rulesDir, { recursive: true });
-  mkdirSync(docsDir, { recursive: true });
-  mkdirSync(ruleDir);
+export function writeRegistry(root: string): void {
+  const rulesDir = resolve(root, "rules");
+  const names = readdirSync(rulesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .toSorted();
+  const syntax = names.filter((name) => existsSync(resolve(rulesDir, name, "rule.ts")));
+  const typed = names.filter((name) => existsSync(resolve(rulesDir, name, "rule.go")));
+  const imports = syntax.map(
+    (name, index) => `import rule${index} from "../rules/${name}/rule.ts";`,
+  );
+  const entries = syntax.map((name, index) => `  "${name}": rule${index},`);
+  const typedEntries = typed.map((name) => `  "${name}",`);
+  const registry = [
+    `import type { Rule } from "@oxlint/plugins";\n${imports.join("\n")}\n`,
+    `export const rules: Record<string, Rule> = {\n${entries.join("\n")}\n};\n`,
+    `export const typedRuleNames: string[] = [\n${typedEntries.join("\n")}\n];\n`,
+  ];
+  mkdirSync(resolve(root, "src"), { recursive: true });
+  writeFileSync(resolve(root, "src/rules.ts"), registry.join("\n"));
+}
+
+export function newRule(root: string, name: string): void {
+  const folder = ruleFolder(root, name);
   writeFileSync(
-    resolve(ruleDir, "index.ts"),
+    resolve(folder, "rule.ts"),
     `import { defineRule } from "@oxlint/plugins";
 
 export default defineRule({
@@ -40,7 +58,7 @@ export default defineRule({
   );
   addProjectRule(root, name, `aexlint/${name}`);
   writeFileSync(
-    docPath,
+    resolve(folder, "README.md"),
     `# ${name}
 
 TODO: the problem this rule finds and why existing Oxlint rules do not cover it.
@@ -62,18 +80,7 @@ TODO: message ID, span, and limitations. No fixes.
     { flag: "wx" },
   );
 
-  const names = readdirSync(rulesDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .toSorted();
-  const imports = names.map(
-    (ruleName, index) => `import rule${index} from "./${ruleName}/index.ts";`,
-  );
-  const entries = names.map((ruleName, index) => `  "${ruleName}": rule${index},`);
-  writeFileSync(
-    resolve(rulesDir, "index.ts"),
-    `import type { Rule } from "@oxlint/plugins";\n${imports.join("\n")}\n\nexport const rules: Record<string, Rule> = {\n${entries.join("\n")}\n};\n`,
-  );
+  writeRegistry(root);
 }
 
 if (import.meta.main) {

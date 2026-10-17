@@ -67,9 +67,10 @@ function run(
   return result.stdout;
 }
 
-export function ruleNames(directory = join(root, "native/rules")): string[] {
+export function ruleNames(directory = join(root, "rules")): string[] {
   return readdirSync(directory, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
+    .filter((entry) => existsSync(join(directory, entry.name, "rule.go")))
     .map((entry) => entry.name)
     .toSorted();
 }
@@ -126,7 +127,12 @@ async function prepare(): Promise<void> {
 function overlay(probe: boolean): string[] {
   const destination = join(source, "internal/aexlint");
   rmSync(destination, { recursive: true, force: true });
-  cpSync(join(root, "native/rules"), join(destination, "rules"), { recursive: true });
+  for (const name of ruleNames()) {
+    cpSync(join(root, "rules", name), join(destination, "rules", name), {
+      recursive: true,
+      filter: (path) => !path.endsWith(".md"),
+    });
+  }
   cpSync(join(root, "native/model"), join(destination, "model"), { recursive: true });
   cpSync(join(root, "native/fixtures"), join(destination, "fixtures"), { recursive: true });
   if (probe) cpSync(join(root, "native/probe"), join(destination, "rules"), { recursive: true });
@@ -231,7 +237,7 @@ function assertSourceAction(action: string): void {
 
 export async function native(action: string, args: string[] = []): Promise<void> {
   if (isFormattingAction(action)) {
-    const output = run("gofmt", [action === "format" ? "-w" : "-l", "native"], root);
+    const output = run("gofmt", [action === "format" ? "-w" : "-l", "native", "rules"], root);
     if (action === "format:check" && output.trim()) {
       throw new Error(`Run pnpm native:format:\n${output}`);
     }

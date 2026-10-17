@@ -9,19 +9,15 @@ export function backendExecutable(platform: string = process.platform): string {
 export function defaultBackend(): string {
   return fileURLToPath(
     new URL(
-      `../native/${process.platform}-${process.arch}/${backendExecutable()}`,
+      `../../native/${process.platform}-${process.arch}/${backendExecutable()}`,
       import.meta.url,
     ),
   );
 }
 
-export function availableRules(backend = defaultBackend()): string[] {
+export function ruleManifest(backend = defaultBackend()): string[] | null {
   const manifest = join(dirname(backend), "rules.json");
-  if (!existsSync(backend) || !existsSync(manifest)) {
-    throw new Error(
-      `The typed backend is missing for ${process.platform}-${process.arch}. Build with pnpm build, or install a complete release package.`,
-    );
-  }
+  if (!existsSync(backend) || !existsSync(manifest)) return null;
   const names: unknown = JSON.parse(readFileSync(manifest, "utf8"));
   if (!Array.isArray(names) || !names.every((name) => typeof name === "string")) {
     throw new Error("Invalid native rule manifest.");

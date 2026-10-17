@@ -1,13 +1,13 @@
 # Native backend
 
-Oxlint's JS API has no type checker, and its built-in typed backend accepts only built-in rules. `@aetherall/aexlint/typed-plugin` bridges our Go rules to ordinary Oxlint plugin diagnostics.
+Oxlint's JS API has no type checker, and its built-in typed backend accepts only built-in rules. The `@aetherall/aexlint` plugin bridges our Go rules to ordinary Oxlint plugin diagnostics, next to the syntax rules.
 
 ## Source layout
 
 | Path                   | Purpose                                                    |
 | ---------------------- | ---------------------------------------------------------- |
 | `native/upstream.json` | Pinned tsgolint/typescript-go revisions and archive hashes |
-| `native/rules/<name>/` | Go rule, tests, and `rule.json` metadata                   |
+| `rules/<name>/`        | Go rule (`rule.go`), `rule.json` metadata, and its doc     |
 | `native/model/`        | Shared decision model used by rules                        |
 | `native/patches/`      | Changes to the pinned upstream backend                     |
 | `native/snapshots/`    | Reviewed probe snapshots                                   |
@@ -19,10 +19,11 @@ Preparation verifies source archives and applies upstream patches plus our patch
 
 Our patches require a configured TypeScript project, add a persistent server, and support linting whole programs. Review them when upgrading; internal compiler APIs are not stable.
 
-## Oxlint typed plugin
+## Type-aware rules in the plugin
 
 - Each file's wrappers collect enabled rules and options. The first visitor requests whole-program results; later files reuse them for the same rule set.
-- On Unix, the plugin starts a backend at import time and communicates through FIFOs. Starting it later can fail because Oxlint's large memory mapping prevents `fork()`. Startup is checked with a timeout. On Windows, each request runs the headless backend directly.
+- On Unix, the plugin starts a backend at import time and communicates through FIFOs, even when only syntax rules are enabled. Starting it later can fail because Oxlint's large memory mapping prevents `fork()`. Startup is checked with a timeout. On Windows, each request runs the headless backend directly.
+- Typed rule names come from the backend's `rules.json`, or from `src/rules.ts` when the backend is missing. A missing or failed backend only fails the run when a typed rule is enabled.
 - Responses use upstream headless V2 framing. The server adds a length frame around each request and response. Invalid frames and backend failures fail the lint run.
 - The upstream backend drops a diagnostic without notice when its message is not valid UTF-8. Compiler-internal symbol names start with `ast.InternalSymbolNamePrefix` (`\xFE`), so never put them in messages.
 - Diagnostics convert UTF-8 byte ranges to JS offsets. Oxlint handles severities and disable comments. Fixes are not forwarded.

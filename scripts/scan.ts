@@ -1,8 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
 import { relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { decodeFrames } from "../src/typed/backend.ts";
+import { ruleNames } from "./native.ts";
 
 const usage = "Usage: node scripts/scan.ts <facts|rules> <backend> <project root> <seed file>...";
 
@@ -28,10 +27,7 @@ function diagnostic(value: unknown): Diagnostic {
 function rules(mode: string): { name: string }[] {
   if (mode === "facts") return [{ name: "aexlint/model-facts" }];
   if (mode !== "rules") throw new Error(usage);
-  const directory = fileURLToPath(new URL("../native/rules", import.meta.url));
-  return readdirSync(directory, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => ({ name: `aexlint/${entry.name}` }));
+  return ruleNames().map((name) => ({ name: `aexlint/${name}` }));
 }
 
 function scan(mode: string, backend: string, root: string, seed: string): string[] {

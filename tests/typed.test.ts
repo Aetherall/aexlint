@@ -5,10 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { availableRules, backendExecutable, decodeFrames } from "../src/typed/backend.ts";
+import { backendExecutable, decodeFrames, ruleManifest } from "../src/typed/backend.ts";
 
 const oxlint = fileURLToPath(new URL("../node_modules/oxlint/bin/oxlint", import.meta.url));
-const plugin = fileURLToPath(new URL("../src/typed/plugin.ts", import.meta.url));
+const plugin = fileURLToPath(new URL("../src/index.ts", import.meta.url));
 const target = `${process.platform}-${process.arch}`;
 const backend = fileURLToPath(
   new URL(`../.native/probe/${target}/${backendExecutable()}`, import.meta.url),
@@ -47,7 +47,7 @@ function project(t: { after: (fn: () => void) => void }) {
       ".oxlintrc.json",
       JSON.stringify({ jsPlugins: [plugin], categories: { correctness: "off" }, rules }),
     );
-  configure({ "aexlint-typed/type-probe": "error" });
+  configure({ "aexlint/type-probe": "error" });
   const lint = (files: string[], executable = backend): Run => {
     const result = spawnSync(
       process.execPath,
@@ -95,23 +95,23 @@ function codes(run: Run): string[] {
 
 test("native checker resolves imports and generics, not identifier-name heuristics", (t) => {
   const { root, write, configure, lint } = project(t);
-  assert.ok(availableRules(backend).includes("aexlint/type-probe"));
+  assert.ok(ruleManifest(backend)?.includes("aexlint/type-probe"));
   assert.deepEqual(lint(["input.ts"]).diagnostics, []);
   const unchangedCaller = readFileSync(join(root, "input.ts"), "utf8");
   write("dependency.ts", "export function value(): number { return 42; }\n");
   const failure = lint(["input.ts"]);
   assert.equal(failure.status, 1);
-  assert.deepEqual(codes(failure), ["input.ts aexlint-typed(type-probe)"]);
+  assert.deepEqual(codes(failure), ["input.ts aexlint(type-probe)"]);
   assert.equal(failure.diagnostics[0]?.message, "Type checker resolved a number result.");
   assert.equal(failure.diagnostics[0]?.severity, "error");
   assert.equal(readFileSync(join(root, "input.ts"), "utf8"), unchangedCaller);
-  configure({ "aexlint-typed/type-probe": "warn" });
+  configure({ "aexlint/type-probe": "warn" });
   const warning = lint(["input.ts"]);
   assert.equal(warning.status, 0);
   assert.equal(warning.diagnostics[0]?.severity, "warning");
-  configure({ "aexlint-typed/type-probe": "off" });
+  configure({ "aexlint/type-probe": "off" });
   assert.deepEqual(lint(["input.ts"]).diagnostics, []);
-  configure({ "aexlint-typed/type-probe": "error" });
+  configure({ "aexlint/type-probe": "error" });
   write(
     "input.ts",
     'function identity<T>(x: T): T { return x; } identity("hello"); identity(42);\n',
@@ -135,8 +135,8 @@ test("plugin reports what the backend reports, at the same byte offsets", (t) =>
     { name: "aexlint/prefer-truthy-presence-check" },
   ];
   configure({
-    "aexlint-typed/max-interpretation-spread": ["warn", { max: 1 }],
-    "aexlint-typed/prefer-truthy-presence-check": "error",
+    "aexlint/max-interpretation-spread": ["warn", { max: 1 }],
+    "aexlint/prefer-truthy-presence-check": "error",
   });
   const files = ["kinds.ts", "one.ts", "three.ts"];
   const expected = (
@@ -147,7 +147,7 @@ test("plugin reports what the backend reports, at the same byte offsets", (t) =>
       message: { description: string; help?: string };
     }[]
   ).map((item) => ({
-    code: `aexlint-typed(${item.rule.replace("aexlint/", "")})`,
+    code: `aexlint(${item.rule.replace("aexlint/", "")})`,
     filename: item.file_path.slice(root.length + 1),
     offset: item.range.pos,
     message: item.message.help
@@ -173,45 +173,58 @@ test("interpretation spread counts unlinted files and respects disable comments"
       'import type { Kind } from "./kinds.js";\nexport const f = (kind: Kind) => kind === "a";\n',
     );
   }
-  configure({ "aexlint-typed/max-interpretation-spread": ["warn", { max: 1 }] });
+  configure({ "aexlint/max-interpretation-spread": ["warn", { max: 1 }] });
   const spread = lint(["input.ts"]);
-  assert.deepEqual(codes(spread), ["input.ts aexlint-typed(max-interpretation-spread)"]);
+  assert.deepEqual(codes(spread), ["input.ts aexlint(max-interpretation-spread)"]);
   assert.equal(
     spread.diagnostics[0]!.message.split("\n")[1],
     "help: Checked in 2 files. Other files, nearest first: other.ts. Declared as: Kind (kinds.ts).",
   );
   write(
     "other.ts",
-    'import type { Kind } from "./kinds.js";\n// oxlint-disable-next-line aexlint-typed/max-interpretation-spread\nexport const f = (kind: Kind) => kind === "a";\n',
+    'import type { Kind } from "./kinds.js";\n// oxlint-disable-next-line aexlint/max-interpretation-spread\nexport const f = (kind: Kind) => kind === "a";\n',
   );
   assert.deepEqual(codes(lint(["input.ts", "other.ts"])), [
-    "input.ts aexlint-typed(max-interpretation-spread)",
+    "input.ts aexlint(max-interpretation-spread)",
   ]);
-  configure({ "aexlint-typed/max-interpretation-spread": ["warn", { max: 2 }] });
+  configure({ "aexlint/max-interpretation-spread": ["warn", { max: 2 }] });
   assert.deepEqual(lint(["input.ts"]).diagnostics, []);
-  configure({ "aexlint-typed/max-interpretation-spread": "warn" });
+  configure({ "aexlint/max-interpretation-spread": "warn" });
   assert.deepEqual(lint(["input.ts"]).diagnostics, []);
+});
+
+test("without a backend, syntax rules run and typed rules fail with the reason", (t) => {
+  const { root, write, configure, lint } = project(t);
+  const missing = join(root, "missing", backendExecutable());
+  write("input.ts", "export const text = String(Number(1));\n");
+  configure({ "aexlint/max-expression-depth": ["error", { max: 1 }] });
+  assert.deepEqual(codes(lint(["input.ts"], missing)), ["input.ts aexlint(max-expression-depth)"]);
+  configure({ "aexlint/prefer-truthy-presence-check": "error" });
+  const typed = lint(["input.ts"], missing);
+  assert.equal(typed.status, 1);
+  assert.match(typed.output, /aexlint: The typed backend is missing for /);
+  assert.doesNotMatch(typed.output, /\n\s+at /);
 });
 
 test("an invalid option stops the backend once, with its reason and no stack trace", (t) => {
   const { write, configure, lint } = project(t);
   write("other.ts", "export const other = 1;\n");
-  configure({ "aexlint-typed/max-interpretation-spread": ["warn", { max: 0 }] });
+  configure({ "aexlint/max-interpretation-spread": ["warn", { max: 0 }] });
   const invalid = lint(["input.ts", "other.ts"]);
   assert.equal(invalid.status, 1);
   const messages = stoppedLast(invalid.diagnostics.map((item) => item.message));
   assert.equal(messages.length, 2);
   assert.match(
     messages[0]!,
-    /aexlint-typed: The typed backend stopped: aexlint\/max-interpretation-spread: "max" must be a positive safe integer$/,
+    /aexlint: The typed backend stopped: aexlint\/max-interpretation-spread: "max" must be a positive safe integer$/,
   );
-  assert.match(messages[1]!, /aexlint-typed: The typed backend stopped earlier in this run/);
+  assert.match(messages[1]!, /aexlint: The typed backend stopped earlier in this run/);
   assert.doesNotMatch(invalid.output, /\n\s+at |EBADF/);
 });
 
 test("presence rule validates options and requires strict null checking", (t) => {
   const { write, configure, lint } = project(t);
-  const name = "aexlint-typed/prefer-truthy-presence-check";
+  const name = "aexlint/prefer-truthy-presence-check";
   write(
     "input.ts",
     "declare const value: { id: string } | undefined; if (value !== undefined) {}\n",
@@ -237,16 +250,16 @@ test("presence rule validates options and requires strict null checking", (t) =>
 
 test("setup mistakes fail rather than silently passing", (t) => {
   const { root, write, configure, lint } = project(t);
-  configure({ "aexlint-typed/unknown": "error" });
+  configure({ "aexlint/unknown": "error" });
   const unknown = lint(["input.ts"]);
   assert.notEqual(unknown.status, 0);
   assert.match(unknown.output, /unknown/);
-  configure({ "aexlint-typed/type-probe": "error" });
+  configure({ "aexlint/type-probe": "error" });
   mkdirSync(join(root, "loose"));
   write("loose/loose.ts", "export const loose = 1;\n");
   const outside = lint(["loose/loose.ts"]);
   assert.equal(outside.status, 1);
-  assert.match(outside.output, /aexlint-typed: File .* is not included in a TypeScript project/);
+  assert.match(outside.output, /aexlint: File .* is not included in a TypeScript project/);
   assert.doesNotMatch(outside.output, /\n\s+at /);
   rmSync(join(root, "tsconfig.json"));
   const missing = lint(["input.ts"]);
@@ -266,7 +279,7 @@ test("tsconfig errors are left to the compiler and the files are still linted", 
   write("dependency.ts", "export function value(): number { return 42; }\n");
   const run = lint(["input.ts"]);
   assert.equal(run.status, 1);
-  assert.deepEqual(codes(run), ["input.ts aexlint-typed(type-probe)"]);
+  assert.deepEqual(codes(run), ["input.ts aexlint(type-probe)"]);
 });
 
 test("a backend server that exits at startup fails the run instead of hanging", (t) => {
@@ -285,10 +298,7 @@ test("a backend server that exits at startup fails the run instead of hanging", 
   const run = lint(["input.ts", "dependency.ts"], join(fake, "aexlint-typed"));
   assert.equal(run.status, 1);
   const messages = stoppedLast(run.diagnostics.map((item) => item.message));
-  assert.match(
-    messages[0]!,
-    /aexlint-typed: The typed backend did not start: fake backend failed$/,
-  );
+  assert.match(messages[0]!, /aexlint: The typed backend did not start: fake backend failed$/);
   assert.match(messages[1]!, /stopped earlier in this run, so this file was not linted/);
   assert.ok(performance.now() - started < 5_000);
 });
@@ -303,7 +313,7 @@ test("TypeScript's own errors are left to the compiler", (t) => {
 
 test("variant behavior reports external reconstruction through the typed plugin", (t) => {
   const { root, write, configure, lint } = project(t);
-  configure({ "aexlint-typed/no-external-variant-behavior": "error" });
+  configure({ "aexlint/no-external-variant-behavior": "error" });
   write(
     "dependency.ts",
     `export class Figure {
@@ -322,7 +332,7 @@ export function transform(value: Figure) {
   write("input.ts", consumer);
   const reported = lint(["input.ts"]);
   assert.equal(reported.status, 1, reported.output);
-  assert.deepEqual(codes(reported), ["input.ts aexlint-typed(no-external-variant-behavior)"]);
+  assert.deepEqual(codes(reported), ["input.ts aexlint(no-external-variant-behavior)"]);
   assert.equal(
     reported.diagnostics[0]?.message,
     "This code reconstructs behavior for `Figure` outside its owner.\n" +

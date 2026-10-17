@@ -1,7 +1,7 @@
 {
   "name": "@aetherall/aexlint",
   "version": "0.2.3",
-  "description": "Custom Oxlint JavaScript rules and native Go type-aware rules, both run by Oxlint.",
+  "description": "Readability rules for Oxlint, syntax and type-aware, in one plugin.",
   "keywords": [
     "lint",
     "oxlint",
@@ -18,24 +18,19 @@
     "url": "git+https://github.com/Aetherall/aexlint.git"
   },
   "bin": {
-    "aexlint": "dist/cli.js"
+    "aexlint": "dist/src/cli.js"
   },
   "files": [
     "dist",
-    "docs/rules/*.md",
-    "docs/typed-rules/*.md",
+    "rules/*/README.md",
     "README.md",
     "LICENSE"
   ],
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./typed-plugin": {
-      "types": "./dist/typed/plugin.d.ts",
-      "default": "./dist/typed/plugin.js"
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
     }
   },
   "publishConfig": {

@@ -26,7 +26,7 @@ test("generates source, project cases, docs and a sorted registry", (t) => {
   const root = temporaryRoot(t);
   newRule(root, "z-rule");
   newRule(root, "a-rule");
-  const registry = readFileSync(join(root, "src/rules/index.ts"), "utf8");
+  const registry = readFileSync(join(root, "src/rules.ts"), "utf8");
   assert.ok(registry.indexOf('"a-rule"') < registry.indexOf('"z-rule"'));
   const config = JSON.parse(readFileSync(join(root, "tests/project/oxlint.json"), "utf8"));
   assert.deepEqual(config.overrides, [
@@ -34,22 +34,22 @@ test("generates source, project cases, docs and a sorted registry", (t) => {
     { files: ["a-rule/**"], rules: { "aexlint/a-rule": "error" } },
   ]);
   for (const name of ["a-rule", "z-rule"]) {
-    const source = readFileSync(join(root, `src/rules/${name}/index.ts`), "utf8");
+    const source = readFileSync(join(root, `rules/${name}/rule.ts`), "utf8");
     assert.match(source, /throw new Error/);
     assert.match(source, /requiresTypeChecking: false/);
     assert.ok(existsSync(join(root, `tests/project/${name}/reported.ts`)));
-    assert.match(readFileSync(join(root, `docs/rules/${name}.md`), "utf8"), /## Example/);
+    assert.match(readFileSync(join(root, `rules/${name}/README.md`), "utf8"), /## Example/);
   }
 });
 
 test("refuses duplicate rules without changing their files", (t) => {
   const root = temporaryRoot(t);
   newRule(root, "one-rule");
-  const registry = readFileSync(join(root, "src/rules/index.ts"), "utf8");
-  const source = readFileSync(join(root, "src/rules/one-rule/index.ts"), "utf8");
+  const registry = readFileSync(join(root, "src/rules.ts"), "utf8");
+  const source = readFileSync(join(root, "rules/one-rule/rule.ts"), "utf8");
   assert.throws(() => newRule(root, "one-rule"), /already exists/);
-  assert.equal(readFileSync(join(root, "src/rules/index.ts"), "utf8"), registry);
-  assert.equal(readFileSync(join(root, "src/rules/one-rule/index.ts"), "utf8"), source);
+  assert.equal(readFileSync(join(root, "src/rules.ts"), "utf8"), registry);
+  assert.equal(readFileSync(join(root, "rules/one-rule/rule.ts"), "utf8"), source);
 });
 
 test("rejects invalid names and path traversal before writing", (t) => {

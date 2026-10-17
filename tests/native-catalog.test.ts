@@ -6,42 +6,26 @@ import { test } from "node:test";
 import { newTypedRule } from "../scripts/new-typed-rule.ts";
 import { native as runNative, ruleNames } from "../scripts/native.ts";
 
-const native = new URL("../native/rules/", import.meta.url);
-const docs = new URL("../docs/typed-rules/", import.meta.url);
+const rulesDir = new URL("../rules/", import.meta.url);
 
-test("native rules have contracts, unique names, and no unfinished placeholders", () => {
-  const names = ruleNames();
-  assert.deepEqual(
-    readdirSync(docs)
-      .filter((name) => name.endsWith(".md"))
-      .toSorted(),
-    names.map((name) => `${name}.md`),
-  );
-  const syntaxNames = readdirSync(new URL("../src/rules/", import.meta.url));
-  for (const name of names) {
-    assert.ok(!syntaxNames.includes(name), `Duplicate JS/native rule name: ${name}`);
-    const metadata = JSON.parse(readFileSync(new URL(`${name}/rule.json`, native), "utf8"));
+test("native rules have metadata and query the model", () => {
+  for (const name of ruleNames()) {
+    const metadata = JSON.parse(readFileSync(new URL(`${name}/rule.json`, rulesDir), "utf8"));
     assert.equal(metadata.name, `aexlint/${name}`);
     assert.equal(metadata.requiresTypeChecking, true);
     assert.ok(metadata.description);
-    const source = readFileSync(new URL(`${name}/rule.go`, native), "utf8");
+    assert.doesNotMatch(JSON.stringify(metadata), /\bTODO\b/, `Unfinished native rule: ${name}`);
+    const source = readFileSync(new URL(`${name}/rule.go`, rulesDir), "utf8");
     assert.ok(source.includes(`"aexlint/${name}"`));
-    for (const file of readdirSync(new URL(`${name}/`, native)).filter(
+    for (const file of readdirSync(new URL(`${name}/`, rulesDir)).filter(
       (entry) => entry.endsWith(".go") && !entry.endsWith("_test.go"),
     )) {
-      const code = readFileSync(new URL(`${name}/${file}`, native), "utf8");
+      const code = readFileSync(new URL(`${name}/${file}`, rulesDir), "utf8");
       assert.doesNotMatch(
         code,
         /shim\/checker"|\bTypeChecker\.(?!TypeToString\b)/,
         `${name}/${file} reasons about types itself; query the model instead (docs/native.md)`,
       );
-    }
-    for (const text of [
-      source,
-      JSON.stringify(metadata),
-      readFileSync(new URL(`${name}.md`, docs), "utf8"),
-    ]) {
-      assert.doesNotMatch(text, /\bTODO\b/, `Unfinished native rule: ${name}`);
     }
   }
 });
@@ -55,14 +39,15 @@ test("native generator creates a checker-ready skeleton and refuses overwrites",
   t.after(() => rmSync(root, { recursive: true, force: true }));
   assert.throws(() => newTypedRule(root, "../escape"), /kebab-case/);
   newTypedRule(root, "one-rule");
-  const source = readFileSync(join(root, "native/rules/one-rule/rule.go"), "utf8");
+  const source = readFileSync(join(root, "rules/one-rule/rule.go"), "utf8");
   assert.match(source, /package one_rule/);
   assert.match(source, /panic\("TODO/);
   const config = JSON.parse(readFileSync(join(root, "tests/project/oxlint.json"), "utf8"));
   assert.deepEqual(config.overrides, [
-    { files: ["one-rule/**"], rules: { "aexlint-typed/one-rule": "error" } },
+    { files: ["one-rule/**"], rules: { "aexlint/one-rule": "error" } },
   ]);
-  assert.match(readFileSync(join(root, "docs/typed-rules/one-rule.md"), "utf8"), /cross-file/);
+  assert.match(readFileSync(join(root, "rules/one-rule/README.md"), "utf8"), /cross-file/);
+  assert.match(readFileSync(join(root, "src/rules.ts"), "utf8"), /"one-rule",/);
   assert.throws(() => newTypedRule(root, "one-rule"), /already exists/);
-  assert.equal(readFileSync(join(root, "native/rules/one-rule/rule.go"), "utf8"), source);
+  assert.equal(readFileSync(join(root, "rules/one-rule/rule.go"), "utf8"), source);
 });

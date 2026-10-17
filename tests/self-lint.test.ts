@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { rules } from "../src/rules/index.ts";
+import { rules } from "../src/rules.ts";
 import { backendExecutable } from "../src/typed/backend.ts";
 
 const repository = new URL("../", import.meta.url);
@@ -113,7 +113,7 @@ test("enforced and review lint configurations cover every rule and TS directory"
   const typedDiagnostics = JSON.parse(typed.stdout).diagnostics;
   assert.equal(typedDiagnostics.length, 3, JSON.stringify(typedDiagnostics, null, 2));
   for (const diagnostic of typedDiagnostics) {
-    assert.equal(diagnostic.code, "aexlint-typed(prefer-truthy-presence-check)");
+    assert.equal(diagnostic.code, "aexlint(prefer-truthy-presence-check)");
     assert.equal(diagnostic.severity, "error");
   }
 });

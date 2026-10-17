@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { test, type TestContext } from "node:test";
 import { fileURLToPath } from "node:url";
 
-const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+const cli = fileURLToPath(new URL("../dist/src/cli.js", import.meta.url));
 const { version } = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 const depthViolation = "publish(encode(parse(read(input))));\n";
 
@@ -174,11 +174,11 @@ test("CLI resolves imported types and enables typed rules with --typed", (t) => 
   );
   assert.deepEqual(check(), []);
   assert.deepEqual(codes(check(["--typed"], 1)), [
-    "aexlint-typed(no-fact-outside-owner)",
-    "aexlint-typed(prefer-truthy-presence-check)",
+    "aexlint(no-fact-outside-owner)",
+    "aexlint(prefer-truthy-presence-check)",
   ]);
   write("dependency.ts", "export declare const value: string | undefined;\n");
-  assert.deepEqual(codes(check(["--typed"], 1)), ["aexlint-typed(no-fact-outside-owner)"]);
+  assert.deepEqual(codes(check(["--typed"], 1)), ["aexlint(no-fact-outside-owner)"]);
 });
 
 test("CLI reports predicate contracts and observes dependency-only changes", (t) => {
@@ -197,7 +197,7 @@ test("CLI reports predicate contracts and observes dependency-only changes", (t)
   );
   assert.deepEqual(check(), []);
   const diagnostics = check(["--typed"], 1);
-  assert.deepEqual(codes(diagnostics), ["aexlint-typed(no-overbroad-type-predicate)"]);
+  assert.deepEqual(codes(diagnostics), ["aexlint(no-overbroad-type-predicate)"]);
   assert.match(diagnostics[0]!.message, /false|reject/i);
   assert.doesNotMatch(diagnostics[0]!.message, /"restrictions"|"observedHarm"/);
   write("product.ts", 'export interface Product { category: "physical"; id: string }\n');
@@ -323,7 +323,7 @@ test("CLI skips baseline typed diagnostics", (t) => {
     'import { value } from "./dependency.js";\nif (value !== undefined) {}\nif (value !== undefined) {}\n',
   );
   assert.deepEqual(codes(check(["--typed", "--baseline", baseline], 1)), [
-    "aexlint-typed(prefer-truthy-presence-check)",
+    "aexlint(prefer-truthy-presence-check)",
   ]);
 });
 
@@ -358,8 +358,8 @@ test("CLI baselines report only the file joining an over-limit spread", (t) => {
     );
   for (const name of ["first", "second", "third", "fourth", "fifth"]) participant(name);
   assert.deepEqual(codes(check(flags, 1)), [
-    ...Array(5).fill("aexlint-typed(max-interpretation-spread)"),
-    ...Array(5).fill("aexlint-typed(max-projection-spread)"),
+    ...Array(5).fill("aexlint(max-interpretation-spread)"),
+    ...Array(5).fill("aexlint(max-projection-spread)"),
   ]);
   assert.equal(record(flags).length, 10);
   participant("sixth");
@@ -368,8 +368,8 @@ test("CLI baselines report only the file joining an over-limit spread", (t) => {
       .map(({ code, filename }) => [code, filename])
       .toSorted(),
     [
-      ["aexlint-typed(max-interpretation-spread)", "sixth.ts"],
-      ["aexlint-typed(max-projection-spread)", "sixth.ts"],
+      ["aexlint(max-interpretation-spread)", "sixth.ts"],
+      ["aexlint(max-projection-spread)", "sixth.ts"],
     ],
   );
 });
@@ -379,7 +379,7 @@ test("CLI preserves visible failures for missing typed projects and malformed so
   write("input.ts", "export const value = 1;\n");
   assert.match(
     run(["check", "--format", "default", "--typed", "input.ts"], 1),
-    /aexlint-typed: File .*input\.ts is not included in a TypeScript project.*tsconfig\.json/,
+    /aexlint: File .*input\.ts is not included in a TypeScript project.*tsconfig\.json/,
   );
   write("broken.ts", "export const = ;\n");
   const report = JSON.parse(run(["check", "--format", "json", "broken.ts"], 1));

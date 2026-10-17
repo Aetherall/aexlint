@@ -1,12 +1,12 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "categories": { "correctness": "off" },
-  "jsPlugins": ["./src/typed/plugin.ts"],
+  "jsPlugins": ["./src/index.ts"],
   "rules": {
-    "aexlint-typed/prefer-truthy-presence-check": "error",
-    "aexlint-typed/no-repeated-value-group": "error",
-    "aexlint-typed/no-repeated-value-policy": "error",
-    "aexlint-typed/no-procedural-value-dispatch": "error"
+    "aexlint/prefer-truthy-presence-check": "error",
+    "aexlint/no-repeated-value-group": "error",
+    "aexlint/no-repeated-value-policy": "error",
+    "aexlint/no-procedural-value-dispatch": "error"
   },
   "ignorePatterns": ["dist", "node_modules", "tests/project"]
 }

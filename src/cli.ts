@@ -71,7 +71,9 @@ function check(): number {
     return 0;
   }
   if (values.version) {
-    const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+    const manifest = JSON.parse(
+      readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+    );
     console.log(manifest.version);
     return 0;
   }
@@ -98,22 +100,21 @@ function check(): number {
   };
   const jsPlugins = [fileURLToPath(new URL("./baseline-plugin.js", import.meta.url))];
   if (values.typed) {
-    jsPlugins.push(fileURLToPath(new URL("./baseline-typed-plugin.js", import.meta.url)));
     Object.assign(rules, {
-      "aexlint-typed/prefer-truthy-presence-check": "error",
-      "aexlint-typed/max-interpretation-spread": ["error", { max: 4 }],
-      "aexlint-typed/max-projection-spread": ["error", { max: 2 }],
-      "aexlint-typed/no-forgeable-validated-result": "error",
-      "aexlint-typed/no-caller-enforced-invariant": "error",
-      "aexlint-typed/no-repeated-value-group": "error",
-      "aexlint-typed/no-repeated-value-policy": "error",
-      "aexlint-typed/no-procedural-value-dispatch": "error",
-      "aexlint-typed/no-external-variant-behavior": "error",
-      "aexlint-typed/no-repeated-selection": "error",
-      "aexlint-typed/no-repeated-conversion": "error",
-      "aexlint-typed/no-repeated-presence-check": "error",
-      "aexlint-typed/no-fact-outside-owner": "error",
-      "aexlint-typed/no-overbroad-type-predicate": "error",
+      "aexlint/prefer-truthy-presence-check": "error",
+      "aexlint/max-interpretation-spread": ["error", { max: 4 }],
+      "aexlint/max-projection-spread": ["error", { max: 2 }],
+      "aexlint/no-forgeable-validated-result": "error",
+      "aexlint/no-caller-enforced-invariant": "error",
+      "aexlint/no-repeated-value-group": "error",
+      "aexlint/no-repeated-value-policy": "error",
+      "aexlint/no-procedural-value-dispatch": "error",
+      "aexlint/no-external-variant-behavior": "error",
+      "aexlint/no-repeated-selection": "error",
+      "aexlint/no-repeated-conversion": "error",
+      "aexlint/no-repeated-presence-check": "error",
+      "aexlint/no-fact-outside-owner": "error",
+      "aexlint/no-overbroad-type-predicate": "error",
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));

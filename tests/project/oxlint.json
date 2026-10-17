@@ -1,7 +1,6 @@
 {
   "jsPlugins": [
-    "../../src/index.ts",
-    "../../src/typed/plugin.ts"
+    "../../src/index.ts"
   ],
   "categories": {
     "correctness": "off"
@@ -20,7 +19,7 @@
         "no-repeated-value-policy/**"
       ],
       "rules": {
-        "aexlint-typed/no-repeated-value-policy": "error"
+        "aexlint/no-repeated-value-policy": "error"
       }
     },
     {
@@ -325,7 +324,7 @@
         "max-interpretation-spread/**"
       ],
       "rules": {
-        "aexlint-typed/max-interpretation-spread": "error"
+        "aexlint/max-interpretation-spread": "error"
       }
     },
     {
@@ -333,7 +332,7 @@
         "max-interpretation-spread/max-1/**"
       ],
       "rules": {
-        "aexlint-typed/max-interpretation-spread": [
+        "aexlint/max-interpretation-spread": [
           "error",
           {
             "max": 1
@@ -346,7 +345,7 @@
         "max-interpretation-spread/max-2/**"
       ],
       "rules": {
-        "aexlint-typed/max-interpretation-spread": [
+        "aexlint/max-interpretation-spread": [
           "error",
           {
             "max": 2
@@ -359,7 +358,7 @@
         "max-interpretation-spread/max-5/**"
       ],
       "rules": {
-        "aexlint-typed/max-interpretation-spread": [
+        "aexlint/max-interpretation-spread": [
           "error",
           {
             "max": 5
@@ -372,7 +371,7 @@
         "max-projection-spread/**"
       ],
       "rules": {
-        "aexlint-typed/max-projection-spread": "error"
+        "aexlint/max-projection-spread": "error"
       }
     },
     {
@@ -380,7 +379,7 @@
         "max-projection-spread/max-3/**"
       ],
       "rules": {
-        "aexlint-typed/max-projection-spread": [
+        "aexlint/max-projection-spread": [
           "error",
           {
             "max": 3
@@ -393,7 +392,7 @@
         "prefer-truthy-presence-check/**"
       ],
       "rules": {
-        "aexlint-typed/prefer-truthy-presence-check": "error"
+        "aexlint/prefer-truthy-presence-check": "error"
       }
     },
     {
@@ -401,7 +400,7 @@
         "prefer-truthy-presence-check/empty-options/**"
       ],
       "rules": {
-        "aexlint-typed/prefer-truthy-presence-check": [
+        "aexlint/prefer-truthy-presence-check": [
           "error",
           {}
         ]
@@ -412,7 +411,7 @@
         "no-external-variant-behavior/**"
       ],
       "rules": {
-        "aexlint-typed/no-external-variant-behavior": "error"
+        "aexlint/no-external-variant-behavior": "error"
       }
     },
     {
@@ -420,7 +419,7 @@
         "no-repeated-conversion/**"
       ],
       "rules": {
-        "aexlint-typed/no-repeated-conversion": "error"
+        "aexlint/no-repeated-conversion": "error"
       }
     },
     {
@@ -428,7 +427,7 @@
         "no-fact-outside-owner/**"
       ],
       "rules": {
-        "aexlint-typed/no-fact-outside-owner": "error"
+        "aexlint/no-fact-outside-owner": "error"
       }
     },
     {
@@ -436,7 +435,7 @@
         "no-fact-outside-owner/empty-options/**"
       ],
       "rules": {
-        "aexlint-typed/no-fact-outside-owner": [
+        "aexlint/no-fact-outside-owner": [
           "error",
           {}
         ]
@@ -447,7 +446,7 @@
         "no-fact-outside-owner/max-1/**"
       ],
       "rules": {
-        "aexlint-typed/no-fact-outside-owner": [
+        "aexlint/no-fact-outside-owner": [
           "error",
           {
             "max": 1
@@ -460,7 +459,7 @@
         "no-repeated-presence-check/**"
       ],
       "rules": {
-        "aexlint-typed/no-repeated-presence-check": "error"
+        "aexlint/no-repeated-presence-check": "error"
       }
     },
     {
@@ -468,7 +467,7 @@
         "no-repeated-presence-check/empty-options/**"
       ],
       "rules": {
-        "aexlint-typed/no-repeated-presence-check": [
+        "aexlint/no-repeated-presence-check": [
           "error",
           {}
         ]
@@ -479,7 +478,7 @@
         "no-caller-enforced-invariant/**"
       ],
       "rules": {
-        "aexlint-typed/no-caller-enforced-invariant": "error"
+        "aexlint/no-caller-enforced-invariant": "error"
       }
     },
     {
@@ -487,7 +486,7 @@
         "no-forgeable-validated-result/**"
       ],
       "rules": {
-        "aexlint-typed/no-forgeable-validated-result": "error"
+        "aexlint/no-forgeable-validated-result": "error"
       }
     },
     {
@@ -495,7 +494,7 @@
         "no-overbroad-type-predicate/**"
       ],
       "rules": {
-        "aexlint-typed/no-overbroad-type-predicate": "error"
+        "aexlint/no-overbroad-type-predicate": "error"
       }
     },
     {
@@ -503,7 +502,7 @@
         "no-procedural-value-dispatch/**"
       ],
       "rules": {
-        "aexlint-typed/no-procedural-value-dispatch": "error"
+        "aexlint/no-procedural-value-dispatch": "error"
       }
     },
     {
@@ -511,7 +510,7 @@
         "no-repeated-selection/**"
       ],
       "rules": {
-        "aexlint-typed/no-repeated-selection": "error"
+        "aexlint/no-repeated-selection": "error"
       }
     },
     {
@@ -519,7 +518,7 @@
         "no-repeated-value-group/**"
       ],
       "rules": {
-        "aexlint-typed/no-repeated-value-group": "error"
+        "aexlint/no-repeated-value-group": "error"
       }
     }
   ]

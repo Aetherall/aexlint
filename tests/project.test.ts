@@ -4,13 +4,13 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { root, ruleNames } from "../scripts/native.ts";
 import { differences, expectedProject, lintProject } from "../scripts/project.ts";
-import { rules } from "../src/rules/index.ts";
+import { rules } from "../src/rules.ts";
 
 test("every rule has project cases with expected findings", () => {
   const expected = expectedProject();
   const codes = [
     ...Object.keys(rules).map((name) => [name, `aexlint(${name})`]),
-    ...ruleNames().map((name) => [name, `aexlint-typed(${name})`]),
+    ...ruleNames().map((name) => [name, `aexlint(${name})`]),
   ];
   for (const [name, code] of codes) {
     assert.ok(existsSync(join(root, "tests/project", name!)), `${name}: no tests/project folder`);

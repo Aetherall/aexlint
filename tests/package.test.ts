@@ -33,8 +33,8 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
     ),
   );
   const { filename, files } = packed as { filename: string; files: { path: string }[] };
-  assert.ok(files.some((file) => file.path === "dist/index.js"));
-  assert.ok(files.some((file) => file.path === "dist/index.d.ts"));
+  assert.ok(files.some((file) => file.path === "dist/src/index.js"));
+  assert.ok(files.some((file) => file.path === "dist/src/index.d.ts"));
   const target = `${process.platform}-${process.arch}`;
   assert.ok(files.some((file) => file.path === `dist/native/${target}/${backendExecutable()}`));
   assert.ok(files.some((file) => file.path === "dist/native/THIRD_PARTY_NOTICES.txt"));
@@ -45,12 +45,12 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
   for (const { path } of files) {
     assert.match(
       path,
-      /^(?:dist\/|docs\/(?:typed-)?rules\/[^/]+\.md$|(?:README\.md|LICENSE|package\.json)$)/,
+      /^(?:dist\/|rules\/[^/]+\/README\.md$|(?:README\.md|LICENSE|package\.json)$)/,
     );
     assert.doesNotMatch(path, /(?:^|\/)\.[^/]+|\.map$/);
   }
-  const packedDocs = files.map((file) => file.path).filter((path) => path.startsWith("docs/"));
-  const ruleDocs = globSync(["docs/rules/*.md", "docs/typed-rules/*.md"], { cwd: root });
+  const packedDocs = files.map((file) => file.path).filter((path) => path.startsWith("rules/"));
+  const ruleDocs = globSync(["rules/*/README.md"], { cwd: root });
   assert.deepEqual(packedDocs.toSorted(), ruleDocs.toSorted());
   for (const path of ["README.md", "LICENSE", "package.json"]) {
     assert.ok(
@@ -98,7 +98,7 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
 
   writeFileSync(
     join(consumer, "consumer.ts"),
-    'import plugin from "@aetherall/aexlint";\nimport typedPlugin from "@aetherall/aexlint/typed-plugin";\nexport const rules = plugin.rules;\nexport const typedRules = typedPlugin.rules;\n',
+    'import plugin from "@aetherall/aexlint";\nexport const rules = plugin.rules;\n',
   );
   const compiler = fileURLToPath(
     new URL("./bin/tsc", import.meta.resolve("typescript/package.json")),
@@ -270,7 +270,7 @@ export default {
       [
         "--input-type=module",
         "-e",
-        'import plugin from "@aetherall/aexlint/typed-plugin"; console.log(JSON.stringify(Object.keys(plugin.rules)));',
+        'import plugin from "@aetherall/aexlint"; console.log(JSON.stringify(Object.keys(plugin.rules)));',
       ],
       consumer,
     ),
@@ -285,9 +285,9 @@ export default {
   writeFileSync(
     join(consumer, ".oxlintrc.json"),
     JSON.stringify({
-      jsPlugins: ["@aetherall/aexlint/typed-plugin"],
+      jsPlugins: ["@aetherall/aexlint"],
       categories: { correctness: "off" },
-      rules: { "aexlint-typed/prefer-truthy-presence-check": "error" },
+      rules: { "aexlint/prefer-truthy-presence-check": "error" },
     }),
   );
   const caller = 'import { value } from "./dependency.js";\nif (value !== undefined) {}\n';
@@ -299,7 +299,7 @@ export default {
   const typedArgs = [oxlint, "-c", ".oxlintrc.json", "--format", "json", "typed-input.ts"];
   const presence = JSON.parse(run(process.execPath, typedArgs, consumer, 1));
   assert.equal(presence.diagnostics.length, 1);
-  assert.equal(presence.diagnostics[0].code, "aexlint-typed(prefer-truthy-presence-check)");
+  assert.equal(presence.diagnostics[0].code, "aexlint(prefer-truthy-presence-check)");
   assert.match(presence.diagnostics[0].message, /Use a truthiness check/);
   writeFileSync(join(consumer, "dependency.ts"), "export declare const value: string | undefined;");
   assert.deepEqual(JSON.parse(run(process.execPath, typedArgs, consumer)).diagnostics, []);

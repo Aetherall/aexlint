@@ -1,21 +1,10 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { ruleFolder, writeRegistry } from "./new-rule.ts";
 import { addProjectRule } from "./project.ts";
 
 export function newTypedRule(root: string, name: string): void {
-  if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
-    throw new Error("Expected a kebab-case rule name.");
-  }
-  const ruleDir = resolve(root, "native/rules", name);
-  const docsDir = resolve(root, "docs/typed-rules");
-  const docPath = resolve(docsDir, `${name}.md`);
-  const jsRuleDir = resolve(root, "src/rules", name);
-  const fixtures = resolve(root, "tests/project", name);
-  if ([ruleDir, docPath, jsRuleDir, fixtures].some((path) => existsSync(path))) {
-    throw new Error(`Rule or documentation already exists: ${name}`);
-  }
-  mkdirSync(ruleDir, { recursive: true });
-  mkdirSync(docsDir, { recursive: true });
+  const ruleDir = ruleFolder(root, name);
   const goPackage = name.replaceAll("-", "_");
   writeFileSync(
     resolve(ruleDir, "rule.go"),
@@ -32,7 +21,7 @@ var Rule = rule.Rule{
 `,
     { flag: "wx" },
   );
-  addProjectRule(root, name, `aexlint-typed/${name}`);
+  addProjectRule(root, name, `aexlint/${name}`);
   writeFileSync(
     resolve(ruleDir, "rule.json"),
     JSON.stringify(
@@ -47,13 +36,13 @@ var Rule = rule.Rule{
     { flag: "wx" },
   );
   writeFileSync(
-    docPath,
+    resolve(ruleDir, "README.md"),
     `# ${name}
 
 TODO: the problem this rule finds and the maintenance burden it causes.
 
 \`\`\`json
-{ "rules": { "aexlint-typed/${name}": "warn" } }
+{ "rules": { "aexlint/${name}": "warn" } }
 \`\`\`
 
 No options.
@@ -72,6 +61,7 @@ TODO: message ID, span, and limitations. No fixes.
 `,
     { flag: "wx" },
   );
+  writeRegistry(root);
 }
 
 if (import.meta.main) {
