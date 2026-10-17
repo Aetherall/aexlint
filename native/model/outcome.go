@@ -120,13 +120,13 @@ func (m *Analyzer) returned(statements []*ast.Node) []*ast.Node {
 }
 
 // kept returns the value an expression statement assigns to a local variable of its function declared outside
-// statements, which they leave as their result, or nil.
+// statements, which they leave as their result, or nil. A compound assignment keeps the whole assignment.
 func (m *Analyzer) kept(n *ast.Node, statements []*ast.Node) *ast.Node {
 	if n.Kind != ast.KindExpressionStatement {
 		return nil
 	}
 	e := Unwrap(n.Expression())
-	if e.Kind != ast.KindBinaryExpression || e.AsBinaryExpression().OperatorToken.Kind != ast.KindEqualsToken || Unwrap(e.AsBinaryExpression().Left).Kind != ast.KindIdentifier {
+	if !ast.IsAssignmentExpression(e, false) || Unwrap(e.AsBinaryExpression().Left).Kind != ast.KindIdentifier {
 		return nil
 	}
 	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(Unwrap(e.AsBinaryExpression().Left))
@@ -138,7 +138,25 @@ func (m *Analyzer) kept(n *ast.Node, statements []*ast.Node) *ast.Node {
 	if function == nil || function != enclosingFunction(n) || slices.ContainsFunc(statements, func(s *ast.Node) bool { return encloses(s, declaration) }) {
 		return nil
 	}
+	if e.AsBinaryExpression().OperatorToken.Kind != ast.KindEqualsToken {
+		return e
+	}
 	return e.AsBinaryExpression().Right
+}
+
+// assignsLocal reports whether an expression statement assigns, with any assignment operator, to a local variable of
+// its function.
+func (m *Analyzer) assignsLocal(n *ast.Node) bool {
+	e := Unwrap(n.Expression())
+	if !ast.IsAssignmentExpression(e, false) || Unwrap(e.AsBinaryExpression().Left).Kind != ast.KindIdentifier {
+		return false
+	}
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(Unwrap(e.AsBinaryExpression().Left))
+	if symbol == nil || symbol.ValueDeclaration == nil || symbol.ValueDeclaration.Kind != ast.KindVariableDeclaration {
+		return false
+	}
+	function := enclosingFunction(symbol.ValueDeclaration)
+	return function != nil && function == enclosingFunction(n)
 }
 
 func enclosingFunction(n *ast.Node) *ast.Node {
@@ -161,7 +179,7 @@ func (m *Analyzer) commands(statements []*ast.Node) bool {
 		if found || ast.IsFunctionLike(n) || ast.IsClassLike(n) {
 			return found
 		}
-		if n.Kind == ast.KindExpressionStatement && !m.exits(n) && m.kept(n, statements) == nil {
+		if n.Kind == ast.KindExpressionStatement && !m.exits(n) && m.kept(n, statements) == nil && !m.assignsLocal(n) {
 			found = true
 			return true
 		}

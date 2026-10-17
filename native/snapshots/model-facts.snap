@@ -227,6 +227,15 @@ Message: dispatch on trim.kind; field kind @ ../../fixtures/file.ts:1; owner Tri
 ---
 
 [TestModelFacts/invalid-9 - 1]
+Diagnostic 1: decision (4:7 - 4:15)
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> other, control flow 0, built 0 / {"stock"} of {"stock" | "text"} complete -> other, control flow 0, built 0; constructions []
+   3 |   let sum = 0;
+   4 |   if (item.kind === "text") {
+     |       ~~~~~~~~~
+   5 |     sum += 2;
+---
+
+[TestModelFacts/invalid-10 - 1]
 Diagnostic 1: decision (4:33 - 4:36)
 Message: dispatch on each; field each @ ../../fixtures/file.ts:4; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> none with commands, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> none with commands, control flow 0, built 0; constructions []
    3 | export function f(sizes: Size[], size: Size, ready: boolean) {
@@ -249,7 +258,7 @@ Message: dispatch on size; field size @ ../../fixtures/file.ts:3; owner none; ar
    7 | }
 ---
 
-[TestModelFacts/invalid-10 - 1]
+[TestModelFacts/invalid-11 - 1]
 Diagnostic 1: decision (3:7 - 3:10)
 Message: guard on size; field size @ ../../fixtures/file.ts:2; owner none; arms {"M" | "S"} of {"L" | "M" | "S"} tested -> constant 1, control flow 0, built 0; constructions []
    2 | export function f(size: Size, ready: boolean) {
@@ -279,7 +288,7 @@ Message: dispatch on size; field size @ ../../fixtures/file.ts:13; owner none; a
   17 |   else return 2;
 ---
 
-[TestModelFacts/invalid-11 - 1]
+[TestModelFacts/invalid-12 - 1]
 Diagnostic 1: decision (4:7 - 4:10)
 Message: guard on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> empty, control flow 0, built 0; constructions []
    3 | export function f(size: Size, other: { size: Size } | undefined) {
@@ -302,7 +311,7 @@ Message: dispatch on other?.size; field size @ ../../fixtures/file.ts:3; owner n
    8 | }
 ---
 
-[TestModelFacts/invalid-12 - 1]
+[TestModelFacts/invalid-13 - 1]
 Diagnostic 1: decision (4:7 - 4:10)
 Message: guard on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> none, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 1, control flow 1, built 0; constructions []
    3 | export function f(size: Size, flag: boolean) {
@@ -346,7 +355,7 @@ Message: dispatch on size; field size @ ../../fixtures/file.ts:8; owner none; ar
   16 | }
 ---
 
-[TestModelFacts/invalid-13 - 1]
+[TestModelFacts/invalid-14 - 1]
 Diagnostic 1: decision (5:7 - 5:10)
 Message: guard on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant 1, control flow 0, built 0; constructions []
    4 |   const { kind } = item;
@@ -383,7 +392,7 @@ Message: entry on z; holds {`null` | other falsy values | present} of {`null` | 
   14 | export function moved({ pond }: Ponds) {
 ---
 
-[TestModelFacts/invalid-14 - 1]
+[TestModelFacts/invalid-15 - 1]
 Diagnostic 1: decision (3:11 - 3:14)
 Message: dispatch on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> other, control flow 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> other, control flow 0, built 0; constructions []
    2 | export function render({ kind, ...rest }: Item) {
@@ -406,7 +415,7 @@ Message: dispatch on kind; field kind @ ../../fixtures/items.ts:1, ../../fixture
   15 | }
 ---
 
-[TestModelFacts/invalid-15 - 1]
+[TestModelFacts/invalid-16 - 1]
 Diagnostic 1: decision (6:12 - 6:15)
 Message: dispatch on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> value, control flow 0, built 0 / {"stock"} of {"stock" | "text"} complete -> value, control flow 0, built 0; constructions []
    5 |     const { kind } = this.item;
@@ -415,7 +424,7 @@ Message: dispatch on kind; field kind @ ../../fixtures/items.ts:1, ../../fixture
    7 |   }
 ---
 
-[TestModelFacts/invalid-16 - 1]
+[TestModelFacts/invalid-17 - 1]
 Diagnostic 1: rejection (3:26 - 3:49)
 Message: rejection; on [id.length] reads [id.length]
    2 |   const short = id;
@@ -424,7 +433,7 @@ Message: rejection; on [id.length] reads [id.length]
    4 |   return name;
 ---
 
-[TestModelFacts/invalid-17 - 1]
+[TestModelFacts/invalid-18 - 1]
 Diagnostic 1: test (6:7 - 6:28)
 Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ ../../fixtures/file.ts:4
    5 |   if (declared.includes(size)) return 1;
@@ -433,7 +442,7 @@ Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ .
    7 |   return 0;
 ---
 
-[TestModelFacts/invalid-18 - 1]
+[TestModelFacts/invalid-19 - 1]
 Diagnostic 1: decision (4:10 - 4:13)
 Message: guard on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} tested -> other, control flow 0, built 0; constructions []
    3 | export function f({ kind }: Item, { title, ...rest }: Panel) {
@@ -477,7 +486,7 @@ Message: test value panel.size; claim {"L"} of {"L" | "S"}; field size @ ../../f
    8 | }
 ---
 
-[TestModelFacts/invalid-19 - 1]
+[TestModelFacts/invalid-20 - 1]
 Diagnostic 1: decision (5:10 - 5:13)
 Message: dispatch on size; field size @ ../../fixtures/file.ts:4; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant symbol:Labels@file.ts:45["of"]("small"), control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> other, control flow 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> value, control flow 0, built 0; constructions []
    4 | export function f(size: Size) {
@@ -486,7 +495,7 @@ Message: dispatch on size; field size @ ../../fixtures/file.ts:4; owner none; ar
    6 | }
 ---
 
-[TestModelFacts/invalid-20 - 1]
+[TestModelFacts/invalid-21 - 1]
 Diagnostic 1: test (4:20 - 4:41)
 Message: test value this.#state; claim {"open"} of {"open" | "shut"}; field #state @ ../../fixtures/file.ts:2; named "open"; property #state; declared {"open"} of {"open" | "shut"}; answered by none
    3 |   #lock?: string;
@@ -502,7 +511,7 @@ Message: test value this.#lock; claim {present} of {`null` | `undefined` | other
    5 | }
 ---
 
-[TestModelFacts/invalid-21 - 1]
+[TestModelFacts/invalid-22 - 1]
 Diagnostic 1: decision (4:20 - 4:28)
 Message: dispatch on this.size; field size @ ../../fixtures/file.ts:3; owner Panel, inside yes; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 10, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 20, control flow 0, built 0 / {"L"} of {"L" | "M" | "S"} complete -> constant 30, control flow 0, built 0; constructions []
    3 |   constructor(readonly size: Size) {}
@@ -518,7 +527,7 @@ Message: dispatch on panel.size; field size @ ../../fixtures/file.ts:3; owner Pa
    8 | }
 ---
 
-[TestModelFacts/invalid-22 - 1]
+[TestModelFacts/invalid-23 - 1]
 Diagnostic 1: guard (3:40 - 3:59)
 Message: guard on item.kind; holds {"text"} of {"stock" | "text"}; whole yes; fallback "\"\""; work 1
    2 | declare function show(text: string): string;
@@ -546,7 +555,7 @@ Message: guard on item.kind; holds {"stock"} of {"stock" | "text"}; whole no; fa
      |                                                                          ~~~~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-23 - 1]
+[TestModelFacts/invalid-24 - 1]
 Diagnostic 1: guard (3:78 - 3:82)
 Message: guard on limit; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback ""; work 1
    2 | type Row = { id: string };
@@ -562,7 +571,7 @@ Message: guard on id; holds {`null` | other falsy values | present} of {`null` |
    5 | export const known = (id: "a" | "b" | undefined) => (id !== undefined ? ["a", "b"].includes(id) : false);
 ---
 
-[TestModelFacts/invalid-24 - 1]
+[TestModelFacts/invalid-25 - 1]
 Diagnostic 1: entry (3:7 - 3:11)
 Message: entry on text; holds {present} of {`null` | `undefined` | other falsy values | present}; whole yes; fallback "[]"; work 1
    2 | export function f(text: string | undefined) {
@@ -591,7 +600,7 @@ Message: entry on text; holds {`undefined` | other falsy values | present} of {`
      |                                           ~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-25 - 1]
+[TestModelFacts/invalid-26 - 1]
 Diagnostic 1: boundary (8:27 - 8:30)
 Message: boundary into text of strict; keeps yes; rechecks []
    7 | export function f(text: string | undefined) {
@@ -614,7 +623,7 @@ Message: boundary into text of fallback; keeps no; rechecks []
   11 |   return a + b + c;
 ---
 
-[TestModelFacts/invalid-26 - 1]
+[TestModelFacts/invalid-27 - 1]
 Diagnostic 1: boundary (8:31 - 8:34)
 Message: boundary into text of loose; keeps yes; rechecks [{present} of {`null` | `undefined` | other falsy values | present} fallback "0"]
    7 | export function f(text: string | undefined) {
@@ -623,7 +632,7 @@ Message: boundary into text of loose; keeps yes; rechecks [{present} of {`null` 
    9 |   return length;
 ---
 
-[TestModelFacts/invalid-27 - 1]
+[TestModelFacts/invalid-28 - 1]
 Diagnostic 1: rejection (4:21 - 4:45)
 Message: rejection; on [value] reads [value]
    3 | function check(value: string | number) {
@@ -638,7 +647,7 @@ Message: rejection; on [input] reads [input]
      |                                               ~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-28 - 1]
+[TestModelFacts/invalid-29 - 1]
 Diagnostic 1: flow (2:32 - 2:66)
 Message: flow; rejections []; calls [super(input) with [input] after 0 rejections]; results []; carried []; rejected {}; read {}
    1 | declare function validate(value: string): void;
@@ -661,7 +670,7 @@ Message: flow; rejections [throw new Error("positive"); checks [amount] reads [a
   12 |     if (amount <= 0) throw new Error("positive");
 ---
 
-[TestModelFacts/invalid-29 - 1]
+[TestModelFacts/invalid-30 - 1]
 Diagnostic 1: flow (2:3 - 2:37)
 Message: flow; rejections [throw new Error("label"); checks [value.length] reads [value.length]]; calls [new Error("label") with [] after 0 rejections thrown]; results []; carried []; rejected {0: [$.length]}; read {0: [$.length]}
    1 | export class Label {
@@ -670,7 +679,7 @@ Message: flow; rejections [throw new Error("label"); checks [value.length] reads
    3 |     if (value.length > 47) throw new Error("label");
 ---
 
-[TestModelFacts/invalid-30 - 1]
+[TestModelFacts/invalid-31 - 1]
 Diagnostic 1: rejection (3:29 - 3:52)
 Message: rejection; on [input.length, limit] reads [input.length, limit]
    2 | export function parse(input: string, limit: number) {
@@ -686,7 +695,7 @@ Message: rejection; on [input] reads [input]
    7 |   return input;
 ---
 
-[TestModelFacts/invalid-31 - 1]
+[TestModelFacts/invalid-32 - 1]
 Diagnostic 1: rejection (2:15 - 2:41)
 Message: rejection; on [value] reads [value]
    1 | export function decode(value: unknown, name: string, count: number) {
@@ -716,7 +725,7 @@ Message: rejection; on [name] reads [part of name]
    7 |   return [value, name, count];
 ---
 
-[TestModelFacts/invalid-32 - 1]
+[TestModelFacts/invalid-33 - 1]
 Diagnostic 1: rejection (2:60 - 2:83)
 Message: rejection; on [input.kind] reads [input.kind]
    1 | export function read(input: { kind: "a" | "b"; extra?: string }) {
@@ -732,7 +741,7 @@ Message: rejection; on [input.kind] reads [input.kind]
    4 |   return input;
 ---
 
-[TestModelFacts/invalid-33 - 1]
+[TestModelFacts/invalid-34 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -740,7 +749,7 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-34 - 1]
+[TestModelFacts/invalid-35 - 1]
 Diagnostic 1: function (3:12 - 3:45)
 Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; narrowings []
    2 | export const view = {
@@ -763,7 +772,7 @@ Message: gate matches -> render
    4 |   render(item: Item) {
 ---
 
-[TestModelFacts/invalid-35 - 1]
+[TestModelFacts/invalid-36 - 1]
 Diagnostic 1: function (2:16 - 2:30)
 Message: selector filled; answer [item.kind in {"text"} of {"stock" | "text"}]; narrowings [item.kind in {"text"} of {"stock" | "text"} by own guard]
    1 | import type { Item } from "./items.js";

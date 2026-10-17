@@ -181,6 +181,18 @@ export function f(trim: Trim) {
   else if (trim.kind === "c") log("c");
   else log("none");
 }`, Options: only("decision"), Errors: facts("decision", 1)},
+			{Code: `import type { Item } from "./items.js";
+export function total(item: Item, prices: number[]) {
+  let sum = 0;
+  if (item.kind === "text") {
+    sum += 2;
+  } else {
+    let each = 0;
+    each = prices.length;
+    sum = each;
+  }
+  return sum;
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 1)},
 			{Code: `import type { Size } from "./items.js";
 declare function log(text: string): void;
 export function f(sizes: Size[], size: Size, ready: boolean) {
