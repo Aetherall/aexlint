@@ -6,7 +6,18 @@
     "curly": ["error", "multi-line"],
     "aexlint/max-expression-complexity": ["error", { "max": 4 }],
     "aexlint/max-expression-depth": ["error", { "max": 3 }],
-    "aexlint/max-decision-depth": ["error", { "max": 2 }]
+    "aexlint/max-decision-depth": ["error", { "max": 2 }],
+    "aexlint/prefer-truthy-presence-check": "error",
+    "aexlint/max-projection-spread": ["error", { "max": 2 }],
+    "aexlint/no-external-variant-behavior": "error",
+    "aexlint/no-fact-outside-owner": "error",
+    "aexlint/no-overbroad-type-predicate": "error",
+    "aexlint/no-procedural-value-dispatch": "error",
+    "aexlint/no-repeated-conversion": "error",
+    "aexlint/no-repeated-presence-check": "error",
+    "aexlint/no-repeated-selection": "error",
+    "aexlint/no-repeated-value-group": "error",
+    "aexlint/no-repeated-value-policy": "error"
   },
   "ignorePatterns": ["dist", "node_modules", "tests/project"]
 }

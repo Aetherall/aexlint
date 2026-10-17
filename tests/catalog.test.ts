@@ -35,9 +35,30 @@ test("every rule folder has one implementation, a doc and a registry entry", () 
     assert.ok(rule.meta.schema, `${name}: missing options schema`);
     assert.ok(Object.keys(rule.meta.messages ?? {}).length, `${name}: missing messages`);
   }
+  for (const name of typed) {
+    const metadata = JSON.parse(readFileSync(new URL(`${name}/rule.json`, rulesDir), "utf8"));
+    assert.equal(metadata.name, `aexlint/${name}`);
+    assert.equal(metadata.requiresTypeChecking, true);
+    assert.ok(metadata.description);
+    assert.ok(
+      readFileSync(new URL(`${name}/rule.go`, rulesDir), "utf8").includes(`"aexlint/${name}"`),
+    );
+    for (const file of readdirSync(new URL(`${name}/`, rulesDir)).filter((entry) =>
+      entry.endsWith(".go"),
+    )) {
+      assert.doesNotMatch(
+        readFileSync(new URL(`${name}/${file}`, rulesDir), "utf8"),
+        /shim\/checker"|\bTypeChecker\.(?!TypeToString\b)/,
+        `${name}/${file} reasons about types itself; query the model instead (docs/native.md)`,
+      );
+    }
+  }
   for (const name of names) {
     assert.ok(has(name, "README.md"), `${name}: missing README.md`);
-    for (const file of ["README.md", syntax.includes(name) ? "rule.ts" : "rule.go"]) {
+    for (const file of [
+      "README.md",
+      ...(syntax.includes(name) ? ["rule.ts"] : ["rule.go", "rule.json"]),
+    ]) {
       const text = readFileSync(new URL(`${name}/${file}`, rulesDir), "utf8");
       assert.doesNotMatch(text, /\bTODO\b/, `${name}: unfinished ${file}`);
     }

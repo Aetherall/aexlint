@@ -335,13 +335,6 @@ export const view = {
 };`, Files: files, Options: only("function", "gate"), Errors: []rule_tester.InvalidTestCaseError{
 				{MessageId: "function"}, {MessageId: "function"}, {MessageId: "gate"},
 			}},
-			{Code: `type Node = { status: "running" | "failed" | "done" };
-declare function paint(color: "accent" | "error" | "dim" | "success", text: string): string;
-export function row(node: Node) {
-  const a = node.status === "failed" ? "error" : node.status === "running" ? "accent" : "dim";
-  const b = node.status === "running" ? "accent" : node.status === "failed" ? "error" : "success";
-  return paint(a, "x") + paint(b, "y");
-}`, Options: only("conflict"), Errors: facts("conflict", 1)},
 		},
 	)
 }

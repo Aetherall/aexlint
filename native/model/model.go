@@ -1,8 +1,6 @@
 package model
 
 import (
-	"fmt"
-	"maps"
 	"slices"
 	"strings"
 
@@ -47,12 +45,6 @@ const (
 	PredicateFunction FunctionKind = "predicate"
 )
 
-// RelationKind is how two decisions relate.
-type RelationKind string
-
-// Conflicts relates two lookup dispatches on one field that map a variant to disjoint values for a shared purpose.
-const Conflicts RelationKind = "conflicts"
-
 // Branch is an arm of a decision: Claim holds where it runs. Tested is false for the arm reached when no test holds.
 type Branch struct {
 	Claim    Claim
@@ -72,7 +64,6 @@ type Decision struct {
 	Field      Field
 	Vocabulary *Vocabulary
 	Arms       []Branch
-	Purposes   []string
 	// Receiver is the expression or binding pattern whose type holds the tested field, Object the value it reads, and Tag
 	// the field's name.
 	Receiver    *ast.Node
@@ -82,13 +73,6 @@ type Decision struct {
 	Inside      bool
 	Root        *ast.Node
 	Alternative []*ast.Node
-	path        []side
-	purposed    bool
-}
-
-type side struct {
-	node *ast.Node
-	id   int
 }
 
 // Domain is a guard a function makes on a literal-valued part of a parameter before its work, possibly through a
@@ -123,18 +107,10 @@ type Gate struct {
 	Container *ast.Node
 }
 
-type Relation struct {
-	Kind   RelationKind
-	A      int
-	B      int
-	Detail string
-}
-
 type File struct {
 	Functions []*Function
 	Decisions []*Decision
 	Gates     []Gate
-	Relations []Relation
 }
 
 type builder struct {
@@ -146,7 +122,7 @@ type builder struct {
 }
 
 func newBuilder(a *Analyzer, source *ast.SourceFile) *builder {
-	md := &builder{File: File{Functions: []*Function{}, Decisions: []*Decision{}, Relations: []Relation{}}, m: a, source: source, ids: map[*ast.Node]int{}, analyzed: map[*ast.Node][]Domain{}}
+	md := &builder{File: File{Functions: []*Function{}, Decisions: []*Decision{}}, m: a, source: source, ids: map[*ast.Node]int{}, analyzed: map[*ast.Node][]Domain{}}
 	root := source.AsNode()
 	md.collectFunctions(root)
 	md.visit(root)
@@ -171,7 +147,6 @@ func Build(a *Analyzer) *File {
 		f.Domains = md.entryDomains(f.Node)
 	}
 	md.containers(root)
-	md.relations()
 	return &md.File
 }
 
@@ -346,7 +321,6 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 	if work >= 2 {
 		d.Form = DispatchForm
 	}
-	d.path = md.path(root)
 	d.Root = root
 	d.Alternative = alternative
 	if receiver := md.m.objectNode(subjectNode); receiver != nil && tested != "" {
@@ -821,265 +795,6 @@ func (md *builder) implies(g Gate, d Domain) bool {
 		return t.Value.Root == selector && t.Value.This == nil && t.Value.Base == nil && slices.Equal(t.Value.Path, d.Value.Path) && t.Claim.Implies(d.Claim)
 	})
 }
-func (md *builder) parameterPurpose(call, argument *ast.Node) string {
-	index := slices.Index(call.Arguments(), argument)
-	signature := md.m.ctx.TypeChecker.GetResolvedSignature(call)
-	if index < 0 || signature == nil {
-		return ""
-	}
-	if signature.Target() != nil {
-		signature = signature.Target()
-	}
-	parameters := signature.Parameters()
-	if index >= len(parameters) {
-		return ""
-	}
-	parameter := parameters[index]
-	owner := "?"
-	if parameter.ValueDeclaration != nil && parameter.ValueDeclaration.Parent != nil {
-		if name := parameter.ValueDeclaration.Parent.Name(); name != nil {
-			owner = Text(name, 40)
-		}
-	}
-	return fmt.Sprintf("argument %s(%s)", owner, parameter.Name)
-}
-
-func (md *builder) returnPurpose(id int) string {
-	f := md.Functions[id]
-	return fmt.Sprintf("return of %s#L%d", f.Name, f.Line)
-}
-
-func (md *builder) functionSymbol(fn *ast.Node) *ast.Symbol {
-	tc := md.m.ctx.TypeChecker
-	if name := fn.Name(); name != nil {
-		return tc.GetSymbolAtLocation(name)
-	}
-	if p := fn.Parent; p != nil && (p.Kind == ast.KindVariableDeclaration || p.Kind == ast.KindPropertyAssignment || p.Kind == ast.KindPropertyDeclaration) {
-		return tc.GetSymbolAtLocation(p.Name())
-	}
-	return nil
-}
-
-func (md *builder) returnPurposes(id int, depth int) []string {
-	out := []string{md.returnPurpose(id)}
-	symbol := md.functionSymbol(md.Functions[id].Node)
-	if symbol == nil || depth >= 3 {
-		return out
-	}
-	tc := md.m.ctx.TypeChecker
-	var walk func(*ast.Node) bool
-	walk = func(n *ast.Node) bool {
-		if n.Kind == ast.KindCallExpression {
-			callee := Unwrap(n.Expression())
-			name := callee
-			if callee.Kind == ast.KindPropertyAccessExpression {
-				name = callee.Name()
-			}
-			if tc.GetSymbolAtLocation(name) == symbol {
-				for _, purpose := range md.purposes(n, depth+1) {
-					if !slices.Contains(out, purpose) {
-						out = append(out, purpose)
-					}
-				}
-			}
-		}
-		n.ForEachChild(walk)
-		return false
-	}
-	walk(md.source.AsNode())
-	return out
-}
-
-func (md *builder) purposes(n *ast.Node, depth int) []string {
-	tc := md.m.ctx.TypeChecker
-	e := n
-	for e.Parent != nil {
-		p := e.Parent
-		if p.Kind == ast.KindParenthesizedExpression || p.Kind == ast.KindConditionalExpression && p.AsConditionalExpression().Condition != e {
-			e = p
-			continue
-		}
-		break
-	}
-	p := e.Parent
-	switch {
-	case p == nil:
-		return nil
-	case p.Kind == ast.KindCallExpression && p.Expression() != e:
-		if purpose := md.parameterPurpose(p, e); purpose != "" {
-			if depth < 3 {
-				if outer := md.purposes(p, depth+1); len(outer) > 0 {
-					out := []string{}
-					returned := false
-					for _, o := range outer {
-						switch {
-						case strings.HasPrefix(o, "return of "):
-							returned = true
-						case !strings.HasPrefix(o, "type "):
-							out = append(out, purpose+" -> "+o)
-						}
-					}
-					if len(out) == 0 && returned {
-						return []string{purpose}
-					}
-					if len(out) == 0 {
-						return nil
-					}
-					return out
-				}
-			}
-			return []string{purpose}
-		}
-	case p.Kind == ast.KindPropertyAssignment:
-		object := p.Parent
-		if t := checker.Checker_getContextualType(tc, object, checker.ContextFlagsNone); t != nil {
-			return []string{"property " + md.typeName(tc.GetNonNullableType(t)) + "." + Text(p.Name(), 40)}
-		}
-		return []string{"property ?." + Text(p.Name(), 40)}
-	case p.Kind == ast.KindReturnStatement:
-		if f := md.enclosing(p); f >= 0 {
-			return md.returnPurposes(f, depth)
-		}
-	case p.Kind == ast.KindVariableDeclaration && p.Type() == nil && p.Name().Kind == ast.KindIdentifier && depth < 3:
-		symbol := tc.GetSymbolAtLocation(p.Name())
-		out := []string{}
-		var walk func(*ast.Node) bool
-		walk = func(c *ast.Node) bool {
-			if c.Kind == ast.KindIdentifier && c != p.Name() && tc.GetSymbolAtLocation(c) == symbol {
-				for _, purpose := range md.purposes(c, depth+1) {
-					if !slices.Contains(out, purpose) {
-						out = append(out, purpose)
-					}
-				}
-			}
-			c.ForEachChild(walk)
-			return false
-		}
-		walk(md.source.AsNode())
-		return out
-	}
-	if t := checker.Checker_getContextualType(tc, e, checker.ContextFlagsNone); t != nil {
-		return []string{"type " + md.typeName(tc.GetNonNullableType(t))}
-	}
-	return nil
-}
-
-func (md *builder) path(n *ast.Node) []side {
-	out := []side{}
-	for c := n; c.Parent != nil; c = c.Parent {
-		p := c.Parent
-		if ast.IsFunctionLike(p) {
-			break
-		}
-		switch p.Kind {
-		case ast.KindIfStatement:
-			s := p.AsIfStatement()
-			if c == s.ThenStatement {
-				out = append(out, side{p, 1})
-			} else if c == s.ElseStatement {
-				out = append(out, side{p, 2})
-			}
-		case ast.KindConditionalExpression:
-			s := p.AsConditionalExpression()
-			if c == s.WhenTrue {
-				out = append(out, side{p, 1})
-			} else if c == s.WhenFalse {
-				out = append(out, side{p, 2})
-			}
-		case ast.KindCaseClause, ast.KindDefaultClause:
-			out = append(out, side{p.Parent, int(p.Pos()) + 3})
-		}
-		if p.Kind == ast.KindBlock || p.Kind == ast.KindCaseClause || p.Kind == ast.KindDefaultClause || p.Kind == ast.KindSourceFile {
-			for _, before := range p.Statements() {
-				if before == c {
-					break
-				}
-				if before.Kind == ast.KindIfStatement {
-					s := before.AsIfStatement()
-					if s.ElseStatement == nil && md.m.exits(s.ThenStatement) {
-						out = append(out, side{before, 2})
-					}
-				}
-			}
-		}
-	}
-	return out
-}
-
-func exclusive(a, b []side) bool {
-	for _, x := range a {
-		for _, y := range b {
-			if x.node == y.node && x.id != y.id {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (md *builder) purpose(d *Decision) {
-	if d.purposed || d.Root == nil {
-		return
-	}
-	d.purposed = true
-	if ast.IsExpression(d.Root) {
-		d.Purposes = md.purposes(d.Root, 0)
-	} else if d.Function >= 0 {
-		d.Purposes = md.returnPurposes(d.Function, 0)
-	}
-}
-
-func (md *builder) mapping(d *Decision) map[string][]string {
-	if d.Form != DispatchForm {
-		return nil
-	}
-	out := map[string][]string{}
-	for _, a := range d.Arms {
-		if !a.Complete || !a.Outcome.Lookup() {
-			return nil
-		}
-		for _, v := range a.Claim.Accepted {
-			out[v] = a.Outcome.Values
-		}
-	}
-	return out
-}
-
-func (md *builder) relations() {
-	for i, a := range md.Decisions {
-		for _, b := range md.Decisions[i+1:] {
-			if !a.Field.Same(b.Field) {
-				continue
-			}
-			ma, mb := md.mapping(a), md.mapping(b)
-			if ma == nil || mb == nil || exclusive(a.path, b.path) {
-				continue
-			}
-			md.purpose(a)
-			md.purpose(b)
-			for _, v := range slices.Sorted(maps.Keys(ma)) {
-				x := ma[v]
-				y, ok := mb[v]
-				if !ok || slices.ContainsFunc(x, func(s string) bool { return slices.Contains(y, s) }) {
-					continue
-				}
-				shared := []string{}
-				for _, x := range a.Purposes {
-					if !strings.HasPrefix(x, "type ") && slices.Contains(b.Purposes, x) {
-						shared = append(shared, x)
-					}
-				}
-				if len(shared) == 0 {
-					break
-				}
-				purpose := strings.Join(shared, ", ")
-				md.Relations = append(md.Relations, Relation{Kind: Conflicts, A: a.ID, B: b.ID, Detail: fmt.Sprintf("%s: %v vs %v; purpose %s", v, x, y, purpose)})
-				break
-			}
-		}
-	}
-}
-
 func (md *builder) collectFunctions(n *ast.Node) bool {
 	if ast.IsFunctionLike(n) && n.Body() != nil {
 		name := ""

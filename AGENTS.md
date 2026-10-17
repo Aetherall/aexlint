@@ -19,7 +19,7 @@
 
 ## Adding or changing a rule
 
-1. Generate with `pnpm rule:new <name>` or `pnpm rule:new:typed <name>`, one at a time.
+1. Generate with `pnpm rule:new <name>`, adding `--typed` for a type-aware rule, one at a time.
 2. Write the rule's `README.md`: problem, reported and accepted examples, options, span, limitations.
 3. Write tests first: a `tests/project/<name>/` folder of reported and accepted files, enabled for the rule in `tests/project/oxlint.json`. Typed rules cover imports, aliases, generics, unions, any/unknown/never, unresolved types, and a dependency-only type change (two folders differing only in the dependency). Cross-file rules see the whole project, so use literal values no other folder uses. Cases needing other compiler options go in a `project-<name>/` folder with its own `tsconfig.json`; option variants go in a subfolder with its own override.
 4. Implement the smallest correct visitor.

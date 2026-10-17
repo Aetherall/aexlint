@@ -37,7 +37,7 @@ The executable lives at `dist/native/<platform>-<arch>/aexlint-typed` (`.exe` on
 
 `native/model/` is a Go package, not a rule. It is copied next to the rules and imported as `internal/aexlint/model`. It holds the analyzer that reads tests of finite literal values and of presence, syntax helpers, the per-program index of decision sites, ownership resolution, result construction, and the per-file decision model described in [decision model](design/decision-model.md). Rules build on it instead of copying its logic: a rule is a query over the model's facts plus its wording. Rules do not call the checker or import its package, except `TypeToString` to name a type in a message; the catalog test enforces this. When a rule needs a fact about types, add it to the model with a `model-facts` fixture.
 
-The test-only `native/probe/model-facts` rule reports every kind of model fact as a diagnostic: sites, tests, decisions with their arms and outcomes, functions, gates, conflicts, guards, entry tests, boundaries, flows, the checks of flows and type-predicate contracts. Its `facts` option selects kinds, so each fixture asserts one kind exactly while its snapshot pins the content. A fact enters the model together with its fixture, before a rule relies on it. Run `pnpm native:test model-facts`. The older `native/probe/decision-model` probe covers selector narrowing and conflicts.
+The test-only `native/probe/model-facts` rule reports every kind of model fact as a diagnostic: sites, tests, decisions with their arms and outcomes, functions, gates, guards, entry tests, boundaries, flows, the checks of flows and type-predicate contracts. Its `facts` option selects kinds, so each fixture asserts one kind exactly while its snapshot pins the content. A fact enters the model together with its fixture, before a rule relies on it. Run `pnpm native:test model-facts`.
 
 To review a model change on real code, dump the facts of whole programs before and after it and diff them:
 
@@ -59,7 +59,7 @@ Cross-file rules may share an index when it is:
 
 ## Tests and upgrades
 
-Rules are tested through `tests/project/` (see [development](development.md#adding-a-rule)). `pnpm native:test` runs the test-only probes (`model-facts`, `decision-model`, `type-probe`); add `--update` only for intentional snapshot changes. Native ranges are byte offsets.
+Rules are tested through `tests/project/` (see [development](development.md#adding-a-rule)). `pnpm native:test` runs the test-only probes (`model-facts`, `type-probe`); add `--update` only for intentional snapshot changes. Native ranges are byte offsets.
 
 To upgrade:
 

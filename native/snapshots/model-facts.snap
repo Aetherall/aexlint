@@ -627,12 +627,3 @@ Message: gate matches -> render
      |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    4 |   render(item: Item) {
 ---
-
-[TestModelFacts/invalid-26 - 1]
-Diagnostic 1: conflict (4:13 - 4:23)
-Message: conflicts with line 5: s:done: [dim] vs [success]; purpose argument paint(color)
-   3 | export function row(node: Node) {
-   4 |   const a = node.status === "failed" ? "error" : node.status === "running" ? "accent" : "dim";
-     |             ~~~~~~~~~~~
-   5 |   const b = node.status === "running" ? "accent" : node.status === "failed" ? "error" : "success";
----

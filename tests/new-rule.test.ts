@@ -42,6 +42,22 @@ test("generates source, project cases, docs and a sorted registry", (t) => {
   }
 });
 
+test("generates a type-aware rule with metadata, docs and a registry entry", (t) => {
+  const root = temporaryRoot(t);
+  newRule(root, "one-rule", true);
+  const source = readFileSync(join(root, "rules/one-rule/rule.go"), "utf8");
+  assert.match(source, /package one_rule/);
+  assert.match(source, /Name: "aexlint\/one-rule"/);
+  const metadata = JSON.parse(readFileSync(join(root, "rules/one-rule/rule.json"), "utf8"));
+  assert.equal(metadata.requiresTypeChecking, true);
+  assert.ok(existsSync(join(root, "rules/one-rule/README.md")));
+  assert.match(readFileSync(join(root, "src/rules.ts"), "utf8"), /typedRuleNames[^]*"one-rule",/);
+  const config = JSON.parse(readFileSync(join(root, "tests/project/oxlint.json"), "utf8"));
+  assert.deepEqual(config.overrides, [
+    { files: ["one-rule/**"], rules: { "aexlint/one-rule": "error" } },
+  ]);
+});
+
 test("refuses duplicate rules without changing their files", (t) => {
   const root = temporaryRoot(t);
   newRule(root, "one-rule");

@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "conflict", "guard", "entry", "boundary", "flow", "check", "contract"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "check", "contract"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -337,9 +337,6 @@ func (p *probe) run() {
 	}
 	for _, g := range file.Gates {
 		p.report("gate", g.Selector.Node, fmt.Sprintf("gate %s -> %s", g.Names[0], g.Names[1]))
-	}
-	for _, r := range file.Relations {
-		p.report("conflict", file.Decisions[r.A].Node, fmt.Sprintf("%s with line %d: %s", r.Kind, file.Decisions[r.B].Line, r.Detail))
 	}
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {

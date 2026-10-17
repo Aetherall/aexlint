@@ -18,8 +18,7 @@ The shell provides Node.js, pnpm, and Go. The first native build needs network a
 | ------------------------------ | -------------------------------------------------------------------- |
 | `pnpm native:test [--update]`  | Run the model probes; review snapshot changes                        |
 | `pnpm test:project [--update]` | Lint `tests/project` with every rule and compare with `expected.txt` |
-| `pnpm lint`                    | Self-lint with both plugins; rebuilds the host backend               |
-| `pnpm lint:classifications`    | Optional review with the rules self-lint does not enforce            |
+| `pnpm lint`                    | Lint this repo with the rules it passes; rebuilds the backend        |
 | `pnpm format`                  | Format TS, docs, and Go                                              |
 | `pnpm check`                   | Types, lint, formatting, Go/TS tests, and package integration        |
 | `pnpm build`                   | Build JS, declarations, and the host binary                          |
@@ -29,7 +28,7 @@ The shell provides Node.js, pnpm, and Go. The first native build needs network a
 ## Adding a rule
 
 1. Check for an existing Oxlint rule. Define one general problem, not a list of special cases.
-2. Run `pnpm rule:new <name>` for syntax, or `pnpm rule:new:typed <name>` for types. Both create `rules/<name>/` and register the rule in `src/rules.ts`.
+2. Run `pnpm rule:new <name>`, with `--typed` for a type-aware rule. It creates `rules/<name>/` and registers the rule in `src/rules.ts`.
 3. Replace the generated placeholders with a short rule contract, real valid/invalid tests, and an implementation.
 4. Run focused tests, then `pnpm format` and `pnpm check`.
 
