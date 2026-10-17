@@ -252,7 +252,7 @@ test("CLI skips diagnostics recorded in a baseline but reports new ones", (t) =>
   const recorded = record();
   assert.equal(recorded.length, 3);
   assert.ok(
-    recorded.some((line) => line.startsWith('legacy.ts\taexlint(max-expression-depth)\t"')),
+    recorded.some((line) => line.startsWith('"legacy.ts"\taexlint(max-expression-depth)\t"')),
   );
   assert.equal(check(["legacy.ts", "other.ts"], 1).length, 3);
   assert.deepEqual(skip(["legacy.ts", "other.ts"]), []);
@@ -286,6 +286,14 @@ test("CLI baselines are unaffected by a suppressed copy of a finding", (t) => {
   assert.equal(check(["--baseline", baseline], 1).length, 1);
 });
 
+test("CLI baselines files whose names look like comments or hold tabs", (t) => {
+  const { write, check, record, baseline } = consumer(t);
+  write("#legacy.ts", depthViolation);
+  write("tab\tname.ts", depthViolation);
+  assert.equal(record().length, 2);
+  assert.deepEqual(check(["--baseline", baseline]), []);
+});
+
 test("CLI rejects conflicting, missing, and malformed baselines", (t) => {
   const { run, baseline } = consumer(t);
   assert.match(
@@ -313,10 +321,10 @@ test("CLI --write-baseline replaces the file with the diagnostics of that run", 
   write("first.ts", depthViolation);
   write("second.ts", "if (a) work(); else if (b) other();\n");
   const all = record();
-  assert.ok(all.some((line) => line.startsWith("second.ts\taexlint(no-else-if)")));
+  assert.ok(all.some((line) => line.startsWith('"second.ts"\taexlint(no-else-if)')));
   assert.deepEqual(
     record(["first.ts"]).map((line) => line.split("\t").slice(0, 2)),
-    [["first.ts", "aexlint(max-expression-depth)"]],
+    [['"first.ts"', "aexlint(max-expression-depth)"]],
   );
 });
 
@@ -326,7 +334,7 @@ test("CLI checks one checkout against a baseline recorded in another", (t) => {
   for (const checkout of [base, head]) checkout.write("src/legacy.ts", depthViolation);
   const recorded = base.record();
   assert.equal(recorded.length, 1);
-  assert.ok(recorded[0]?.startsWith("src/legacy.ts\taexlint(max-expression-depth)\t"));
+  assert.ok(recorded[0]?.startsWith('"src/legacy.ts"\taexlint(max-expression-depth)\t'));
   assert.deepEqual(head.check(["--baseline", base.baseline]), []);
   head.write("src/new.ts", depthViolation);
   assert.deepEqual(filenames(head.check(["--baseline", base.baseline], 1)), ["src/new.ts"]);

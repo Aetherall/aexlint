@@ -10,21 +10,30 @@ export interface BaselineEntry {
 
 const header = "# Diagnostics recorded by aexlint check --write-baseline\n";
 
+function parseLine(line: string): BaselineEntry | undefined {
+  const [file, code, message, ...rest] = line.split("\t");
+  if (!file || !code || message === undefined || rest.length) return undefined;
+  try {
+    const entry = { file: JSON.parse(file), code, message: JSON.parse(message) };
+    return typeof entry.file === "string" && typeof entry.message === "string" ? entry : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function parseBaseline(text: string): BaselineEntry[] {
   const entries: BaselineEntry[] = [];
   for (const line of text.split(/\r?\n/)) {
     if (!line.trim() || line.startsWith("#")) continue;
-    const [file, code, message] = line.split("\t");
-    if (!file || !code || message === undefined) {
-      throw new Error(`Malformed baseline line: ${line}`);
-    }
-    entries.push({ file, code, message: JSON.parse(message) });
+    const entry = parseLine(line);
+    if (!entry) throw new Error(`Malformed baseline line: ${line}`);
+    entries.push(entry);
   }
   return entries;
 }
 
 function lineOf({ file, code, message }: BaselineEntry): string {
-  return [file, code, JSON.stringify(message)].join("\t");
+  return [JSON.stringify(file), code, JSON.stringify(message)].join("\t");
 }
 
 export function formatBaseline(entries: BaselineEntry[]): string {
