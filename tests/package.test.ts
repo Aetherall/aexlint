@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncOptionsWithStringEncoding } from "node:child_process";
 import { globSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -24,6 +24,16 @@ test("packed package imports and executes in a real Oxlint consumer", { timeout:
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
   const report = (args: string[], status = 0) =>
     JSON.parse(run(process.execPath, args, consumer, status));
+  const attempt = (args: string[]) => {
+    const options: SpawnSyncOptionsWithStringEncoding = {
+      cwd: consumer,
+      encoding: "utf8",
+      timeout: 30_000,
+    };
+    const result = spawnSync(process.execPath, args, options);
+    if (result.error) throw result.error;
+    return { status: result.status, output: result.stdout + result.stderr };
+  };
   const packed = JSON.parse(
     run(
       "pnpm",
@@ -243,14 +253,9 @@ export default {
       ["error", { max: 2 }, {}],
     ]) {
       syntaxConfig(ruleName, setting);
-      const result = spawnSync(process.execPath, depthArgs, {
-        cwd: consumer,
-        encoding: "utf8",
-        timeout: 30_000,
-      });
-      if (result.error) throw result.error;
+      const result = attempt(depthArgs);
       assert.notEqual(result.status, 0, JSON.stringify(setting));
-      assert.match(result.stdout + result.stderr, /(?:config|option|schema|max)/i);
+      assert.match(result.output, /(?:config|option|schema|max)/i);
     }
   }
   const typedRules = JSON.parse(

@@ -8,6 +8,7 @@
     "aexlint/max-expression-depth": ["error", { "max": 3 }],
     "aexlint/max-decision-depth": ["error", { "max": 2 }],
     "aexlint/no-else-if": "error",
+    "aexlint/max-held-context": ["error", { "max": 3 }],
     "aexlint/max-call-assembly": ["error", { "maxWidth": 60, "maxReferences": 3 }],
     "aexlint/prefer-truthy-presence-check": "error",
     "aexlint/max-projection-spread": ["error", { "max": 2 }],

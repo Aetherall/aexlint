@@ -223,6 +223,13 @@ function assertSourceAction(action: string): void {
   }
 }
 
+function testPackages(filter: string[], names: string[]): string[] {
+  if (!filter.length) return ["./internal/aexlint/model/...", "./internal/aexlint/rules/..."];
+  const unknown = filter.find((name) => !names.includes(name));
+  if (unknown) throw new Error(`Unknown native rule: ${unknown}`);
+  return filter.map((name) => `./internal/aexlint/rules/${name}`);
+}
+
 export async function native(action: string, args: string[] = []): Promise<void> {
   if (isFormattingAction(action)) {
     const output = run("gofmt", [action === "format" ? "-w" : "-l", "native", "rules"], root);
@@ -242,12 +249,7 @@ export async function native(action: string, args: string[] = []): Promise<void>
     rmSync(snapshotDir, { recursive: true, force: true });
     cpSync(join(root, "native/snapshots"), snapshotDir, { recursive: true });
     const before = snapshots();
-    const packages = filter.length
-      ? filter.map((name) => {
-          if (!names.includes(name)) throw new Error(`Unknown native rule: ${name}`);
-          return `./internal/aexlint/rules/${name}`;
-        })
-      : ["./internal/aexlint/model/...", "./internal/aexlint/rules/..."];
+    const packages = testPackages(filter, names);
     const testEnv = { ...goEnv, UPDATE_SNAPS: update ? "true" : "false" };
     const command = ["test", "-mod=readonly", "-count=1", ...packages];
     process.stdout.write(run("go", command, source, testEnv));
