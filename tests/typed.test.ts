@@ -83,6 +83,14 @@ function later(message: string): boolean {
   return message.includes("stopped earlier in this run");
 }
 
+function bomLength(file: string): number {
+  return readFileSync(file)
+    .subarray(0, 3)
+    .equals(Buffer.from([0xef, 0xbb, 0xbf]))
+    ? 3
+    : 0;
+}
+
 function stoppedLast(messages: string[]): string[] {
   return [...messages.filter((message) => !later(message)), ...messages.filter(later)];
 }
@@ -126,7 +134,7 @@ test("plugin reports what the backend reports, at the same byte offsets", (t) =>
   );
   write(
     "three.ts",
-    'import type { Kind } from "./kinds.js";\nconst label = "é";\nexport function h(k: Kind, entry: { id: string } | undefined) {\n  if (entry !== undefined) return label;\n  return k === "c";\n}\n',
+    '\uFEFFimport type { Kind } from "./kinds.js";\nconst label = "é";\nexport function h(k: Kind, entry: { id: string } | undefined) {\n  if (entry !== undefined) return label;\n  return k === "c";\n}\n',
   );
   const rules = [
     { name: "aexlint/max-interpretation-spread", options: { max: 1 } },
@@ -147,7 +155,7 @@ test("plugin reports what the backend reports, at the same byte offsets", (t) =>
   ).map((item) => ({
     code: `aexlint(${item.rule.replace("aexlint/", "")})`,
     filename: item.file_path.slice(root.length + 1),
-    offset: item.range.pos,
+    offset: item.range.pos + bomLength(item.file_path),
     message: item.message.help
       ? `${item.message.description}\nhelp: ${item.message.help}`
       : item.message.description,

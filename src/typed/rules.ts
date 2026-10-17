@@ -214,12 +214,16 @@ function request(context: Context, name: string): void {
   pending.requests.push(options === undefined ? { name } : { name, options });
 }
 
+function onDiskAs(file: string, text: string): boolean {
+  return readFileSync(file, "utf8").replace(/^\uFEFF/, "") === text;
+}
+
 function runBatch(
   file: string,
   text: string,
   requests: Request[],
 ): Map<string, NativeDiagnostic[]> {
-  const onDisk = readFileSync(file, "utf8") === text;
+  const onDisk = onDiskAs(file, text);
   const payload = {
     version: 2,
     configs: [{ file_paths: [file], rules: requests }],
@@ -265,7 +269,7 @@ function diagnosticsFor(context: Context): NativeDiagnostic[] {
   const text = context.sourceCode.text;
   const key = JSON.stringify(pending.requests);
   const cached = batches.get(key)?.get(file);
-  const fresh = cached && readFileSync(file, "utf8") === text;
+  const fresh = cached && onDiskAs(file, text);
   let found = fresh ? cached : undefined;
   if (!found) {
     const store = batches.get(key) ?? new Map<string, NativeDiagnostic[]>();
