@@ -142,12 +142,17 @@ function isPredicateResult(node: ESTree.Node): boolean {
 
 function validationBodyOf(node: ESTree.Node): ESTree.BlockStatement | undefined {
   const result = compositionRoot(node);
-  let statement = result.parent;
+  const statement = result.parent;
   if (!statement) return;
   if (statement.type === "VariableDeclarator" && statement.init === result) {
-    statement = statement.parent;
-  } else if (statement.type !== "IfStatement" || statement.test !== result) return;
-  const body = statement.parent;
+    return namedFunctionBody(statement.parent);
+  }
+  if (statement.type !== "IfStatement" || statement.test !== result) return;
+  return namedFunctionBody(statement);
+}
+
+function namedFunctionBody(statement: ESTree.Node | null): ESTree.BlockStatement | undefined {
+  const body = statement?.parent;
   if (body?.type !== "BlockStatement") return;
   const fn = body.parent;
   if (!isFunctionNode(fn)) return;

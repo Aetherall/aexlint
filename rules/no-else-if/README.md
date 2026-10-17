@@ -30,4 +30,4 @@ return "sunny";
 
 Reports `elseIf` once per `else if`, from `else` through `if`. Plain `else`, ternaries and `else { if … }` are not checked. No fixes: early returns, switches and lookup tables are not interchangeable in general.
 
-[max-held-context](../max-held-context/README.md) treats uniform `else if` chains as clear alternatives; pick the view that suits your code.
+[max-held-context](../max-held-context/README.md) allows `else if` chains. The early returns above satisfy both rules.

@@ -1,5 +1,5 @@
 import { defineRule, type ESTree, type Reference } from "@oxlint/plugins";
-import { isFunctionNode, unwrap } from "../../src/expression.ts";
+import { childNodes, isFunctionNode, unwrap } from "../../src/expression.ts";
 
 type Invocation = ESTree.CallExpression | ESTree.NewExpression;
 type Piece = { text: string; start: number; end: number };
@@ -116,15 +116,9 @@ export default defineRule({
         if (isFunctionNode(current) && current.body) {
           collapsed.push([current.body.start, current.body.end]);
         }
-        const fields = current as unknown as Record<string, ESTree.Node | ESTree.Node[] | null>;
-        for (const key of sourceCode.visitorKeys[current.type] ?? []) {
-          if (isFunctionNode(current) && key === "body") continue;
-          if (typeKeys.has(key)) continue;
-          const child = fields[key];
-          if (Array.isArray(child)) {
-            for (const element of child) if (element != null) visit(element);
-          } else if (child != null) visit(child);
-        }
+        const ownBody = isFunctionNode(current) ? "body" : undefined;
+        const measured = (key: string) => key !== ownBody && !typeKeys.has(key);
+        for (const child of childNodes(sourceCode.visitorKeys, current, measured)) visit(child);
       };
       for (const argument of node.arguments) visit(argument);
       return { collapsed, names };
@@ -145,7 +139,9 @@ export default defineRule({
         if (!range) {
           const text = withoutLiteralText(token);
           result.push({ text, start: token.start, end: token.end });
-        } else if (result.at(-1)?.start !== range[0]) {
+          continue;
+        }
+        if (result.at(-1)?.start !== range[0]) {
           result.push({ text: "{}", start: range[0], end: range[1] });
         }
       }

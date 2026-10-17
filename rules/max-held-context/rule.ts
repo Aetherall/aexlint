@@ -1,5 +1,5 @@
 import { defineRule, type Context, type ESTree, type LineColumn } from "@oxlint/plugins";
-import { isFunctionNode, unwrap } from "../../src/expression.ts";
+import { childNodes, isFunctionNode, unwrap } from "../../src/expression.ts";
 
 type Loop =
   | ESTree.ForStatement
@@ -112,12 +112,8 @@ class HeldContextMeasure {
   }
 
   private children(node: ESTree.Node, depth: number, region: Region): void {
-    const fields = node as unknown as Record<string, ESTree.Node | (ESTree.Node | null)[] | null>;
-    for (const key of this.context.sourceCode.visitorKeys[node.type] ?? []) {
-      const child = fields[key];
-      if (Array.isArray(child)) {
-        for (const element of child) if (element) this.walk(element, depth, region);
-      } else if (child && typeof child.type === "string") this.walk(child, depth, region);
+    for (const child of childNodes(this.context.sourceCode.visitorKeys, node)) {
+      this.walk(child, depth, region);
     }
   }
 
@@ -127,8 +123,8 @@ class HeldContextMeasure {
 
   private walk(node: ESTree.Node, depth: number, region: Region): void {
     if (isFunctionNode(node)) {
-      if (isArgumentCallback(node)) this.opened(node.body!, depth, region);
-      else if (node.body) this.unit(node.body);
+      if (isArgumentCallback(node)) return this.opened(node.body!, depth, region);
+      if (node.body) this.unit(node.body);
       return;
     }
     if (isClass(node)) {
@@ -161,8 +157,8 @@ class HeldContextMeasure {
       return;
     }
     this.opened(node.consequent, depth, region);
-    if (node.alternate?.type === "IfStatement") this.walk(node.alternate, depth, region);
-    else if (node.alternate) this.opened(node.alternate, depth, region);
+    if (node.alternate?.type === "IfStatement") return this.walk(node.alternate, depth, region);
+    if (node.alternate) this.opened(node.alternate, depth, region);
   }
 
   private switchStatement(node: ESTree.SwitchStatement, depth: number, region: Region): void {

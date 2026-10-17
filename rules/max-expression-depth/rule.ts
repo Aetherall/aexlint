@@ -1,5 +1,5 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
-import { computedProperty, unwrap } from "../../src/expression.ts";
+import { childNodes, computedProperty, unwrap } from "../../src/expression.ts";
 
 function isBoundary(node: ESTree.Node): boolean {
   return [
@@ -49,17 +49,7 @@ export default defineRule({
       for (const node of nodes) depth = Math.max(depth, depthOf(node));
       return depth;
     };
-    const childrenOf = (node: ESTree.Node): ESTree.Node[] => {
-      const fields = node as unknown as Record<string, ESTree.Node | ESTree.Node[] | null>;
-      const children: ESTree.Node[] = [];
-      for (const key of context.sourceCode.visitorKeys[node.type] ?? []) {
-        const child = fields[key];
-        if (Array.isArray(child)) {
-          for (const element of child) if (element != null) children.push(element);
-        } else if (child != null) children.push(child);
-      }
-      return children;
-    };
+    const childrenOf = (node: ESTree.Node) => childNodes(context.sourceCode.visitorKeys, node);
     return {
       "*:exit"(node) {
         if (isBoundary(node)) {
@@ -88,10 +78,11 @@ export default defineRule({
             depths.set(node, greatestDepth(childrenOf(node)));
             return;
         }
+        if (callee && callee.type !== "MemberExpression") inputs.push(callee);
         if (callee?.type === "MemberExpression") {
           receiverDepth = depthOf(callee.object);
           inputs.push(...computedProperty(callee));
-        } else if (callee) inputs.push(callee);
+        }
         const depth = 1 + greatestDepth(inputs);
         depths.set(node, Math.max(depth, receiverDepth));
         if (depth > max) candidates.set(node, depth);

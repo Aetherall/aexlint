@@ -44,4 +44,4 @@ function validate(a, b) {
 
 Reports `tooDeep` on the decision head; only the first over-limit decision in a context is reported. No fixes. Callback aliases and when callbacks run are not tracked. Nested test and promise callbacks count like any others; use overrides for test files.
 
-[no-else-if](../no-else-if/README.md) takes the opposite view of uniform `else if` chains.
+[no-else-if](../no-else-if/README.md) reports `else if` chains, which this rule allows. Early returns satisfy both.

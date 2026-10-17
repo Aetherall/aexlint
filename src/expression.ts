@@ -48,3 +48,17 @@ export function unwrap(node: ESTree.Node): ESTree.Node {
   while (isExpressionWrapper(node)) node = node.expression;
   return node;
 }
+
+export function childNodes(
+  visitorKeys: Readonly<Record<string, readonly string[]>>,
+  node: ESTree.Node,
+  keep: (key: string) => boolean = () => true,
+): ESTree.Node[] {
+  const fields = node as unknown as Record<string, ESTree.Node | (ESTree.Node | null)[] | null>;
+  const children: ESTree.Node[] = [];
+  for (const key of (visitorKeys[node.type] ?? []).filter(keep)) {
+    const value = fields[key];
+    for (const child of Array.isArray(value) ? value : [value]) if (child) children.push(child);
+  }
+  return children;
+}

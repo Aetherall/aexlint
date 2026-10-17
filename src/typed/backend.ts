@@ -49,10 +49,20 @@ export function decodeFrames(input: Uint8Array): NativeMessages {
     if (size > bytes.length - offset) throw new Error("Truncated native message payload.");
     const payload: unknown = JSON.parse(bytes.subarray(offset, offset + size).toString("utf8"));
     offset += size;
-    if (type === 0) throw new Error(String(object(payload, "error").error));
-    if (type === 1) messages.diagnostics.push(payload);
-    else if (type === 3) messages.programFiles.push(...programFiles(payload));
-    else if (type !== 2) throw new Error(`Unknown native message type: ${type}`);
+    switch (type) {
+      case 0:
+        throw new Error(String(object(payload, "error").error));
+      case 1:
+        messages.diagnostics.push(payload);
+        break;
+      case 2:
+        break;
+      case 3:
+        messages.programFiles.push(...programFiles(payload));
+        break;
+      default:
+        throw new Error(`Unknown native message type: ${type}`);
+    }
   }
   return messages;
 }

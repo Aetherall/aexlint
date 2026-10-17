@@ -1,5 +1,6 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
 import {
+  childNodes,
   computedProperty,
   isLogicalDecision,
   isSignedExpression,
@@ -158,17 +159,7 @@ export default defineRule({
     const stringValues = new WeakSet<ESTree.Node>();
     const regions = new Set<ESTree.Node>();
     const scoreOf = (node: ESTree.Node) => scores.get(node) ?? 0;
-    const childrenOf = (node: ESTree.Node): ESTree.Node[] => {
-      const fields = node as unknown as Record<string, ESTree.Node | ESTree.Node[] | null>;
-      const children: ESTree.Node[] = [];
-      for (const key of context.sourceCode.visitorKeys[node.type] ?? []) {
-        const child = fields[key];
-        if (Array.isArray(child)) {
-          for (const element of child) if (element != null) children.push(element);
-        } else if (child != null) children.push(child);
-      }
-      return children;
-    };
+    const childrenOf = (node: ESTree.Node) => childNodes(context.sourceCode.visitorKeys, node);
     const sum = (nodes: ESTree.Node[]) => nodes.reduce((total, node) => total + scoreOf(node), 0);
     return {
       "*:exit"(node) {
