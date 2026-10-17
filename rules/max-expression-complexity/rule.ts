@@ -1,22 +1,15 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
 import {
   childNodes,
+  closestAncestor,
   computedProperty,
+  continuesGroup,
+  invokedExpression,
+  isComputationBoundary,
   isLogicalDecision,
   isSignedExpression,
   unwrap,
 } from "../../src/expression.ts";
-
-function isBoundary(node: ESTree.Node): boolean {
-  return [
-    "FunctionDeclaration",
-    "FunctionExpression",
-    "ArrowFunctionExpression",
-    "ClassDeclaration",
-    "ClassExpression",
-    "ObjectExpression",
-  ].includes(node.type);
-}
 
 function isIndependentContainer(node: ESTree.Node): boolean {
   return ["ArrayExpression", "JSXElement", "JSXFragment", "JSXOpeningElement"].includes(node.type);
@@ -166,12 +159,12 @@ export default defineRule({
         for (const region of handlerFor(measuredRegions, node)?.(node) ?? []) {
           if (region != null) regions.add(region);
         }
-        if (isBoundary(node)) {
+        if (isComputationBoundary(node)) {
           scores.set(node, 0);
           return;
         }
         if (canHaveFluentReceiver(node)) {
-          const callee = unwrap(node.type === "CallExpression" ? node.callee : node.tag);
+          const callee = invokedExpression(node);
           if (callee.type === "MemberExpression") {
             const inputs: ESTree.Node[] =
               node.type === "CallExpression" ? [...node.arguments] : [node.quasi];
@@ -195,11 +188,8 @@ export default defineRule({
         }
         if (isLogicalDecision(node)) {
           const term = (child: ESTree.Node) => {
-            const expression = unwrap(child);
-            const sameGroup =
-              expression.type === "LogicalExpression" && expression.operator === node.operator;
             const childScore = scoreOf(child);
-            return sameGroup ? childScore - 1 : childScore;
+            return continuesGroup(child, node) ? childScore - 1 : childScore;
           };
           const groupScore = 1 + term(node.left) + term(node.right);
           scores.set(node, groupScore);
@@ -221,11 +211,10 @@ export default defineRule({
       "Program:exit"() {
         const excessive = new Set([...regions].filter((node) => scoreOf(node) > max));
         for (const node of excessive) {
-          let ancestor = node.parent;
-          while (ancestor !== null && !isBoundary(ancestor) && !excessive.has(ancestor)) {
-            ancestor = ancestor.parent;
-          }
-          if (ancestor !== null && excessive.has(ancestor)) continue;
+          const stop = (ancestor: ESTree.Node) =>
+            isComputationBoundary(ancestor) || excessive.has(ancestor);
+          const outer = closestAncestor(node, stop);
+          if (outer !== null && excessive.has(outer)) continue;
           context.report({ node, messageId: "tooComplex", data: { score: scoreOf(node), max } });
         }
       },

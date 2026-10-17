@@ -1,5 +1,5 @@
 import { defineRule, type Context, type ESTree, type LineColumn } from "@oxlint/plugins";
-import { childNodes, isFunctionNode, unwrap } from "../../src/expression.ts";
+import { childNodes, isClass, isFunctionNode, isInvocation, unwrap } from "../../src/expression.ts";
 
 type Loop =
   | ESTree.ForStatement
@@ -9,10 +9,6 @@ type Loop =
   | ESTree.DoWhileStatement;
 
 const exits = ["ReturnStatement", "ThrowStatement", "ContinueStatement", "BreakStatement"];
-
-function isClass(node: ESTree.Node): boolean {
-  return node.type === "ClassDeclaration" || node.type === "ClassExpression";
-}
 
 function isLoop(node: ESTree.Node): node is Loop {
   return [
@@ -29,8 +25,7 @@ function isArgumentCallback(node: ESTree.Node): boolean {
   let value: ESTree.Node = node;
   while (value.parent !== null && unwrap(value.parent) !== value.parent) value = value.parent;
   const parent = value.parent;
-  const invocation = parent?.type === "CallExpression" || parent?.type === "NewExpression";
-  if (!invocation) return false;
+  if (parent === null || !isInvocation(parent)) return false;
   return (parent.arguments as ESTree.Node[]).includes(value);
 }
 

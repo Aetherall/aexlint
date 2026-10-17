@@ -24,6 +24,40 @@ export function isFunctionNode(
   );
 }
 
+export type Invocation = ESTree.CallExpression | ESTree.NewExpression;
+
+export function isInvocation(node: ESTree.Node): node is Invocation {
+  return node.type === "CallExpression" || node.type === "NewExpression";
+}
+
+export function isClass(node: ESTree.Node): node is ESTree.Class {
+  return node.type === "ClassDeclaration" || node.type === "ClassExpression";
+}
+
+export function isComputationBoundary(node: ESTree.Node): boolean {
+  return isFunctionNode(node) || isClass(node) || node.type === "ObjectExpression";
+}
+
+export function invokedExpression(
+  node: ESTree.CallExpression | ESTree.TaggedTemplateExpression,
+): ESTree.Node {
+  return unwrap(node.type === "CallExpression" ? node.callee : node.tag);
+}
+
+export function continuesGroup(child: ESTree.Node, group: ESTree.LogicalExpression): boolean {
+  const expression = unwrap(child);
+  return expression.type === "LogicalExpression" && expression.operator === group.operator;
+}
+
+export function closestAncestor(
+  node: ESTree.Node,
+  stop: (ancestor: ESTree.Node) => boolean,
+): ESTree.Node | null {
+  let ancestor = node.parent;
+  while (ancestor !== null && !stop(ancestor)) ancestor = ancestor.parent;
+  return ancestor;
+}
+
 export function isLogicalDecision(
   node: ESTree.Node,
 ): node is ESTree.LogicalExpression & { operator: "&&" | "||" } {

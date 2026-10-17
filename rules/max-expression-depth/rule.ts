@@ -1,13 +1,14 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
-import { childNodes, computedProperty, unwrap } from "../../src/expression.ts";
+import {
+  childNodes,
+  closestAncestor,
+  computedProperty,
+  isFunctionNode,
+  unwrap,
+} from "../../src/expression.ts";
 
 function isBoundary(node: ESTree.Node): boolean {
-  return [
-    "FunctionDeclaration",
-    "FunctionExpression",
-    "ArrowFunctionExpression",
-    "ClassBody",
-  ].includes(node.type);
+  return isFunctionNode(node) || node.type === "ClassBody";
 }
 
 export default defineRule({
@@ -89,11 +90,9 @@ export default defineRule({
       },
       "Program:exit"() {
         for (const [node, depth] of candidates) {
-          let ancestor = node.parent;
-          while (ancestor !== null && !isBoundary(ancestor) && !candidates.has(ancestor)) {
-            ancestor = ancestor.parent;
-          }
-          if (ancestor !== null && candidates.has(ancestor)) continue;
+          const stop = (ancestor: ESTree.Node) => isBoundary(ancestor) || candidates.has(ancestor);
+          const outer = closestAncestor(node, stop);
+          if (outer !== null && candidates.has(outer)) continue;
           context.report({ node, messageId: "tooDeep", data: { depth, max } });
         }
       },

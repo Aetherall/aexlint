@@ -1,16 +1,11 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
-import { childNodes, isLogicalDecision, unwrap } from "../../src/expression.ts";
-
-function isBoundary(node: ESTree.Node): boolean {
-  return [
-    "FunctionDeclaration",
-    "FunctionExpression",
-    "ArrowFunctionExpression",
-    "ClassDeclaration",
-    "ClassExpression",
-    "ObjectExpression",
-  ].includes(node.type);
-}
+import {
+  childNodes,
+  closestAncestor,
+  continuesGroup,
+  isComputationBoundary,
+  isLogicalDecision,
+} from "../../src/expression.ts";
 
 export default defineRule({
   meta: {
@@ -49,7 +44,7 @@ export default defineRule({
     const depthOf = (node: ESTree.Node) => depths.get(node) ?? 0;
     return {
       "*:exit"(node) {
-        if (isBoundary(node)) {
+        if (isComputationBoundary(node)) {
           depths.set(node, 0);
           return;
         }
@@ -57,11 +52,8 @@ export default defineRule({
         let depth = Math.max(0, ...children.map(depthOf));
         if (isLogicalDecision(node)) {
           const branchDepth = (child: ESTree.Node) => {
-            const expression = unwrap(child);
-            const sameGroup =
-              expression.type === "LogicalExpression" && expression.operator === node.operator;
             const childDepth = depthOf(child);
-            return sameGroup ? childDepth - 1 : childDepth;
+            return continuesGroup(child, node) ? childDepth - 1 : childDepth;
           };
           depth = 1 + Math.max(branchDepth(node.left), branchDepth(node.right));
           if (depth > max) candidates.set(node, depth);
@@ -75,11 +67,10 @@ export default defineRule({
       },
       "Program:exit"() {
         for (const [node, depth] of candidates) {
-          let ancestor = node.parent;
-          while (ancestor !== null && !isBoundary(ancestor) && !candidates.has(ancestor)) {
-            ancestor = ancestor.parent;
-          }
-          if (ancestor !== null && candidates.has(ancestor)) continue;
+          const stop = (ancestor: ESTree.Node) =>
+            isComputationBoundary(ancestor) || candidates.has(ancestor);
+          const outer = closestAncestor(node, stop);
+          if (outer !== null && candidates.has(outer)) continue;
           context.report({ node, messageId: "tooDeep", data: { depth, max } });
         }
       },

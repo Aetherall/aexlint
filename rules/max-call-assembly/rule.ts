@@ -1,13 +1,14 @@
 import { defineRule, type ESTree, type Reference } from "@oxlint/plugins";
-import { childNodes, isFunctionNode, unwrap } from "../../src/expression.ts";
+import {
+  childNodes,
+  isFunctionNode,
+  isInvocation,
+  unwrap,
+  type Invocation,
+} from "../../src/expression.ts";
 
-type Invocation = ESTree.CallExpression | ESTree.NewExpression;
 type Piece = { text: string; start: number; end: number };
 type Assembly = { collapsed: [number, number][]; names: Set<string> };
-
-function isInvocation(node: ESTree.Node): node is Invocation {
-  return node.type === "CallExpression" || node.type === "NewExpression";
-}
 
 function isInsideFunction(node: ESTree.Node): boolean {
   for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
