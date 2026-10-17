@@ -39,7 +39,9 @@ function describe({ code, message, help, filename, labels }: Diagnostic): string
 function byPosition(a: Diagnostic, b: Diagnostic): number {
   const files = a.filename.localeCompare(b.filename);
   if (files) return files;
-  return (a.labels[0]?.span.offset ?? -1) - (b.labels[0]?.span.offset ?? -1);
+  const offsets = (a.labels[0]?.span.offset ?? -1) - (b.labels[0]?.span.offset ?? -1);
+  if (offsets) return offsets;
+  return describe(a).localeCompare(describe(b));
 }
 
 export function lintProject(): string {
@@ -80,8 +82,12 @@ export function expectedProject(): string {
   return readFileSync(expectedFile, "utf8");
 }
 
-function blocks(text: string): Set<string> {
-  return new Set(text.split("\n\n").map((block) => block.trim()));
+function blocks(text: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const block of text.split("\n\n").map((item) => item.trim())) {
+    counts.set(block, (counts.get(block) ?? 0) + 1);
+  }
+  return counts;
 }
 
 function mark(sign: string, block: string): string {
@@ -91,14 +97,18 @@ function mark(sign: string, block: string): string {
     .join("\n");
 }
 
+function surplus(from: Map<string, number>, than: Map<string, number>): string[] {
+  return [...from].flatMap(([block, count]) =>
+    Array<string>(Math.max(0, count - (than.get(block) ?? 0))).fill(block),
+  );
+}
+
 export function differences(expected: string, actual: string): string {
   const before = blocks(expected);
   const after = blocks(actual);
-  const removed = [...before].filter((block) => !after.has(block));
-  const added = [...after].filter((block) => !before.has(block));
   const marked = [
-    ...removed.map((block) => mark("-", block)),
-    ...added.map((block) => mark("+", block)),
+    ...surplus(before, after).map((block) => mark("-", block)),
+    ...surplus(after, before).map((block) => mark("+", block)),
   ];
   return marked.join("\n\n");
 }
