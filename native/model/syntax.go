@@ -73,6 +73,8 @@ func valueLike(n *ast.Node) bool {
 func partOfQuestion(n *ast.Node) bool {
 	_, p := parent(n)
 	switch p.Kind {
+	case ast.KindAsExpression, ast.KindTypeAssertionExpression, ast.KindNonNullExpression, ast.KindSatisfiesExpression:
+		return true
 	case ast.KindPrefixUnaryExpression:
 		return p.AsPrefixUnaryExpression().Operator == ast.KindExclamationToken
 	case ast.KindBinaryExpression:

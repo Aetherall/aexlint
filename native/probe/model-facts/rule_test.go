@@ -82,6 +82,9 @@ export function g(size: Size) {
       return "wide";
   }
 }`, Files: files, Options: only("site"), Errors: facts("site", 4)},
+			{Code: `import type { Size } from "./items.js";
+export const open = (size: Size) => (size === "S" || size === "M") satisfies boolean;
+export const shut = (size: Size) => (size === "L") as boolean;`, Files: files, Options: only("site"), Errors: facts("site", 2)},
 			{Code: `import type { Item, Box } from "./items.js";
 export function f(item: Item, box: Box, flag: string | undefined, count: number | undefined, value: unknown) {
   if (item.kind === "stock") return item.sku;
