@@ -679,6 +679,16 @@ max-interpretation-spread/default/over-limit/file.ts:2:34 aexlint(max-interpreta
   `Kind` ("equinox" | "solstice" | "thaw") is checked for particular values in more than 4 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 5 files. Other files, nearest first: max-interpretation-spread/default/over-limit/consumer0.ts, max-interpretation-spread/default/over-limit/consumer1.ts, max-interpretation-spread/default/over-limit/consumer2.ts, and 1 more. Declared as: Kind (max-interpretation-spread/default/over-limit/kinds.ts).
 
+max-interpretation-spread/max-1/alias-and-optional/consumer0.ts:2:52 aexlint(max-interpretation-spread)
+  ~ weather
+  `Weather` ("breeze" | "gale" | "squall") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+  help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/alias-and-optional/file.ts. Declared as: Weather (max-interpretation-spread/max-1/alias-and-optional/kinds.ts).
+
+max-interpretation-spread/max-1/alias-and-optional/file.ts:3:42 aexlint(max-interpretation-spread)
+  ~ forecast
+  `Weather` ("breeze" | "gale" | "squall") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+  help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/alias-and-optional/consumer0.ts. Declared as: Weather (max-interpretation-spread/max-1/alias-and-optional/kinds.ts).
+
 max-interpretation-spread/max-1/as-const-object/a.ts:1:76 aexlint(max-interpretation-spread)
   ~ s
   `Status` ("lightning" | "thunder") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
