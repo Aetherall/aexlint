@@ -93,6 +93,7 @@ export function g(k: Kind) { if (k === "b" || k === "a") return 1; return 0; }`
 			{Code: `import type { Notice, Channel } from "./channel.js";
 export function isInstant(n: Notice) { return n.channel === "sms" || n.channel === "push"; }
 export const instant = (n: Notice) => n.channel === "push" || n.channel === "sms";
+export function isQuick(n: Notice) { "worklet"; return n.channel === "sms" || n.channel === "push"; }
 export const INSTANT: Channel[] = ["sms", "push"];
 export class Rules { static instant = (n: Notice) => ["sms", "push"].includes(n.channel); }`, Files: files("other.ts", instant)},
 			// A function passed to a call whose result is callable, such as memo, is named by the declaration it initializes.

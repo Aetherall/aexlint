@@ -275,7 +275,7 @@ func (m *Analyzer) predicateName(n *ast.Node) string {
 		return m.functionName(p)
 	case p.Kind == ast.KindReturnStatement:
 		block := p.Parent
-		if block.Kind == ast.KindBlock && len(block.Statements()) == 1 && block.Parent != nil && ast.IsFunctionLike(block.Parent) && block.Parent.Body() == block {
+		if block.Kind == ast.KindBlock && len(work(block)) == 1 && block.Parent != nil && ast.IsFunctionLike(block.Parent) && block.Parent.Body() == block {
 			return m.functionName(block.Parent)
 		}
 	}

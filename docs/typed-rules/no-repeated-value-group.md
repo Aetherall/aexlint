@@ -42,7 +42,7 @@ const INSTANT: Channel[] = ["sms", "push"];
 - A group is a test of one subject that accepts at least two values and rejects at least two values. Tests of one value, or of all values but one, do not form a group.
 - Groups are written as `===`/`!==`/`==`/`!=` tests combined with `||`, `&&` and `!` on the same subject, as `includes` on a list of literals or a tuple of literal types such as a list written `as const`, as consecutive `case` labels sharing one body, or as a literal list whose expected element type is the vocabulary, such as an argument to a parameter typed `Channel[]`. Other operands may be combined with the group.
 - Two groups match when they accept the same values, whatever the vocabulary, subject, form or order. A group and its complement are different groups.
-- A test that is the whole body of a named function, method or variable-assigned function, including one passed to a call whose result is callable too, such as `memo(fn)`, and a literal list that initializes a named variable or property, _define_ the group. Definitions are neither reported nor counted; the help names them when they exist.
+- A test that is the whole body, after any directive prologue such as `"worklet"`, of a named function, method or variable-assigned function, including one passed to a call whose result is callable too, such as `memo(fn)`, and a literal list that initializes a named variable or property, _define_ the group. Definitions are neither reported nor counted; the help names them when they exist.
 - The search covers project source files of the TypeScript program, including unlinted files and tests, but not declaration files or files inside `node_modules`. Repetition within one file counts.
 
 ## Reporting scope

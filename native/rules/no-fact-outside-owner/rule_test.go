@@ -143,6 +143,14 @@ export const f = (s: Circle | Square) => s.kind === "circle";`
 	maybeSeat := use + `export const f = (seat?: Seat) => (seat?.kind === "taken" ? 1 : 2);`
 	maybeText := use + `export const f = (m?: Leaflet) => (m?.type === "text" ? 1 : 2);`
 	maybeNotText := use + `export const f = (m?: Leaflet) => (m?.type !== "text" ? 1 : 2);`
+	image := use + `export const f = (m: Leaflet) => (m.type === "image" ? m.url : m.body);`
+	directive := func(statement string) map[string]string {
+		return map[string]string{"items.ts": items, "helpers.ts": `import type { Image, Leaflet } from "./items.js";
+export function isImage(m: Leaflet): m is Image {
+  ` + statement + `
+  return m.type === "image";
+}`}
+	}
 	overridden := `class Value {
   constructor(readonly value: string | undefined) {}
   isEmpty() { return this.value === undefined; }
@@ -243,6 +251,8 @@ export const g = (p: Plain) => p.kind === "a";`},
 export const f = (f: Folder) => f.deleted !== undefined;`},
 			// Helpers that are not exported or take more parameters are not predicates.
 			{Code: use + `export const f = (item: Item) => (item.kind === "text" ? 1 : 2);`, Files: helped},
+			// A parenthesized string is a statement before the return, not a directive.
+			{Code: image, Files: directive(`("worklet");`)},
 			// A module defining the same fact is a stand-in owner too.
 			{Code: use + `export const isStock = (item: Item) => item.kind === "stock";`, Files: helped},
 			// The helper's own file and the file declaring the property are owners.
@@ -307,6 +317,8 @@ export const isPosted = (m: Leaflet) => m.postedAt !== undefined;`}, askers), Op
 			{Code: items, Files: itemAskers, Options: one, Errors: []rule_tester.InvalidTestCaseError{unanswered(items, "kind")}},
 			// Tests through a union ask about each member's declaration: the fact is reported once.
 			{Code: media, Files: mediaAskers, Options: one, Errors: []rule_tester.InvalidTestCaseError{unanswered(media, "file")}},
+			// A directive prologue does not count as part of the helper's body.
+			{Code: image, Files: directive(`"worklet";`), Errors: []rule_tester.InvalidTestCaseError{at(image, `m.type === "image"`, 1)}},
 		},
 	)
 }

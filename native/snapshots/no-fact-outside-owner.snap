@@ -307,3 +307,12 @@ Help: Each of those files decides on its own what this test means, so changing t
      |                                      ~~~~
    2 | export type Video = { kind: "video"; file?: { at: number } };
 ---
+
+[TestRule/invalid-34 - 1]
+Diagnostic 1: bypassedPredicate (2:35 - 2:52)
+Message: `m.type === "image"` rewrites `isImage`, which `../../fixtures/helpers.ts` already provides.
+Help: Use `isImage(m)` so its definition stays the only one.
+   1 | import type { Item, Leaflet, Seat, Task } from "./items.js";
+   2 | export const f = (m: Leaflet) => (m.type === "image" ? m.url : m.body);
+     |                                   ~~~~~~~~~~~~~~~~~~
+---

@@ -578,7 +578,7 @@ func declaresPredicate(fn *ast.Node) bool {
 	return fn.Type() != nil && fn.Type().Kind == ast.KindTypePredicate
 }
 
-// result returns fn's whole result: its expression body or its only statement's returned value.
+// result returns fn's whole result: its expression body or its only statement's returned value, after any directives.
 func result(fn *ast.Node) *ast.Node {
 	body := fn.Body()
 	if body == nil {
@@ -587,11 +587,20 @@ func result(fn *ast.Node) *ast.Node {
 	if body.Kind != ast.KindBlock {
 		return body
 	}
-	statements := body.Statements()
+	statements := work(body)
 	if len(statements) == 1 && statements[0].Kind == ast.KindReturnStatement {
 		return statements[0].Expression()
 	}
 	return nil
+}
+
+// work returns block's statements after its directive prologue, such as "use strict" or "worklet".
+func work(block *ast.Node) []*ast.Node {
+	statements := block.Statements()
+	for len(statements) > 0 && ast.IsPrologueDirective(statements[0]) {
+		statements = statements[1:]
+	}
+	return statements
 }
 
 func (md *builder) selector(f *Function) {
