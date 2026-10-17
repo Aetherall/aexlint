@@ -1,6 +1,6 @@
 # CLI baselines
 
-The CLI reports only findings missing from a baseline recorded on the base revision for each check (`--write-baseline` on the base, `--baseline` on the branch). A finding is its file, rule and message, without help text, counted per file.
+The CLI reports only findings missing from a baseline recorded on the base revision for each check (`--write-baseline` on the base, `--baseline` on the branch). A finding is its file, rule and message, without help text, counted per file. The plugin records and filters findings as rules report them, before Oxlint applies disable comments, so both runs count the same findings.
 
 The baseline is regenerated for every check rather than committed, so it never holds stale entries, partial updates, or conflicts between worktrees.
 

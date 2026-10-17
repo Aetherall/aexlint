@@ -39,7 +39,7 @@ git worktree add ../base "$(git merge-base origin/master HEAD)"
 "$aexlint" check --baseline /tmp/aexlint-baseline
 ```
 
-Use the same version, flags and paths for both runs, from the root of each checkout. A finding is its file, rule and message: it survives moved lines, but comes back when its message changes, when its file is renamed, or when it is caused by a change elsewhere. Identical findings in a file are counted. Parse errors are never skipped. When a rule cannot run, such as a typed rule outside a TypeScript project, `--write-baseline` fails and writes nothing. Baselines apply only to the CLI.
+Use the same version, flags and paths for both runs, from the root of each checkout. A finding is its file, rule and message: it survives moved lines, but comes back when its message changes, when its file is renamed, or when it is caused by a change elsewhere. Identical findings in a file are counted, including those silenced by disable comments. Parse errors are never skipped. When a rule cannot run, such as a typed rule outside a TypeScript project, `--write-baseline` fails and writes nothing. Baselines apply only to the CLI.
 
 ## Plugin setup
 

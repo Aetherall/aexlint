@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import { relative } from "node:path";
 import type { Context, Diagnostic, Plugin, Rule } from "@oxlint/plugins";
 
@@ -23,10 +23,12 @@ export function parseBaseline(text: string): BaselineEntry[] {
   return entries;
 }
 
+function lineOf({ file, code, message }: BaselineEntry): string {
+  return [file, code, JSON.stringify(message)].join("\t");
+}
+
 export function formatBaseline(entries: BaselineEntry[]): string {
-  const lines = entries.map(({ file, code, message }) =>
-    [file, code, JSON.stringify(message)].join("\t"),
-  );
+  const lines = entries.map(lineOf);
   return header + lines.toSorted().join("\n") + (lines.length ? "\n" : "");
 }
 
@@ -34,7 +36,7 @@ export function projectPath(root: string, file: string): string {
   return relative(root, file).replaceAll("\\", "/");
 }
 
-export function findingOf(message: string): string {
+function findingOf(message: string): string {
   return message.split("\nhelp: ")[0] ?? message;
 }
 
@@ -64,6 +66,7 @@ function loadBudgets(path: string | undefined): Map<string, Map<string, number>>
 
 export function withBaseline(plugin: Plugin): Plugin {
   const budgets = loadBudgets(process.env.AEXLINT_BASELINE);
+  const recording = process.env.AEXLINT_RECORD;
   const root = process.cwd();
   const wrap = (name: string, rule: Rule): Rule => {
     const create = rule.create;
@@ -72,11 +75,13 @@ export function withBaseline(plugin: Plugin): Plugin {
     return {
       ...rule,
       create(context: Context) {
-        const budget = budgets.get(`${projectPath(root, context.filename)}\n${code}`);
-        if (!budget) return create(context);
+        const file = projectPath(root, context.filename);
+        const budget = budgets.get(`${file}\n${code}`);
+        if (!budget && !recording) return create(context);
         const remaining = new Map(budget);
         const report = (diagnostic: Diagnostic) => {
           const message = findingOf(messageOf(rule, diagnostic));
+          if (recording) appendFileSync(recording, lineOf({ file, code, message }) + "\n");
           const count = remaining.get(message) ?? 0;
           if (count > 0) remaining.set(message, count - 1);
           else context.report(diagnostic);

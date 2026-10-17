@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { findingOf, formatBaseline, parseBaseline, projectPath } from "./baseline.ts";
+import { formatBaseline, parseBaseline } from "./baseline.ts";
 
 const ignoreFile = ".aexlintignore";
 
@@ -40,16 +40,11 @@ function readIgnorePatterns(): string[] {
   return lines.map((line) => line.trim()).filter((line) => line && !line.startsWith("#"));
 }
 
-function writeBaseline(file: string, output: string, codes: Set<string>): number {
+function writeBaseline(file: string, output: string, recorded: string): number {
   const { diagnostics } = JSON.parse(output) as { diagnostics: Reported[] };
   const failure = diagnostics.find(({ code, labels }) => !code && !labels.length);
   if (failure) throw new Error(`no baseline recorded; the run failed:\n${failure.message}`);
-  const root = process.cwd();
-  const entries = diagnostics.flatMap(({ filename, code, message }) =>
-    code && codes.has(code)
-      ? [{ file: projectPath(root, resolve(filename)), code, message: findingOf(message) }]
-      : [],
-  );
+  const entries = existsSync(recorded) ? parseBaseline(readFileSync(recorded, "utf8")) : [];
   writeFileSync(file, formatBaseline(entries));
   console.log(`aexlint: recorded ${entries.length} diagnostics in ${file}`);
   return 0;
@@ -133,8 +128,10 @@ function check(): number {
     const patterns = [...readIgnorePatterns(), ...(values["ignore-pattern"] ?? [])];
     for (const pattern of patterns) args.push("--ignore-pattern", pattern);
     args.push("--", ...(paths.length ? paths : ["."]));
-    const { AEXLINT_BASELINE: _, ...env } = process.env;
+    const { AEXLINT_BASELINE: _, AEXLINT_RECORD: __, ...env } = process.env;
     if (baseline) env.AEXLINT_BASELINE = resolve(baseline);
+    const recorded = join(directory, "recorded");
+    if (record) env.AEXLINT_RECORD = recorded;
     const options: SpawnSyncOptionsWithStringEncoding = {
       env,
       encoding: "utf8",
@@ -146,8 +143,7 @@ function check(): number {
     if (!record) return result.status ?? 1;
     const finished = result.status === 0 || result.status === 1;
     if (!finished) return result.status ?? 1;
-    const codes = new Set(Object.keys(rules).map((rule) => rule.replace(/\/(.*)$/, "($1)")));
-    return writeBaseline(record, result.stdout, codes);
+    return writeBaseline(record, result.stdout, recorded);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

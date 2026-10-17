@@ -275,6 +275,17 @@ test("CLI skips diagnostics recorded in a baseline but reports new ones", (t) =>
   assert.deepEqual(skip(["other.ts"]), []);
 });
 
+test("CLI baselines are unaffected by a suppressed copy of a finding", (t) => {
+  const { write, check, record, baseline } = consumer(t);
+  const suppression = "// oxlint-disable-next-line aexlint/max-expression-depth\n";
+  write("legacy.ts", suppression + depthViolation + depthViolation);
+  assert.equal(check([], 1).length, 1);
+  record();
+  assert.deepEqual(check(["--baseline", baseline]), []);
+  write("legacy.ts", suppression + depthViolation + depthViolation + depthViolation);
+  assert.equal(check(["--baseline", baseline], 1).length, 1);
+});
+
 test("CLI rejects conflicting, missing, and malformed baselines", (t) => {
   const { run, baseline } = consumer(t);
   assert.match(
