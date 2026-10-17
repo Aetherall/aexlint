@@ -2240,6 +2240,36 @@ no-repeated-value-policy/reported/select.ts:4:7 aexlint(no-repeated-value-policy
   Testing `account.plan` for anything but "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/pick.ts:4. When this rule changes, every copy has to be found and changed the same way.
 
+no-repeated-value-policy/reported/shapes-other.ts:4:43 aexlint(no-repeated-value-policy)
+  ~ tier === "team"
+  Testing `tier` for "team" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/shapes.ts:4. When this rule changes, every copy has to be found and changed the same way.
+
+no-repeated-value-policy/reported/shapes-other.ts:5:62 aexlint(no-repeated-value-policy)
+  ~ account.plan === "personal"
+  Testing `account.plan` for "personal" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/shapes.ts:5. When this rule changes, every copy has to be found and changed the same way.
+
+no-repeated-value-policy/reported/shapes-other.ts:6:56 aexlint(no-repeated-value-policy)
+  ~ plan === "team"
+  Testing `plan` for "team" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/shapes.ts:6. When this rule changes, every copy has to be found and changed the same way.
+
+no-repeated-value-policy/reported/shapes.ts:4:43 aexlint(no-repeated-value-policy)
+  ~ tier === "team"
+  Testing `tier` for "team" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/shapes-other.ts:4. When this rule changes, every copy has to be found and changed the same way.
+
+no-repeated-value-policy/reported/shapes.ts:5:62 aexlint(no-repeated-value-policy)
+  ~ account.plan === "personal"
+  Testing `account.plan` for "personal" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/shapes-other.ts:5. When this rule changes, every copy has to be found and changed the same way.
+
+no-repeated-value-policy/reported/shapes.ts:6:56 aexlint(no-repeated-value-policy)
+  ~ plan === "team"
+  Testing `plan` for "team" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/shapes-other.ts:6. When this rule changes, every copy has to be found and changed the same way.
+
 no-repeated-value-policy/reported/summary.ts:3:48 aexlint(no-repeated-value-policy)
   ~ account.plan === "free"
   Testing `account.plan` for "free" leads to the same outcome in other files.
