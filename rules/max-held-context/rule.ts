@@ -75,12 +75,7 @@ export default defineRule({
     },
   },
   create(context) {
-    const option = context.options[0] as { max?: unknown } | undefined;
-    const max = option?.max;
-    if (typeof max !== "number" || !Number.isSafeInteger(max) || max < 1) {
-      throw new Error("max-held-context requires a positive safe integer max option.");
-    }
-    const measure = new HeldContextMeasure(context, max);
+    const measure = new HeldContextMeasure(context);
     return {
       Program(node) {
         measure.unit(node);
@@ -99,7 +94,12 @@ class HeldContextMeasure {
   private readonly context: Context;
   private readonly max: number;
 
-  constructor(context: Context, max: number) {
+  constructor(context: Context) {
+    const option = context.options[0] as { max?: unknown } | undefined;
+    const max = option?.max;
+    if (typeof max !== "number" || !Number.isSafeInteger(max) || max < 1) {
+      throw new Error("max-held-context requires a positive safe integer max option.");
+    }
     this.context = context;
     this.max = max;
   }
