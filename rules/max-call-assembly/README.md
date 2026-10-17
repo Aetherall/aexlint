@@ -29,7 +29,7 @@ export const styles = StyleSheet.create({ box: { color: Color.primary, margin: S
 
 - Only calls and `new` inside function or class bodies; module-level declarations are skipped. Calls without arguments are ignored.
 - Width is the argument list printed on one line: nested function and class bodies count as `{}`, gaps as one space, comments and trailing commas as nothing, and literal text as nothing (a string counts as its quotes).
-- Outside names are distinct value references in the arguments declared outside them. A member path counts its root once; callback parameters and type positions do not count.
+- Outside names are distinct value references in the arguments declared outside them. A member path counts its root once, and `this` counts as one name; callback parameters, `this` inside nested `function` bodies, and type positions do not count.
 - React hook calls (`use`, `useX`, `React.useX`) are skipped because of their dependency arrays. This is a provisional, name-based exception.
 
 ## Reporting and limits

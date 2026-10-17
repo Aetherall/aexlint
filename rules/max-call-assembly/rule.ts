@@ -116,6 +116,7 @@ export default defineRule({
         }
         const reference = references.get(current);
         if (reference && isOutside(reference)) names.add(reference.identifier.name);
+        if (current.type === "ThisExpression") names.add("this");
         if (isFunctionNode(current) && current.body) {
           collapsed.push([current.body.start, current.body.end]);
         }

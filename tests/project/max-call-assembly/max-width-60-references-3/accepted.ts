@@ -13,3 +13,8 @@ export const styles = StyleSheet.create({
 function hookDependencies() {
 const visible = useMemo(() => filter(items), [items, query, sortOrder, filters, locale]);
 }
+class Listener {
+  attach() {
+    on("click", { once: true, handler: function () { return close(this.dialog, this.options, this.state); } });
+  }
+}

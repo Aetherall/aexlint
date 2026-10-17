@@ -82,6 +82,10 @@ max-call-assembly/max-width-60-references-3/reported.ts:2:13 aexlint(max-call-as
   ~ ({ port: config.port, host: resolveHost(env), tls: loadCerts(paths.cert) })
   These arguments are 75 characters wide on one line and draw on 5 outside names (config, resolveHost, env, loadCerts, paths); limits are 60 and 3. So much is assembled at this call that it cannot be read at a glance.
 
+max-call-assembly/max-width-60-references-3/reported.ts:6:24 aexlint(max-call-assembly)
+  ~ ({ port: this.config.port, host: resolveHost(this.env), tls: loadCerts(paths.cert) })
+  These arguments are 85 characters wide on one line and draw on 4 outside names (this, resolveHost, loadCerts, paths); limits are 60 and 3. So much is assembled at this call that it cannot be read at a glance.
+
 max-decision-depth/max-1/reported.js:1:1 aexlint(max-decision-depth)
   ~ a && (b || c)
   Decision depth is 2; maximum is 1. Make the nested decisions explicit with meaningful predicates or branches.

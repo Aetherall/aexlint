@@ -190,11 +190,8 @@ class HeldContextMeasure {
   private decide(node: ESTree.Node, open: number, region: Region): void {
     const depth = open + 1;
     if (region.reported || depth <= this.max) return;
-    this.context.report({
-      loc: this.head(node),
-      messageId: "tooDeep",
-      data: { depth, open, max: this.max },
-    });
+    const data = { depth, open, max: this.max };
+    this.context.report({ loc: this.head(node), messageId: "tooDeep", data });
     region.reported = true;
   }
 
