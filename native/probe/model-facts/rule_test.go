@@ -153,6 +153,23 @@ export function remember(item: Item) {
   if (item.kind === "text") last = "Text";
   else last = item.sku;
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 2)},
+			{Code: `import type { Size } from "./items.js";
+declare const current: Size;
+export function f(size: Size) {
+  switch (size) {
+    case "S":
+      log("small");
+    case "M":
+      log("medium");
+      break;
+    case current:
+      log("current");
+      break;
+    default:
+      log("other");
+  }
+}
+declare function log(text: string): void;`, Files: files, Options: only("decision"), Errors: facts("decision", 1)},
 			{Code: `import type { Box, Size } from "./items.js";
 export function f(size: Size, ready: boolean) {
   if (size === "S" || (size === "M" && ready)) return 1;

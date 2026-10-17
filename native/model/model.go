@@ -154,6 +154,7 @@ type arm struct {
 	claim     Claim
 	condition *ast.Node
 	body      []*ast.Node
+	unread    bool
 }
 
 func (md *builder) line(n *ast.Node) int {
@@ -300,6 +301,10 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 	pure := true
 	covered := Claim{Domain: vocabulary.Values, Accepted: []string{}, Vocabulary: vocabulary}
 	for _, a := range arms {
+		if a.unread {
+			pure = false
+			continue
+		}
 		if a.condition != nil {
 			_, whole := md.m.literalTest(a.condition)
 			pure = pure && whole
@@ -478,13 +483,18 @@ func (md *builder) statements(list []*ast.Node) {
 	}
 }
 
-func clauseBody(clauses []*ast.Node) []*ast.Node {
+// clauseBody returns the statements that run for the first of clauses: its own and those of the clauses it falls
+// through to, until statements that leave.
+func (md *builder) clauseBody(clauses []*ast.Node) []*ast.Node {
+	var body []*ast.Node
 	for _, c := range clauses {
-		if statements := c.Statements(); len(statements) > 0 {
-			return statements
+		statements := c.Statements()
+		body = append(body, statements...)
+		if len(statements) > 0 && md.m.exits(statements[len(statements)-1]) {
+			break
 		}
 	}
-	return nil
+	return body
 }
 
 func (md *builder) switchStatement(n *ast.Node) {
@@ -497,7 +507,7 @@ func (md *builder) switchStatement(n *ast.Node) {
 	var alternative []*ast.Node
 	clauses := n.AsSwitchStatement().CaseBlock.AsCaseBlock().Clauses.Nodes
 	for i, clause := range clauses {
-		body := clauseBody(clauses[i:])
+		body := md.clauseBody(clauses[i:])
 		if clause.Kind == ast.KindDefaultClause {
 			if body == nil {
 				body = []*ast.Node{}
@@ -510,6 +520,8 @@ func (md *builder) switchStatement(n *ast.Node) {
 		}
 		if s := md.m.Classify(clause); s != nil {
 			arms = append(arms, arm{claim: s.Tests[0].Claim, body: body})
+		} else {
+			arms = append(arms, arm{unread: true})
 		}
 	}
 	md.record(n, subjectNode, v, arms, alternative)
