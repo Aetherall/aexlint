@@ -48,13 +48,13 @@ function project(t: { after: (fn: () => void) => void }) {
       JSON.stringify({ jsPlugins: [plugin], categories: { correctness: "off" }, rules }),
     );
   configure({ "aexlint/type-probe": "error" });
-  const lint = (files: string[], executable = backend): Run => {
+  const lint = (files: string[], executable = backend, env: NodeJS.ProcessEnv = {}): Run => {
     const command = [oxlint, "-c", ".oxlintrc.json", "--format", "json", ...files];
     const options: SpawnSyncOptionsWithStringEncoding = {
       cwd: root,
       encoding: "utf8",
       timeout: 60_000,
-      env: { ...process.env, AEXLINT_TYPED_BACKEND: executable },
+      env: { ...process.env, AEXLINT_TYPED_BACKEND: executable, ...env },
     };
     const result = spawnSync(process.execPath, command, options);
     if (result.error) throw result.error;
@@ -299,6 +299,15 @@ test("a backend server that exits at startup fails the run instead of hanging", 
   assert.match(messages[0]!, /aexlint: The typed backend did not start: fake backend failed$/);
   assert.match(messages[1]!, /stopped earlier in this run, so this file was not linted/);
   assert.ok(performance.now() - started < 5_000);
+});
+
+test("a backend that cannot be set up reports the same reason for every file", (t) => {
+  const { root, lint } = project(t);
+  const run = lint(["input.ts", "dependency.ts"], backend, { TMPDIR: join(root, "missing") });
+  assert.equal(run.status, 1);
+  const messages = run.diagnostics.map((item) => item.message.split("\n").at(-1));
+  assert.equal(messages.length, 2);
+  for (const message of messages) assert.match(message!, /^aexlint: ENOENT: .*mkdtemp/);
 });
 
 test("TypeScript's own errors are left to the compiler", (t) => {

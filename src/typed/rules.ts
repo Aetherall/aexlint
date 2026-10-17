@@ -38,8 +38,9 @@ function withoutStack<T>(run: () => T): T {
     return run();
   } catch (error) {
     if (error instanceof Error && error.constructor === Error) {
-      error.message = `aexlint: ${error.message}`;
-      error.stack = "";
+      const reported = new Error(`aexlint: ${error.message}`);
+      reported.stack = "";
+      throw reported;
     }
     throw error;
   }
