@@ -56,6 +56,13 @@ export function decode(value: unknown, input: unknown, record: { kind: unknown; 
 }`, Options: only("rejection")},
 			{Code: `import type { Item } from "./items.js";
 export const isPlain = (item: Item) => !(item.kind === "text" && item.text.length > 0);`, Files: files, Options: only("function")},
+			{Code: `export function f(input: string) {
+  const a: boolean = !a || input === "";
+  const b: boolean = c || input === "x";
+  const c: boolean = b;
+  if (a || b) return input;
+  return "";
+}`, Options: only("rejection")},
 		},
 		[]rule_tester.InvalidTestCase{
 			{Code: `import type { Size } from "./items.js";

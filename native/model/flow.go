@@ -447,7 +447,8 @@ func (m *Analyzer) Narrowing(n *ast.Node) bool {
 	return ok && held&AbsentFalsy == 0
 }
 
-// condition returns the initializer of a const boolean local.
+// condition returns the initializer of a const boolean local declared before n in its file, so that following
+// conditions never cycles.
 func (m *Analyzer) condition(n *ast.Node) *ast.Node {
 	if t := m.ctx.TypeChecker.GetTypeAtLocation(n); t == nil || t.Flags()&checker.TypeFlagsBooleanLike == 0 {
 		return nil
@@ -458,6 +459,9 @@ func (m *Analyzer) condition(n *ast.Node) *ast.Node {
 	}
 	d := symbol.ValueDeclaration
 	if d.Kind != ast.KindVariableDeclaration || d.Name().Kind != ast.KindIdentifier || !ast.IsVarConst(d) {
+		return nil
+	}
+	if ast.GetSourceFileOfNode(d) != ast.GetSourceFileOfNode(n) || d.End() > n.Pos() {
 		return nil
 	}
 	return d.Initializer()
