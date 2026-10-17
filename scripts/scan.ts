@@ -14,13 +14,11 @@ interface Diagnostic {
 
 function diagnostic(value: unknown): Diagnostic {
   const d = value as Diagnostic;
-  if (
-    typeof d?.rule !== "string" ||
-    typeof d.file_path !== "string" ||
-    typeof d.message?.id !== "string"
-  ) {
-    throw new Error("Invalid native diagnostic.");
-  }
+  const valid =
+    typeof d?.rule === "string" &&
+    typeof d.file_path === "string" &&
+    typeof d.message?.id === "string";
+  if (!valid) throw new Error("Invalid native diagnostic.");
   return d;
 }
 
