@@ -323,6 +323,11 @@ export class Account {
     this.balance += amount;
   }
 }`, Options: only("flow"), Errors: facts("flow", 3)},
+			{Code: `export class Label {
+  constructor(readonly value: string) {
+    if (value.length > 47) throw new Error("label");
+  }
+}`, Options: only("flow"), Errors: facts("flow", 1)},
 			{Code: `declare function validate(value: string): void;
 export function parse(input: string, limit: number) {
   if (input.length > limit) throw new Error("long");

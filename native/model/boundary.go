@@ -93,12 +93,12 @@ func (m *Analyzer) Inward(b Boundary, v Value) (Value, bool) {
 	if !v.Within(argument) {
 		return Value{}, false
 	}
-	return Value{Node: b.Parameter, Root: b.Parameter.Symbol(), Path: v.Path[len(argument.Path):]}, true
+	return Value{Node: b.Parameter, Root: parameterSymbol(b.Parameter), Path: v.Path[len(argument.Path):]}, true
 }
 
 // Outward returns the value v, read from the parameter in the called function, is at the call.
 func (m *Analyzer) Outward(b Boundary, v Value) (Value, bool) {
-	if v.Root != b.Parameter.Symbol() || v.This != nil || v.Base != nil {
+	if v.Root != parameterSymbol(b.Parameter) || v.This != nil || v.Base != nil {
 		return Value{}, false
 	}
 	argument := m.ValueOf(b.Argument)

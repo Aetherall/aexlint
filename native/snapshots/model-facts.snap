@@ -560,7 +560,7 @@ Message: boundary into text of fallback; keeps no; rechecks []
 
 [TestModelFacts/invalid-22 - 1]
 Diagnostic 1: flow (2:32 - 2:66)
-Message: flow; rejections []; calls [super(input) with [] after 0 rejections]; results []; carried []; rejected {}; read {}
+Message: flow; rejections []; calls [super(input) with [input] after 0 rejections]; results []; carried []; rejected {}; read {}
    1 | declare function validate(value: string): void;
    2 | class Rejected extends Error { constructor(readonly input: string) { super(input); } }
      |                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -582,6 +582,15 @@ Message: flow; rejections [throw new Error("positive"); checks [amount] reads [a
 ---
 
 [TestModelFacts/invalid-23 - 1]
+Diagnostic 1: flow (2:3 - 2:37)
+Message: flow; rejections [throw new Error("label"); checks [value.length] reads [value.length]]; calls [new Error("label") with [] after 0 rejections thrown]; results []; carried []; rejected {0: [$.length]}; read {0: [$.length]}
+   1 | export class Label {
+   2 |   constructor(readonly value: string) {
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   3 |     if (value.length > 47) throw new Error("label");
+---
+
+[TestModelFacts/invalid-24 - 1]
 Diagnostic 1: rejection (3:29 - 3:52)
 Message: rejection; on [input.length, limit] reads [input.length, limit]
    2 | export function parse(input: string, limit: number) {
@@ -597,7 +606,7 @@ Message: rejection; on [input] reads [input]
    7 |   return input;
 ---
 
-[TestModelFacts/invalid-24 - 1]
+[TestModelFacts/invalid-25 - 1]
 Diagnostic 1: rejection (2:15 - 2:41)
 Message: rejection; on [value] reads [value]
    1 | export function decode(value: unknown, name: string, count: number) {
@@ -627,7 +636,7 @@ Message: rejection; on [name] reads [part of name]
    7 |   return [value, name, count];
 ---
 
-[TestModelFacts/invalid-25 - 1]
+[TestModelFacts/invalid-26 - 1]
 Diagnostic 1: rejection (2:60 - 2:83)
 Message: rejection; on [input.kind] reads [input.kind]
    1 | export function read(input: { kind: "a" | "b"; extra?: string }) {
@@ -643,7 +652,7 @@ Message: rejection; on [input.kind] reads [input.kind]
    4 |   return input;
 ---
 
-[TestModelFacts/invalid-26 - 1]
+[TestModelFacts/invalid-27 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -651,7 +660,7 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-27 - 1]
+[TestModelFacts/invalid-28 - 1]
 Diagnostic 1: function (3:12 - 3:45)
 Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; narrowings []
    2 | export const view = {
@@ -674,7 +683,7 @@ Message: gate matches -> render
    4 |   render(item: Item) {
 ---
 
-[TestModelFacts/invalid-28 - 1]
+[TestModelFacts/invalid-29 - 1]
 Diagnostic 1: function (2:16 - 2:30)
 Message: selector filled; answer [item.kind in {"text"} of {"stock" | "text"}]; narrowings [item.kind in {"text"} of {"stock" | "text"} by own guard]
    1 | import type { Item } from "./items.js";

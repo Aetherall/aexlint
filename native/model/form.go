@@ -94,7 +94,21 @@ func (m *Analyzer) SymbolOf(n *ast.Node) *ast.Symbol {
 	if parent := n.Parent; parent != nil && parent.Kind == ast.KindShorthandPropertyAssignment && parent.Name() == n {
 		return m.ctx.TypeChecker.GetShorthandAssignmentValueSymbol(parent)
 	}
+	if parent := n.Parent; parent != nil && parent.Kind == ast.KindParameter && parent.Name() == n {
+		return parameterSymbol(parent)
+	}
 	return m.ctx.TypeChecker.GetSymbolAtLocation(n)
+}
+
+// parameterSymbol returns the symbol a function's body reads parameter through. A parameter property also declares a
+// class property, which the binder gives the parameter node; its body reads the constructor's own local instead.
+func parameterSymbol(parameter *ast.Node) *ast.Symbol {
+	if name := parameter.Name(); ast.IsParameterPropertyDeclaration(parameter, parameter.Parent) && name.Kind == ast.KindIdentifier {
+		if local := parameter.Parent.Locals()[name.Text()]; local != nil {
+			return local
+		}
+	}
+	return parameter.Symbol()
 }
 
 func (m *Analyzer) reference(n *ast.Node) string {
