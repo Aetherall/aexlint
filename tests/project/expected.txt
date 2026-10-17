@@ -1791,6 +1791,11 @@ no-procedural-value-dispatch/reported/nested-ternary.ts:3:3 aexlint(no-procedura
   Branches on `order.delivery` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
 
+no-procedural-value-dispatch/reported/non-ascii-subject.ts:8:11 aexlint(no-procedural-value-dispatch)
+  ~ colis.modeDeLivraisonDesDestinataireÉloigné
+  Branches on `colis.modeDeLivraisonDesDestinataire...` contain their own control flow.
+  help: Branches with nested decisions, loops or error handling: "guichet". Each is a procedure for its values, written inline instead of standing on its own.
+
 no-procedural-value-dispatch/reported/switch-branch-decides.ts:4:11 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.

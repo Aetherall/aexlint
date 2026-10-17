@@ -2,6 +2,7 @@ package model
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/scanner"
@@ -17,13 +18,18 @@ func source(n *ast.Node) string {
 // written returns n's whole source text with whitespace collapsed: the text code is compared by.
 func written(n *ast.Node) string { return Squash(source(n)) }
 
-// Text returns n's source text with whitespace collapsed, shortened to limit bytes for display.
+// Text returns n's source text with whitespace collapsed, shortened to limit bytes for display without splitting a
+// character, so the message stays valid UTF-8.
 func Text(n *ast.Node, limit int) string {
 	s := Squash(source(n))
-	if len(s) > limit {
-		return s[:limit-3] + "..."
+	if len(s) <= limit {
+		return s
 	}
-	return s
+	cut := limit - 3
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut] + "..."
 }
 
 func parent(n *ast.Node) (*ast.Node, *ast.Node) {
