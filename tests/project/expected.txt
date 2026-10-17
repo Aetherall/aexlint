@@ -1081,6 +1081,11 @@ no-embedded-translation/reported/inline-switch.ts:8:11 aexlint(no-embedded-trans
   Branches on `instrument.kind` read its fields into this code's own state.
   help: Branches for "violin"; "oboe" turn the value into this code's own model in the middle of other work. A projection, a function from the value to that model that returns it, keeps the translation in one place and leaves this logic free of variant tests.
 
+no-embedded-translation/reported/placement.ts:7:7 aexlint(no-embedded-translation)
+  ~ cue.at
+  Branches on `cue.at` read its fields into this code's own state.
+  help: Branches for "after"; "before" turn the value into this code's own model in the middle of other work. A projection, a function from the value to that model that returns it, keeps the translation in one place and leaves this logic free of variant tests.
+
 no-external-variant-behavior/conversions/declaration-file/consumer.ts:4:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.

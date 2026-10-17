@@ -43,11 +43,12 @@ function soundOf(instrument: Instrument): Sound | undefined {
 ## What counts
 
 - A decision on a field with finite literal values, as in [no-repeated-value-group](../no-repeated-value-group/README.md#what-counts), whether the type is the project's or a dependency's.
-- A tested branch whose result depends on the variant's other fields, alone or with other data, and that keeps the result in a local declared outside the branch or has effects.
-- Branches that return their result, plain narrowing such as `if (x.kind === "a") return x.name`, and branches that pass the whole value to a handler are accepted.
+- The tested object's type is a union, and a tested branch reads a field that only some of its members have: content of a variant, not fields every variant shares.
+- That branch keeps its result in a local declared outside it, so the surrounding code goes on to use it.
+- Branches that return their result, run effects, pass the whole value to a handler, or read only shared fields are accepted. A mode flag on an object that is not a union is not a variant.
 
 ## Reporting and limits
 
 Reports `embeddedTranslation` once per decision, on its subject; help lists the values of the embedded branches. No fixes.
 
-A branch whose fields only feed an effect, such as `list.push(x.name)` with nothing kept, is not reported. A returned result that mixes the variant's fields with other state is accepted.
+A branch whose fields only feed an effect, such as `list.push(x.name)` with nothing kept, is not reported. A returned result that mixes the variant's fields with other state is accepted. A kept local used once afterwards, returned or passed to a constructor, is still reported, although the function is then already a projection.

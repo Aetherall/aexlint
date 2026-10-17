@@ -397,3 +397,33 @@ func (m *Analyzer) code(symbol *ast.Symbol) bool {
 	}
 	return len(symbol.Declarations) > 0 && !slices.ContainsFunc(symbol.Declarations, func(d *ast.Node) bool { return !ast.GetSourceFileOfNode(d).IsDeclarationFile })
 }
+
+// VariantReads returns the fields of d's receiver that an arm reads and that only some members of the receiver's type
+// have: content of a variant, not fields every variant shares. It is empty when the receiver's type is not a union.
+func (m *Analyzer) VariantReads(d *Decision, b Branch) []string {
+	if d.Receiver == nil || d.Tag == "" {
+		return nil
+	}
+	tc := m.ctx.TypeChecker
+	t := tc.GetNonNullableType(tc.GetTypeAtLocation(d.Receiver))
+	if t.Flags()&checker.TypeFlagsUnion == 0 && t.Flags()&checker.TypeFlagsInstantiable != 0 {
+		if constraint := checker.Checker_getBaseConstraintOfType(tc, t); constraint != nil {
+			t = tc.GetNonNullableType(constraint)
+		}
+	}
+	if t.Flags()&checker.TypeFlagsUnion == 0 {
+		return nil
+	}
+	shared := func(field string) bool {
+		return !slices.ContainsFunc(t.Types(), func(member *checker.Type) bool { return tc.GetPropertyOfType(member, field) == nil })
+	}
+	reads := []string{}
+	for _, n := range armStatements(b.Body) {
+		for _, field := range m.ReadsOf(n, d.Object, d.Tag).Fields {
+			if !shared(field) && !slices.Contains(reads, field) {
+				reads = append(reads, field)
+			}
+		}
+	}
+	return reads
+}

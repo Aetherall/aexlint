@@ -8,15 +8,15 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-func embedded(a *model.Analyzer, b model.Branch) bool {
+func embedded(a *model.Analyzer, d *model.Decision, b model.Branch) bool {
 	reads := b.Outcome.Source == model.PartsResult || b.Outcome.Source == model.MixedResult
-	return b.Tested && reads && (b.Outcome.Effects || a.KeepsResult(b.Body))
+	return b.Tested && reads && a.KeepsResult(b.Body) && len(a.VariantReads(d, b)) > 0
 }
 
 func report(ctx rule.RuleContext, a *model.Analyzer, d *model.Decision) {
 	values := []string{}
 	for _, b := range d.Arms {
-		if embedded(a, b) {
+		if embedded(a, d, b) {
 			values = append(values, b.Claim.Vocabulary.Display(b.Claim.Accepted))
 		}
 	}
