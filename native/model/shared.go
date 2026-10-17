@@ -18,15 +18,16 @@ type Shared[T any] struct {
 }
 
 type sharedEntry[T any] struct {
-	once  sync.Once
-	value *T
+	once    sync.Once
+	value   *T
+	failure any
 }
 
 func NewShared[T any](build func(*compiler.Program) *T) *Shared[T] {
 	return &Shared[T]{build: build, entries: map[weak.Pointer[compiler.Program]]*sharedEntry[T]{}}
 }
 
-// For returns the program's value, building it on first use.
+// For returns the program's value, building it on first use. A build that panics panics again for every caller.
 func (s *Shared[T]) For(program *compiler.Program) *T {
 	key := weak.Make(program)
 	s.mu.Lock()
@@ -41,7 +42,13 @@ func (s *Shared[T]) For(program *compiler.Program) *T {
 		}, key)
 	}
 	s.mu.Unlock()
-	entry.once.Do(func() { entry.value = s.build(program) })
+	entry.once.Do(func() {
+		defer func() { entry.failure = recover() }()
+		entry.value = s.build(program)
+	})
+	if entry.failure != nil {
+		panic(entry.failure)
+	}
 	return entry.value
 }
 
