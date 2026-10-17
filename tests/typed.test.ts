@@ -329,7 +329,7 @@ function fakeServer(root: string, lines: string[]): string {
   const fake = join(root, "fake");
   mkdirSync(fake, { recursive: true });
   writeFileSync(join(fake, "rules.json"), JSON.stringify(["aexlint/type-probe"]));
-  const script = ["#!/bin/sh", 'exec 3<"$2" 4<>"$3"', ...lines, ""].join("\n");
+  const script = ["#!/bin/sh", 'exec 5<"$2" 6<>"$3"', ...lines, ""].join("\n");
   writeFileSync(join(fake, "aexlint-typed"), script, { mode: 0o755 });
   return join(fake, "aexlint-typed");
 }
@@ -337,9 +337,9 @@ function fakeServer(root: string, lines: string[]): string {
 test("a backend server that exits after its split greeting fails the run instead of hanging", (t) => {
   const { root, lint } = project(t);
   const fake = fakeServer(root, [
-    "printf '\\005\\000\\000\\000' >&4",
+    "printf '\\005\\000\\000\\000' >&6",
     "sleep 0.2",
-    "printf ready >&4",
+    "printf ready >&6",
     "echo 'fake backend gave up' >&2",
   ]);
   const run = lint(["input.ts", "dependency.ts"], fake);
@@ -352,8 +352,8 @@ test("a backend server that exits after its split greeting fails the run instead
 test("a backend server that stops reading requests fails the run instead of hanging", (t) => {
   const { root, lint } = project(t);
   const fake = fakeServer(root, [
-    "exec 3<&-",
-    "printf '\\005\\000\\000\\000ready' >&4",
+    "exec 5<&-",
+    "printf '\\005\\000\\000\\000ready' >&6",
     "sleep 10",
   ]);
   const started = performance.now();
@@ -370,8 +370,8 @@ test("a backend that crashes reports its exit before its partial output", (t) =>
   const { root, lint } = project(t);
   const header = '{"status":2,"signal":null,"error":null,"stderr":"panic: boom"}';
   const fake = fakeServer(root, [
-    "printf '\\005\\000\\000\\000ready' >&4",
-    `printf '\\076\\000\\000\\000%s\\003\\000\\000\\000abc' '${header}' >&4`,
+    "printf '\\005\\000\\000\\000ready' >&6",
+    `printf '\\076\\000\\000\\000%s\\003\\000\\000\\000abc' '${header}' >&6`,
     "sleep 1",
   ]);
   const run = lint(["input.ts"], fake);

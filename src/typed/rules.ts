@@ -2,7 +2,6 @@ import { spawn, spawnSync, type SpawnOptions } from "node:child_process";
 import {
   closeSync,
   constants,
-  existsSync,
   mkdtempSync,
   openSync,
   readFileSync,
@@ -93,19 +92,6 @@ const startTimeout = 10_000;
 const pause = new Int32Array(new SharedArrayBuffer(4));
 const readyFrame = Buffer.from([5, 0, 0, 0, ...Buffer.from("ready")]);
 
-const processTable = existsSync("/proc/self/stat");
-
-function exited(pid: number | undefined): boolean {
-  if (pid === undefined) return true;
-  if (!processTable) return false;
-  try {
-    const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
-    return /^[ZX]/.test(stat.slice(stat.lastIndexOf(")") + 2));
-  } catch {
-    return true;
-  }
-}
-
 function available(fd: number, buffer: Buffer, offset: number): number {
   try {
     return readSync(fd, buffer, offset, buffer.length - offset, null);
@@ -115,7 +101,16 @@ function available(fd: number, buffer: Buffer, offset: number): number {
   }
 }
 
-function awaitServer(path: string, pid: number | undefined, log: number): number {
+function exited(lifeline: number): boolean {
+  try {
+    return readSync(lifeline, Buffer.alloc(1), 0, 1, null) === 0;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EAGAIN") return false;
+    throw error;
+  }
+}
+
+function awaitServer(path: string, lifeline: number, log: number): number {
   const responses = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK);
   const greeting = Buffer.alloc(readyFrame.length);
   const deadline = Date.now() + startTimeout;
@@ -124,7 +119,7 @@ function awaitServer(path: string, pid: number | undefined, log: number): number
     for (;;) {
       received += available(responses, greeting, received);
       if (received === greeting.length) break;
-      if (exited(pid) || Date.now() > deadline) {
+      if (exited(lifeline) || Date.now() > deadline) {
         throw new Error(`The typed backend did not start: ${logText(log)}`);
       }
       Atomics.wait(pause, 0, 0, 5);
@@ -143,12 +138,16 @@ function serveChannel(): Channel {
   const directory = mkdtempSync(join(tmpdir(), "aexlint-typed-fifo-"));
   const requestPath = join(directory, "requests");
   const responsePath = join(directory, "responses");
-  const fifo = spawnSync("mkfifo", [requestPath, responsePath]);
+  const lifelinePath = join(directory, "lifeline");
+  const fifo = spawnSync("mkfifo", [requestPath, responsePath, lifelinePath]);
   if (fifo.status !== 0) throw new Error(`mkfifo failed: ${fifo.error?.message ?? fifo.stderr}`);
   const opening = openSync(requestPath, "r+");
   const log = openSync(join(directory, "stderr"), "w+");
-  const options: SpawnOptions = { stdio: ["ignore", "ignore", log], env: environment };
+  const lifeline = openSync(lifelinePath, constants.O_RDONLY | constants.O_NONBLOCK);
+  const held = openSync(lifelinePath, constants.O_WRONLY | constants.O_NONBLOCK);
+  const options: SpawnOptions = { stdio: ["ignore", "ignore", log, held], env: environment };
   const server = spawn(backend, ["serve", requestPath, responsePath], options);
+  closeSync(held);
   server.on("error", () => {});
   server.unref();
   process.once("exit", () => rmSync(directory, { recursive: true, force: true }));
@@ -168,7 +167,7 @@ function serveChannel(): Channel {
     }
     if (channel === null) {
       try {
-        const responses = awaitServer(responsePath, server.pid, log);
+        const responses = awaitServer(responsePath, lifeline, log);
         const requests = openSync(requestPath, constants.O_WRONLY | constants.O_NONBLOCK);
         channel = { requests, responses };
       } catch (error) {
