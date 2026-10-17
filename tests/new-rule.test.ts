@@ -80,11 +80,8 @@ test("generated TypeScript compiles", (t) => {
   const root = temporaryRoot(t);
   newRule(root, "unfinished-rule");
   writeFileSync(join(root, "package.json"), JSON.stringify({ private: true, type: "module" }));
-  symlinkSync(
-    fileURLToPath(new URL("../node_modules", import.meta.url)),
-    join(root, "node_modules"),
-    "dir",
-  );
+  const modules = fileURLToPath(new URL("../node_modules", import.meta.url));
+  symlinkSync(modules, join(root, "node_modules"), "dir");
   copyFileSync(new URL("../tsconfig.json", import.meta.url), join(root, "tsconfig.json"));
   const compiler = fileURLToPath(
     new URL("./bin/tsc", import.meta.resolve("typescript/package.json")),

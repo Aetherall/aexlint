@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncOptionsWithStringEncoding } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -42,11 +42,12 @@ function consumer(t: TestContext) {
   write("package.json", JSON.stringify({ private: true, type: "module" }));
   const run = (args: string[], expectedStatus = 0) => {
     const before = snapshot(root);
-    const result = spawnSync(process.execPath, [cli, ...args], {
+    const options: SpawnSyncOptionsWithStringEncoding = {
       cwd: root,
       encoding: "utf8",
       timeout: 60_000,
-    });
+    };
+    const result = spawnSync(process.execPath, [cli, ...args], options);
     if (result.error) throw result.error;
     assert.deepEqual(
       snapshot(root),

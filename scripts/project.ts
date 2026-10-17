@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncOptionsWithStringEncoding } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -46,16 +46,14 @@ export function lintProject(): string {
   const target = `${process.platform}-${process.arch}`;
   const backend = join(root, "dist/native", target, backendExecutable());
   const { NODE_TEST_CONTEXT: _, ...env } = process.env;
-  const result = spawnSync(
-    process.execPath,
-    [oxlint, "-c", "oxlint.json", "--format", "json", "."],
-    {
-      cwd: project,
-      env: { ...env, AEXLINT_TYPED_BACKEND: backend },
-      encoding: "utf8",
-      maxBuffer: 256 * 1024 * 1024,
-    },
-  );
+  const command = [oxlint, "-c", "oxlint.json", "--format", "json", "."];
+  const options: SpawnSyncOptionsWithStringEncoding = {
+    cwd: project,
+    env: { ...env, AEXLINT_TYPED_BACKEND: backend },
+    encoding: "utf8",
+    maxBuffer: 256 * 1024 * 1024,
+  };
+  const result = spawnSync(process.execPath, command, options);
   if (result.error) throw result.error;
   if (result.status !== 0 && result.status !== 1) {
     throw new Error(`oxlint exited with ${result.status}\n${result.stderr}${result.stdout}`);

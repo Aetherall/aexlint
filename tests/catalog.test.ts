@@ -35,22 +35,20 @@ test("every rule folder has one implementation, a doc and a registry entry", () 
     assert.ok(rule.meta.schema, `${name}: missing options schema`);
     assert.ok(Object.keys(rule.meta.messages ?? {}).length, `${name}: missing messages`);
   }
+  const read = (name: string, file: string) =>
+    readFileSync(new URL(`${name}/${file}`, rulesDir), "utf8");
   for (const name of typed) {
-    const metadata = JSON.parse(readFileSync(new URL(`${name}/rule.json`, rulesDir), "utf8"));
+    const metadata = JSON.parse(read(name, "rule.json"));
     assert.equal(metadata.name, `aexlint/${name}`);
     assert.equal(metadata.requiresTypeChecking, true);
     assert.ok(metadata.description);
-    assert.ok(
-      readFileSync(new URL(`${name}/rule.go`, rulesDir), "utf8").includes(`"aexlint/${name}"`),
-    );
+    assert.ok(read(name, "rule.go").includes(`"aexlint/${name}"`));
     for (const file of readdirSync(new URL(`${name}/`, rulesDir)).filter((entry) =>
       entry.endsWith(".go"),
     )) {
-      assert.doesNotMatch(
-        readFileSync(new URL(`${name}/${file}`, rulesDir), "utf8"),
-        /shim\/checker"|\bTypeChecker\.(?!TypeToString\b)/,
-        `${name}/${file} reasons about types itself; query the model instead (docs/native.md)`,
-      );
+      const reason = `${name}/${file} reasons about types itself; query the model instead (docs/native.md)`;
+      const code = read(name, file);
+      assert.doesNotMatch(code, /shim\/checker"|\bTypeChecker\.(?!TypeToString\b)/, reason);
     }
   }
   for (const name of names) {

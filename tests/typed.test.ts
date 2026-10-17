@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncOptionsWithStringEncoding } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -49,16 +49,14 @@ function project(t: { after: (fn: () => void) => void }) {
     );
   configure({ "aexlint/type-probe": "error" });
   const lint = (files: string[], executable = backend): Run => {
-    const result = spawnSync(
-      process.execPath,
-      [oxlint, "-c", ".oxlintrc.json", "--format", "json", ...files],
-      {
-        cwd: root,
-        encoding: "utf8",
-        timeout: 60_000,
-        env: { ...process.env, AEXLINT_TYPED_BACKEND: executable },
-      },
-    );
+    const command = [oxlint, "-c", ".oxlintrc.json", "--format", "json", ...files];
+    const options: SpawnSyncOptionsWithStringEncoding = {
+      cwd: root,
+      encoding: "utf8",
+      timeout: 60_000,
+      env: { ...process.env, AEXLINT_TYPED_BACKEND: executable },
+    };
+    const result = spawnSync(process.execPath, command, options);
     if (result.error) throw result.error;
     const output = `${result.stdout}\n${result.stderr}`;
     const parsed = result.stdout.startsWith("{") ? JSON.parse(result.stdout) : { diagnostics: [] };

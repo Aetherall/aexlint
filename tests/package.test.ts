@@ -14,17 +14,16 @@ const oxlint = fileURLToPath(new URL("../node_modules/oxlint/bin/oxlint", import
 function run(command: string, args: string[], cwd: string, expectedStatus = 0): string {
   const result = spawnSync(command, args, { cwd, encoding: "utf8", timeout: 60_000 });
   if (result.error) throw result.error;
-  assert.equal(
-    result.status,
-    expectedStatus,
-    `${command} ${args.join(" ")}\n${result.stdout}\n${result.stderr}`,
-  );
+  const output = `${command} ${args.join(" ")}\n${result.stdout}\n${result.stderr}`;
+  assert.equal(result.status, expectedStatus, output);
   return result.stdout;
 }
 
 test("packed package imports and executes in a real Oxlint consumer", { timeout: 120_000 }, (t) => {
   const consumer = mkdtempSync(join(tmpdir(), "aexlint-consumer-"));
   t.after(() => rmSync(consumer, { recursive: true, force: true }));
+  const report = (args: string[], status = 0) =>
+    JSON.parse(run(process.execPath, args, consumer, status));
   const packed = JSON.parse(
     run(
       "pnpm",
@@ -135,14 +134,7 @@ export default {
     }),
   );
   writeFileSync(join(consumer, "invalid.ts"), "debugger;\n");
-  const diagnostics = JSON.parse(
-    run(
-      process.execPath,
-      [oxlint, "-c", ".oxlintrc.json", "--format", "json", "invalid.ts"],
-      consumer,
-      1,
-    ),
-  );
+  const diagnostics = report([oxlint, "-c", ".oxlintrc.json", "--format", "json", "invalid.ts"], 1);
   assert.equal(diagnostics.diagnostics.length, 1);
   assert.equal(diagnostics.diagnostics[0].message, "Package probe executed.");
   writeFileSync(join(consumer, "valid.ts"), "export const value: number = 1;\n");
@@ -154,92 +146,89 @@ export default {
   );
   run(process.execPath, [oxlint, "-c", ".oxlintrc.json", "valid.ts"], consumer);
   const depthRule = "aexlint/max-expression-depth";
-  const syntaxConfig = (ruleName: string, setting: unknown) =>
-    writeFileSync(
-      join(consumer, ".oxlintrc.json"),
-      JSON.stringify({
-        jsPlugins: ["@aetherall/aexlint"],
-        categories: { correctness: "off" },
-        rules: { [ruleName]: setting },
-      }),
-    );
+  const configFile = join(consumer, ".oxlintrc.json");
+  const syntaxConfig = (ruleName: string, setting: unknown) => {
+    const rules = { [ruleName]: setting };
+    const config = { jsPlugins: ["@aetherall/aexlint"], categories: { correctness: "off" }, rules };
+    writeFileSync(configFile, JSON.stringify(config));
+  };
   syntaxConfig(depthRule, ["error", { max: 2 }]);
   writeFileSync(join(consumer, "depth.ts"), "publish(encode(parse(input)));\n");
   const depthArgs = [oxlint, "-c", ".oxlintrc.json", "depth.ts", "--format", "json"];
-  const depthDiagnostics = JSON.parse(run(process.execPath, depthArgs, consumer, 1));
+  const depthDiagnostics = report(depthArgs, 1);
   assert.equal(depthDiagnostics.diagnostics.length, 1);
   assert.match(depthDiagnostics.diagnostics[0].message, /Input-production depth is 3/);
   writeFileSync(
     join(consumer, "depth.ts"),
     "const document = parse(input); publish(encode(document));\n",
   );
-  assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(depthArgs).diagnostics, []);
   const complexityRule = "aexlint/max-expression-complexity";
   writeFileSync(join(consumer, "depth.ts"), "result(a(), b(), c(), d());\n");
-  assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(depthArgs).diagnostics, []);
   syntaxConfig(complexityRule, ["error", { max: 4 }]);
-  const workload = JSON.parse(run(process.execPath, depthArgs, consumer, 1));
+  const workload = report(depthArgs, 1);
   assert.equal(workload.diagnostics.length, 1);
   assert.match(workload.diagnostics[0].message, /Expression workload is 5/);
   writeFileSync(join(consumer, "depth.ts"), "const first = a(); result(first, b(), c(), d());\n");
-  assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(depthArgs).diagnostics, []);
   writeFileSync(
     join(consumer, "depth.ts"),
     "const value = { one: a(), two: b(), three: c(), four: d(), five: e() };\nconst all = a && b && c && d && e;\n",
   );
-  assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(depthArgs).diagnostics, []);
   const decisionRule = "aexlint/max-decision-depth";
   const alternatives = "const value = (a && b) || (c && d);\n";
   const nested = "const value = a && (b || (c && d));\n";
   for (const code of [alternatives, nested]) {
     writeFileSync(join(consumer, "depth.ts"), code);
     syntaxConfig(complexityRule, ["error", { max: 2 }]);
-    const messages = JSON.parse(run(process.execPath, depthArgs, consumer, 1)).diagnostics;
+    const messages = report(depthArgs, 1).diagnostics;
     assert.equal(messages.length, 1);
     assert.match(messages[0].message, /Expression workload is 3/);
   }
   syntaxConfig(decisionRule, ["error", { max: 2 }]);
-  const decisions = JSON.parse(run(process.execPath, depthArgs, consumer, 1)).diagnostics;
+  const decisions = report(depthArgs, 1).diagnostics;
   assert.equal(decisions.length, 1);
   assert.match(decisions[0].message, /Decision depth is 3/);
   writeFileSync(join(consumer, "depth.ts"), alternatives);
-  assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(depthArgs).diagnostics, []);
   const heldRule = "aexlint/max-held-context";
   writeFileSync(join(consumer, "depth.ts"), "if (a) { if (b) { if (c) { if (d) work(); } } }\n");
   syntaxConfig(heldRule, ["error", { max: 3 }]);
-  const held = JSON.parse(run(process.execPath, depthArgs, consumer, 1)).diagnostics;
+  const held = report(depthArgs, 1).diagnostics;
   assert.equal(held.length, 1);
   assert.match(held[0].message, /held-context depth 4/);
   writeFileSync(
     join(consumer, "depth.ts"),
     "for (const x of xs) { if (!x) continue; if (x.a) { use(x); } }\n",
   );
-  assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(depthArgs).diagnostics, []);
   syntaxConfig("aexlint/prefer-domain-predicate", "error");
   writeFileSync(
     join(consumer, "depth.ts"),
     "if (node.type === 'Array' || node.type === 'Object') use(node);\n",
   );
-  const classification = JSON.parse(run(process.execPath, depthArgs, consumer, 1));
+  const classification = report(depthArgs, 1);
   assert.equal(classification.diagnostics.length, 1);
   assert.match(classification.diagnostics[0].message, /classification of node/);
   writeFileSync(
     join(consumer, "depth.ts"),
     "function isContainer(node) { return node.type === 'Array' || node.type === 'Object'; }\n",
   );
-  assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(depthArgs).diagnostics, []);
   for (const code of [
     "const isX = a.amount > 10 && a.type === 'money';",
     "const types = ['Array', 'Object']; if (types.includes(node.type)) use(node);",
   ]) {
     writeFileSync(join(consumer, "depth.ts"), code);
-    assert.deepEqual(JSON.parse(run(process.execPath, depthArgs, consumer)).diagnostics, []);
+    assert.deepEqual(report(depthArgs).diagnostics, []);
   }
   writeFileSync(
     join(consumer, "depth.ts"),
     "const types = ['Array', 'Object']; if (types.includes(node.type) && node.state === 'ready') use(node);",
   );
-  const combined = JSON.parse(run(process.execPath, depthArgs, consumer, 1));
+  const combined = report(depthArgs, 1);
   assert.equal(combined.diagnostics.length, 1);
   assert.match(combined.diagnostics[0].message, /classification of node/);
   for (const ruleName of [depthRule, complexityRule, decisionRule, heldRule]) {
@@ -297,11 +286,11 @@ export default {
     "export declare const value: { id: string } | undefined;",
   );
   const typedArgs = [oxlint, "-c", ".oxlintrc.json", "--format", "json", "typed-input.ts"];
-  const presence = JSON.parse(run(process.execPath, typedArgs, consumer, 1));
+  const presence = report(typedArgs, 1);
   assert.equal(presence.diagnostics.length, 1);
   assert.equal(presence.diagnostics[0].code, "aexlint(prefer-truthy-presence-check)");
   assert.match(presence.diagnostics[0].message, /Use a truthiness check/);
   writeFileSync(join(consumer, "dependency.ts"), "export declare const value: string | undefined;");
-  assert.deepEqual(JSON.parse(run(process.execPath, typedArgs, consumer)).diagnostics, []);
+  assert.deepEqual(report(typedArgs).diagnostics, []);
   assert.equal(readFileSync(join(consumer, "typed-input.ts"), "utf8"), caller);
 });

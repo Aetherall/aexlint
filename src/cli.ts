@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncOptionsWithStringEncoding } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -132,12 +132,13 @@ function check(): number {
     args.push("--", ...(paths.length ? paths : ["."]));
     const { AEXLINT_BASELINE: _, ...env } = process.env;
     if (baseline) env.AEXLINT_BASELINE = resolve(baseline);
-    const result = spawnSync(process.execPath, args, {
+    const options: SpawnSyncOptionsWithStringEncoding = {
       env,
       encoding: "utf8",
       maxBuffer: 1024 * 1024 * 1024,
       stdio: ["inherit", record ? "pipe" : "inherit", "inherit"],
-    });
+    };
+    const result = spawnSync(process.execPath, args, options);
     if (result.error) throw result.error;
     if (!record) return result.status ?? 1;
     if (result.status !== 0 && result.status !== 1) return result.status ?? 1;

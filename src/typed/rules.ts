@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn, spawnSync, type SpawnOptions } from "node:child_process";
 import {
   closeSync,
   constants,
@@ -137,10 +137,8 @@ function serveChannel(): Channel {
   if (fifo.status !== 0) throw new Error(`mkfifo failed: ${fifo.error?.message ?? fifo.stderr}`);
   const requests = openSync(requestPath, "r+");
   const log = openSync(join(directory, "stderr"), "w+");
-  const server = spawn(backend, ["serve", requestPath, responsePath], {
-    stdio: ["ignore", "ignore", log],
-    env: environment,
-  });
+  const options: SpawnOptions = { stdio: ["ignore", "ignore", log], env: environment };
+  const server = spawn(backend, ["serve", requestPath, responsePath], options);
   server.on("error", () => {});
   server.unref();
   process.once("exit", () => rmSync(directory, { recursive: true, force: true }));
@@ -273,10 +271,10 @@ function report(context: Context, name: string, diagnostic: NativeDiagnostic): v
   const bytes = Buffer.from(text, "utf8");
   const range = diagnostic.range ?? { pos: 0, end: 0 };
   const { description, help } = diagnostic.message;
-  context.report({
-    message: help ? `${description}\nhelp: ${help}` : description,
-    node: { range: [textOffset(text, bytes, range.pos), textOffset(text, bytes, range.end)] },
-  });
+  const from = textOffset(text, bytes, range.pos);
+  const to = textOffset(text, bytes, range.end);
+  const message = help ? `${description}\nhelp: ${help}` : description;
+  context.report({ message, node: { range: [from, to] } });
 }
 
 function wrap(name: string): Rule {

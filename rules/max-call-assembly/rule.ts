@@ -181,17 +181,10 @@ export default defineRule({
       if (width <= maxWidth) return;
       coverEnclosing(node);
       if (covered.has(node)) return;
-      context.report({
-        loc: { start: open.loc.start, end: close.loc.end },
-        messageId: "tooAssembled",
-        data: {
-          width,
-          count: assembly.names.size,
-          names: [...assembly.names].join(", "),
-          maxWidth,
-          maxReferences,
-        },
-      });
+      const names = [...assembly.names];
+      const data = { width, count: names.length, names: names.join(", "), maxWidth, maxReferences };
+      const loc = { start: open.loc.start, end: close.loc.end };
+      context.report({ loc, messageId: "tooAssembled", data });
     };
 
     return {

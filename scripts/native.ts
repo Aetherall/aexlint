@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncOptionsWithStringEncoding } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   cpSync,
@@ -53,12 +53,13 @@ function run(
   cwd = source,
   env: NodeJS.ProcessEnv = goEnv,
 ): string {
-  const result = spawnSync(command, args, {
+  const options: SpawnSyncOptionsWithStringEncoding = {
     cwd,
     env,
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,
-  });
+  };
+  const result = spawnSync(command, args, options);
   if (result.error) throw result.error;
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")}\n${result.stdout}${result.stderr}`);
@@ -127,11 +128,10 @@ async function prepare(): Promise<void> {
 function overlay(probe: boolean): string[] {
   const destination = join(source, "internal/aexlint");
   rmSync(destination, { recursive: true, force: true });
+  const withoutDocs = { recursive: true, filter: (path: string) => !path.endsWith(".md") };
   for (const name of ruleNames()) {
-    cpSync(join(root, "rules", name), join(destination, "rules", name), {
-      recursive: true,
-      filter: (path) => !path.endsWith(".md"),
-    });
+    const rule = join(root, "rules", name);
+    cpSync(rule, join(destination, "rules", name), withoutDocs);
   }
   cpSync(join(root, "native/model"), join(destination, "model"), { recursive: true });
   cpSync(join(root, "native/fixtures"), join(destination, "fixtures"), { recursive: true });
@@ -164,21 +164,9 @@ function build(target: string, names: string[], directory: string): void {
     GOARCH: arch === "x64" ? "amd64" : arch!,
   };
   console.log(`Building native ${target}`);
-  run(
-    "go",
-    [
-      "build",
-      "-mod=readonly",
-      "-buildvcs=false",
-      "-trimpath",
-      "-ldflags=-s -w",
-      "-o",
-      join(output, backendExecutable(platform)),
-      "./cmd/tsgolint",
-    ],
-    source,
-    env,
-  );
+  const executable = join(output, backendExecutable(platform));
+  const flags = ["-mod=readonly", "-buildvcs=false", "-trimpath", "-ldflags=-s -w"];
+  run("go", ["build", ...flags, "-o", executable, "./cmd/tsgolint"], source, env);
   writeFileSync(
     join(output, "rules.json"),
     JSON.stringify(
@@ -260,12 +248,9 @@ export async function native(action: string, args: string[] = []): Promise<void>
           return `./internal/aexlint/rules/${name}`;
         })
       : ["./internal/aexlint/model/...", "./internal/aexlint/rules/..."];
-    process.stdout.write(
-      run("go", ["test", "-mod=readonly", "-count=1", ...packages], source, {
-        ...goEnv,
-        UPDATE_SNAPS: update ? "true" : "false",
-      }),
-    );
+    const testEnv = { ...goEnv, UPDATE_SNAPS: update ? "true" : "false" };
+    const command = ["test", "-mod=readonly", "-count=1", ...packages];
+    process.stdout.write(run("go", command, source, testEnv));
     if (update) cpSync(snapshotDir, join(root, "native/snapshots"), { recursive: true });
     else {
       const actualSnapshots = JSON.stringify([...snapshots()].toSorted());
@@ -276,7 +261,8 @@ export async function native(action: string, args: string[] = []): Promise<void>
         );
       }
     }
-    build(`${process.platform}-${process.arch}`, names, join(cache, "probe"));
+    const host = `${process.platform}-${process.arch}`;
+    build(host, names, join(cache, "probe"));
   } else {
     const directory = join(root, "dist/native");
     const targets =

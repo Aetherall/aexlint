@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncOptionsWithBufferEncoding } from "node:child_process";
 import { relative, resolve } from "node:path";
 import { decodeFrames } from "../src/typed/backend.ts";
 import { ruleNames } from "./native.ts";
@@ -36,12 +36,13 @@ function scan(mode: string, backend: string, root: string, seed: string): string
     whole_programs: true,
     configs: [{ file_paths: [resolve(root, seed)], rules: rules(mode) }],
   };
-  const result = spawnSync(backend, ["headless"], {
+  const options: SpawnSyncOptionsWithBufferEncoding = {
     cwd: root,
     input: JSON.stringify(payload),
     maxBuffer: 1 << 30,
     env: { ...process.env, OXLINT_TSGOLINT_DANGEROUSLY_SUPPRESS_PROGRAM_DIAGNOSTICS: "true" },
-  });
+  };
+  const result = spawnSync(backend, ["headless"], options);
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${seed}: ${String(result.stderr).slice(0, 2000)}`);
   return decodeFrames(result.stdout).diagnostics.map((value) => {
