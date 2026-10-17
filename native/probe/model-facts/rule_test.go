@@ -46,6 +46,14 @@ func TestModelFacts(t *testing.T) {
 			{Code: `export function f(item: never) { return item; }`, Options: only("test")},
 			{Code: `import type { Item } from "./items.js";
 export function f(item: Item) { return item.kind === "text" ? item.text : ""; }`, Files: map[string]string{"items.ts": `export type Item = { kind: string; text: string };`}, Options: only("site", "decision", "test")},
+			{Code: `declare function isRecord(value: unknown): value is Record<string, unknown>;
+export function decode(value: unknown, input: unknown, record: { kind: unknown; name: unknown }) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("object");
+  if (!input || !isRecord(input)) throw new Error("record");
+  const valid = typeof record.kind === "number" && typeof record.name === "string";
+  if (!valid) throw new Error("fields");
+  return [value, input, record];
+}`, Options: only("rejection")},
 		},
 		[]rule_tester.InvalidTestCase{
 			{Code: `import type { Size } from "./items.js";
@@ -321,6 +329,14 @@ export function parse(input: string, limit: number) {
   try { if (input === "x") throw new Error("reserved"); } finally { validate(input); }
   return input;
 }`, Options: only("rejection"), Errors: facts("rejection", 2)},
+			{Code: `export function decode(value: unknown, name: string, count: number) {
+  if (!value) throw new Error("present");
+  const long = name.length > 3;
+  if (!long) throw new Error("long");
+  if (!count && typeof count !== "object") throw new Error("count");
+  if (!/^[a-z]+$/.test(name)) throw new Error("pattern");
+  return [value, name, count];
+}`, Options: only("rejection"), Errors: facts("rejection", 4)},
 			{Code: `type Pet = { kind: "cat"; lives: number } | { kind: "dog"; good: boolean };
 export function isCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat"; }
 export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }

@@ -1499,7 +1499,7 @@ no-forgeable-validated-result/reported/destructuring.ts:2:17 aexlint(no-forgeabl
 no-forgeable-validated-result/reported/documented-example.ts:5:17 aexlint(no-forgeable-validated-result)
   ~ applySettings
   `applySettings` rejects some inputs, then returns `Payload`, which other code can produce without that check.
-  help: Code that receives a value of type `Payload` cannot tell whether it passed `applySettings`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 6.
+  help: Code that receives a value of type `Payload` cannot tell whether it passed `applySettings`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 8.
 
 no-forgeable-validated-result/reported/equivalent-declarations.ts:5:17 aexlint(no-forgeable-validated-result)
   ~ a

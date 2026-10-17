@@ -598,6 +598,36 @@ Message: rejection; on [input] reads [input]
 ---
 
 [TestModelFacts/invalid-24 - 1]
+Diagnostic 1: rejection (2:15 - 2:41)
+Message: rejection; on [value] reads [value]
+   1 | export function decode(value: unknown, name: string, count: number) {
+   2 |   if (!value) throw new Error("present");
+     |               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   3 |   const long = name.length > 3;
+
+Diagnostic 2: rejection (4:14 - 4:37)
+Message: rejection; on [name.length] reads [name.length]
+   3 |   const long = name.length > 3;
+   4 |   if (!long) throw new Error("long");
+     |              ~~~~~~~~~~~~~~~~~~~~~~~~
+   5 |   if (!count && typeof count !== "object") throw new Error("count");
+
+Diagnostic 3: rejection (5:44 - 5:68)
+Message: rejection; on [count] reads [count]
+   4 |   if (!long) throw new Error("long");
+   5 |   if (!count && typeof count !== "object") throw new Error("count");
+     |                                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 |   if (!/^[a-z]+$/.test(name)) throw new Error("pattern");
+
+Diagnostic 4: rejection (6:31 - 6:57)
+Message: rejection; on [name] reads [part of name]
+   5 |   if (!count && typeof count !== "object") throw new Error("count");
+   6 |   if (!/^[a-z]+$/.test(name)) throw new Error("pattern");
+     |                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   7 |   return [value, name, count];
+---
+
+[TestModelFacts/invalid-25 - 1]
 Diagnostic 1: contract (4:82 - 4:99)
 Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: number; }
    3 | export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
@@ -605,16 +635,16 @@ Message: restriction on pet.kind rejects cat of target { kind: "cat"; lives: num
      |                                                                                  ~~~~~~~~~~~~~~~~~~
 ---
 
-[TestModelFacts/invalid-25 - 1]
+[TestModelFacts/invalid-26 - 1]
 Diagnostic 1: function (3:12 - 3:45)
-Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; domains []
+Message: predicate matches; answer [item.kind in {"stock"} of {"stock" | "text"}]; narrowings []
    2 | export const view = {
    3 |   matches: (item: Item): item is StockItem => item.kind === "stock",
      |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    4 |   render(item: Item) {
 
 Diagnostic 2: function (4:3 - 4:8)
-Message: function render; answer []; domains [item.kind in {"stock"} of {"stock" | "text"} by selector matches]
+Message: function render; answer []; narrowings [item.kind in {"stock"} of {"stock" | "text"} by selector matches]
    3 |   matches: (item: Item): item is StockItem => item.kind === "stock",
    4 |   render(item: Item) {
      |   ~~~~~~

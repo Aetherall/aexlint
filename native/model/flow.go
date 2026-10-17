@@ -409,18 +409,31 @@ func (a *flowAnalysis) storedAt(v Value) []Value {
 // Narrowing reports whether a condition only tests what TypeScript keeps in a narrowed type: negations, conjunctions,
 // and disjunctions of comparisons with null or undefined, truthiness tests of values that cannot be falsy when present,
 // `instanceof`, `in`, comparisons of `typeof`, and calls to type guards. Such a test establishes presence or a type,
-// which the narrowed type of the value already carries.
+// which the narrowed type of the value already carries. A const boolean local stands for the condition it was initialized with,
+// as it does for TypeScript; unlike TypeScript, the model does not require the tested data to stay unassigned. Among
+// the parts of a conjunction or disjunction, a truthiness test of a value that another part requires to be an object is
+// narrowing too: no object is falsy, so the narrowed object type carries it.
 func (m *Analyzer) Narrowing(n *ast.Node) bool {
 	n = ast.SkipParentheses(n)
 	switch n.Kind {
+	case ast.KindIdentifier:
+		if condition := m.condition(n); condition != nil {
+			return m.Narrowing(condition)
+		}
 	case ast.KindPrefixUnaryExpression:
 		unary := n.AsPrefixUnaryExpression()
 		return unary.Operator == ast.KindExclamationToken && m.Narrowing(unary.Operand)
 	case ast.KindBinaryExpression:
 		binary := n.AsBinaryExpression()
-		switch binary.OperatorToken.Kind {
+		switch operator := binary.OperatorToken.Kind; operator {
 		case ast.KindAmpersandAmpersandToken, ast.KindBarBarToken:
-			return m.Narrowing(binary.Left) && m.Narrowing(binary.Right)
+			operands := parts(n, operator)
+			for i := range operands {
+				if !m.narrowingAmong(operands, i, operator) {
+					return false
+				}
+			}
+			return true
 		case ast.KindEqualsEqualsToken, ast.KindEqualsEqualsEqualsToken, ast.KindExclamationEqualsToken, ast.KindExclamationEqualsEqualsToken:
 			return nullish(binary.Left) || nullish(binary.Right) || typeOf(binary.Left) || typeOf(binary.Right)
 		case ast.KindInstanceOfKeyword, ast.KindInKeyword:
@@ -433,6 +446,97 @@ func (m *Analyzer) Narrowing(n *ast.Node) bool {
 	}
 	held, ok := m.Holds(n)
 	return ok && held&AbsentFalsy == 0
+}
+
+// condition returns the initializer of a const boolean local.
+func (m *Analyzer) condition(n *ast.Node) *ast.Node {
+	if t := m.ctx.TypeChecker.GetTypeAtLocation(n); t == nil || t.Flags()&checker.TypeFlagsBooleanLike == 0 {
+		return nil
+	}
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
+	if symbol == nil || symbol.ValueDeclaration == nil {
+		return nil
+	}
+	d := symbol.ValueDeclaration
+	if d.Kind != ast.KindVariableDeclaration || d.Name().Kind != ast.KindIdentifier || !ast.IsVarConst(d) {
+		return nil
+	}
+	return d.Initializer()
+}
+
+// narrowingAmong reports whether the operand at i of a conjunction or disjunction is narrowing: on its own, or as a
+// truthiness test of a value that another operand requires to be an object. In a conjunction both tests hold where it
+// holds; in a disjunction both are negated, ruling the value out where it holds.
+func (m *Analyzer) narrowingAmong(operands []*ast.Node, i int, operator ast.Kind) bool {
+	if m.Narrowing(operands[i]) {
+		return true
+	}
+	value, truthy, ok := truthiness(operands[i])
+	positive := operator == ast.KindAmpersandAmpersandToken
+	return ok && truthy == positive && slices.ContainsFunc(operands, func(o *ast.Node) bool {
+		subject, requires, ok := m.objectTest(o)
+		return ok && requires == positive && m.SameValue(subject, value)
+	})
+}
+
+// truthiness reads a truthiness test of an access chain, possibly negated: truthy is whether it holds where the value
+// is truthy.
+func truthiness(n *ast.Node) (*ast.Node, bool, bool) {
+	n = ast.SkipParentheses(n)
+	switch n.Kind {
+	case ast.KindPrefixUnaryExpression:
+		if unary := n.AsPrefixUnaryExpression(); unary.Operator == ast.KindExclamationToken {
+			value, truthy, ok := truthiness(unary.Operand)
+			return value, !truthy, ok
+		}
+	case ast.KindIdentifier, ast.KindPropertyAccessExpression, ast.KindElementAccessExpression:
+		return n, true, true
+	}
+	return nil, false, false
+}
+
+// objectTest reads a test that holds only for objects, or only for other values: a comparison of `typeof` with
+// "object" or "function", `instanceof`, `in`, or a call to a type guard whose type admits no primitive. requires is
+// whether it holds only for objects.
+func (m *Analyzer) objectTest(n *ast.Node) (*ast.Node, bool, bool) {
+	n = ast.SkipParentheses(n)
+	switch n.Kind {
+	case ast.KindPrefixUnaryExpression:
+		if unary := n.AsPrefixUnaryExpression(); unary.Operator == ast.KindExclamationToken {
+			subject, requires, ok := m.objectTest(unary.Operand)
+			return subject, !requires, ok
+		}
+	case ast.KindBinaryExpression:
+		binary := n.AsBinaryExpression()
+		switch operator := binary.OperatorToken.Kind; operator {
+		case ast.KindEqualsEqualsToken, ast.KindEqualsEqualsEqualsToken, ast.KindExclamationEqualsToken, ast.KindExclamationEqualsEqualsToken:
+			equal := operator == ast.KindEqualsEqualsToken || operator == ast.KindEqualsEqualsEqualsToken
+			for _, pair := range [][2]*ast.Node{{binary.Left, binary.Right}, {binary.Right, binary.Left}} {
+				test, text := ast.SkipParentheses(pair[0]), ast.SkipParentheses(pair[1])
+				if test.Kind == ast.KindTypeOfExpression && ast.IsStringLiteralLike(text) && (text.Text() == "object" || text.Text() == "function") {
+					return test.Expression(), equal, true
+				}
+			}
+		case ast.KindInstanceOfKeyword:
+			return binary.Left, true, true
+		case ast.KindInKeyword:
+			return binary.Right, true, true
+		}
+	case ast.KindCallExpression:
+		signature := m.ctx.TypeChecker.GetResolvedSignature(n)
+		if signature == nil {
+			break
+		}
+		predicate := m.ctx.TypeChecker.GetTypePredicateOfSignature(signature)
+		if predicate == nil || checker.TypePredicate_kind(predicate) != checker.TypePredicateKindIdentifier {
+			break
+		}
+		index := int(checker.TypePredicate_parameterIndex(predicate))
+		if arguments := n.Arguments(); index < len(arguments) && m.admitsNoFalsy(checker.TypePredicate_t(predicate)) {
+			return arguments[index], true, true
+		}
+	}
+	return nil, false, false
 }
 
 func typeOf(n *ast.Node) bool {
@@ -457,12 +561,42 @@ func (a *flowAnalysis) tested(n *ast.Node) []Value {
 			return a.tested(unary.Operand)
 		}
 	case ast.KindBinaryExpression:
-		binary := n.AsBinaryExpression()
-		if kind := binary.OperatorToken.Kind; kind == ast.KindAmpersandAmpersandToken || kind == ast.KindBarBarToken {
-			return append(a.tested(binary.Left), a.tested(binary.Right)...)
+		if kind := n.AsBinaryExpression().OperatorToken.Kind; kind == ast.KindAmpersandAmpersandToken || kind == ast.KindBarBarToken {
+			found := []Value{}
+			operands := parts(n, kind)
+			for i, operand := range operands {
+				if !a.m.narrowingAmong(operands, i, kind) {
+					found = append(found, a.tested(operand)...)
+				}
+			}
+			return found
 		}
 	}
-	return a.sources(n, false)
+	return append(a.sources(n, false), a.libraryArguments(n)...)
+}
+
+// libraryArguments returns the data of the primitive arguments to library calls in a condition. Such an argument
+// carries no data into the call's result, but a condition testing the result tests it: `pattern.test(input.id)`
+// checks input.id.
+func (a *flowAnalysis) libraryArguments(n *ast.Node) []Value {
+	found := []Value{}
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		if ast.IsFunctionLike(n) || ast.IsClassLike(n) {
+			return false
+		}
+		if n.Kind == ast.KindCallExpression && a.m.carried(n) == nil {
+			for _, argument := range n.Arguments() {
+				if a.primitive(argument) {
+					found = append(found, a.sources(argument, false)...)
+				}
+			}
+		}
+		n.ForEachChild(walk)
+		return false
+	}
+	walk(n)
+	return found
 }
 
 // testedReads returns all the data a condition reads, skipping narrowing tests like tested. Unlike tested, a call
@@ -478,9 +612,15 @@ func (a *flowAnalysis) testedReads(n *ast.Node) []Value {
 			return a.testedReads(unary.Operand)
 		}
 	case ast.KindBinaryExpression:
-		binary := n.AsBinaryExpression()
-		if kind := binary.OperatorToken.Kind; kind == ast.KindAmpersandAmpersandToken || kind == ast.KindBarBarToken {
-			return append(a.testedReads(binary.Left), a.testedReads(binary.Right)...)
+		if kind := n.AsBinaryExpression().OperatorToken.Kind; kind == ast.KindAmpersandAmpersandToken || kind == ast.KindBarBarToken {
+			found := []Value{}
+			operands := parts(n, kind)
+			for i, operand := range operands {
+				if !a.m.narrowingAmong(operands, i, kind) {
+					found = append(found, a.testedReads(operand)...)
+				}
+			}
+			return found
 		}
 	}
 	return a.readsAll(n)

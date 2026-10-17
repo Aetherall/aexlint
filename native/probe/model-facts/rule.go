@@ -223,18 +223,18 @@ func (p *probe) function(f *model.Function) {
 	for _, t := range f.Answer {
 		answer = append(answer, t.Value.String()+" in "+claim(t.Claim))
 	}
-	domains := []string{}
+	narrowings := []string{}
 	for _, d := range f.Narrowings {
 		narrower := "own guard"
 		if d.Selector != "" {
 			narrower = "selector " + d.Selector
 		}
-		domains = append(domains, fmt.Sprintf("%s in %s by %s", d.Value.String(), claim(d.Claim), narrower))
+		narrowings = append(narrowings, fmt.Sprintf("%s in %s by %s", d.Value.String(), claim(d.Claim), narrower))
 	}
-	if f.Kind == model.PlainFunction && len(domains) == 0 {
+	if f.Kind == model.PlainFunction && len(narrowings) == 0 {
 		return
 	}
-	p.reportHead("function", f.Node, fmt.Sprintf("%s %s; answer [%s]; domains [%s]", f.Kind, f.Name, strings.Join(answer, ", "), strings.Join(domains, ", ")))
+	p.reportHead("function", f.Node, fmt.Sprintf("%s %s; answer [%s]; narrowings [%s]", f.Kind, f.Name, strings.Join(answer, ", "), strings.Join(narrowings, ", ")))
 }
 
 func (p *probe) guard(kind string, g model.Guard) {
