@@ -22,7 +22,7 @@ Our patches require a configured TypeScript project, add a persistent server, an
 ## Type-aware rules in the plugin
 
 - Each file's wrappers collect enabled rules and options. The first visitor requests whole-program results; later files reuse them for the same rule set.
-- On Unix, the plugin starts a backend at import time and communicates through FIFOs, even when only syntax rules are enabled. Starting it later can fail because Oxlint's large memory mapping prevents `fork()`. Startup is checked with a timeout. On Windows, each request runs the headless backend directly.
+- On Unix, the plugin starts a backend at import time and communicates through FIFOs, even when only syntax rules are enabled. Starting it later can fail because Oxlint's large memory mapping prevents `fork()`. Startup is checked with a timeout. A backend that exits or stops reading later fails the run; a backend still working is never timed out. On Windows, each request runs the headless backend directly.
 - Typed rule names come from the backend's `rules.json`, or from `src/rules.ts` when the backend is missing. A missing or failed backend only fails the run when a typed rule is enabled.
 - Responses use upstream headless V2 framing. The server adds a length frame around each request and response. Invalid frames and backend failures fail the lint run.
 - The upstream backend drops a diagnostic without notice when its message is not valid UTF-8. Compiler-internal symbol names start with `ast.InternalSymbolNamePrefix` (`\xFE`), so never put them in messages.

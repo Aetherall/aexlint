@@ -301,6 +301,47 @@ test("a backend server that exits at startup fails the run instead of hanging", 
   assert.ok(performance.now() - started < 5_000);
 });
 
+function fakeServer(root: string, lines: string[]): string {
+  const fake = join(root, "fake");
+  mkdirSync(fake, { recursive: true });
+  writeFileSync(join(fake, "rules.json"), JSON.stringify(["aexlint/type-probe"]));
+  const script = ["#!/bin/sh", 'exec 3<"$2" 4<>"$3"', ...lines, ""].join("\n");
+  writeFileSync(join(fake, "aexlint-typed"), script, { mode: 0o755 });
+  return join(fake, "aexlint-typed");
+}
+
+test("a backend server that exits after its split greeting fails the run instead of hanging", (t) => {
+  const { root, lint } = project(t);
+  const fake = fakeServer(root, [
+    "printf '\\005\\000\\000\\000' >&4",
+    "sleep 0.2",
+    "printf ready >&4",
+    "echo 'fake backend gave up' >&2",
+  ]);
+  const run = lint(["input.ts", "dependency.ts"], fake);
+  assert.equal(run.status, 1);
+  const messages = stoppedLast(run.diagnostics.map((item) => item.message));
+  assert.match(messages[0]!, /aexlint: The typed backend stopped: fake backend gave up$/);
+  assert.match(messages[1]!, /stopped earlier in this run, so this file was not linted/);
+});
+
+test("a backend server that stops reading requests fails the run instead of hanging", (t) => {
+  const { root, lint } = project(t);
+  const fake = fakeServer(root, [
+    "exec 3<&-",
+    "printf '\\005\\000\\000\\000ready' >&4",
+    "sleep 10",
+  ]);
+  const started = performance.now();
+  const run = lint(["input.ts"], fake);
+  assert.equal(run.status, 1);
+  assert.match(
+    run.diagnostics[0]!.message,
+    /aexlint: The typed backend stopped: no longer reading$/,
+  );
+  assert.ok(performance.now() - started < 5_000);
+});
+
 test("a backend that cannot be set up reports the same reason for every file", (t) => {
   const { root, lint } = project(t);
   const run = lint(["input.ts", "dependency.ts"], backend, { TMPDIR: join(root, "missing") });

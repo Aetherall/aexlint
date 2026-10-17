@@ -75,6 +75,7 @@ function logText(log: number): string {
 }
 
 const startTimeout = 10_000;
+const pause = new Int32Array(new SharedArrayBuffer(4));
 const readyFrame = Buffer.from([5, 0, 0, 0, ...Buffer.from("ready")]);
 
 const processTable = existsSync("/proc/self/stat");
@@ -90,35 +91,36 @@ function exited(pid: number | undefined): boolean {
   }
 }
 
-function readReady(probe: number): boolean {
-  const buffer = Buffer.alloc(readyFrame.length);
+function available(fd: number, buffer: Buffer, offset: number): number {
   try {
-    const read = readSync(probe, buffer, 0, buffer.length, null);
-    if (read === 0) return false;
-    if (!buffer.subarray(0, read).equals(readyFrame)) {
-      throw new Error("The typed backend server sent an unexpected greeting.");
-    }
-    return true;
+    return readSync(fd, buffer, offset, buffer.length - offset, null);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "EAGAIN") return false;
+    if ((error as NodeJS.ErrnoException).code === "EAGAIN") return 0;
     throw error;
   }
 }
 
 function awaitServer(path: string, pid: number | undefined, log: number): number {
-  const probe = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK);
-  const pause = new Int32Array(new SharedArrayBuffer(4));
+  const responses = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK);
+  const greeting = Buffer.alloc(readyFrame.length);
   const deadline = Date.now() + startTimeout;
+  let received = 0;
   try {
-    while (!readReady(probe)) {
+    for (;;) {
+      received += available(responses, greeting, received);
+      if (received === greeting.length) break;
       if (exited(pid) || Date.now() > deadline) {
         throw new Error(`The typed backend did not start: ${logText(log)}`);
       }
       Atomics.wait(pause, 0, 0, 5);
     }
-    return openSync(path, "r");
-  } finally {
-    closeSync(probe);
+    if (!greeting.equals(readyFrame)) {
+      throw new Error("The typed backend server sent an unexpected greeting.");
+    }
+    return responses;
+  } catch (error) {
+    closeSync(responses);
+    throw error;
   }
 }
 
@@ -128,40 +130,50 @@ function serveChannel(): Channel {
   const responsePath = join(directory, "responses");
   const fifo = spawnSync("mkfifo", [requestPath, responsePath]);
   if (fifo.status !== 0) throw new Error(`mkfifo failed: ${fifo.error?.message ?? fifo.stderr}`);
-  const requests = openSync(requestPath, "r+");
+  const opening = openSync(requestPath, "r+");
   const log = openSync(join(directory, "stderr"), "w+");
   const options: SpawnOptions = { stdio: ["ignore", "ignore", log], env: environment };
   const server = spawn(backend, ["serve", requestPath, responsePath], options);
   server.on("error", () => {});
   server.unref();
   process.once("exit", () => rmSync(directory, { recursive: true, force: true }));
-  let responses: number | null = null;
+  let channel: { requests: number; responses: number } | null = null;
   let stopped = false;
+  const stop = (reason: string) => {
+    stopped = true;
+    const output = logText(log);
+    closeSync(log);
+    return new Error(`The typed backend stopped: ${output || reason}`);
+  };
   return (input) => {
     if (stopped) {
       throw new Error(
         "The typed backend stopped earlier in this run, so this file was not linted.",
       );
     }
-    writeFrame(requests, input);
-    if (responses === null) {
+    if (channel === null) {
       try {
-        responses = awaitServer(responsePath, server.pid, log);
+        const responses = awaitServer(responsePath, server.pid, log);
+        const requests = openSync(requestPath, constants.O_WRONLY | constants.O_NONBLOCK);
+        channel = { requests, responses };
       } catch (error) {
         stopped = true;
         server.kill();
         throw error;
+      } finally {
+        closeSync(opening);
       }
       rmSync(directory, { recursive: true, force: true });
     }
-    const header = readFrame(responses);
-    const stdout = readFrame(responses);
-    if (!header || !stdout) {
-      stopped = true;
-      const output = logText(log);
-      closeSync(log);
-      throw new Error(`The typed backend stopped: ${output}`);
+    try {
+      writeFrame(channel.requests, input);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "EPIPE") throw stop("no longer reading");
+      throw error;
     }
+    const header = readFrame(channel.responses);
+    const stdout = readFrame(channel.responses);
+    if (!header || !stdout) throw stop("no response");
     return { result: JSON.parse(header.toString("utf8")) as ServeResult, stdout };
   };
 }
