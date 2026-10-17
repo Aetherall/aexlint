@@ -21,14 +21,6 @@ func (m *measure) line(node *ast.Node) int {
 	return scanner.GetECMALineOfPosition(file, utils.TrimNodeTextRange(file, node).Pos()) + 1
 }
 
-func (m *measure) text(node *ast.Node) string {
-	text := m.ctx.SourceFile.Text()[utils.TrimNodeTextRange(m.ctx.SourceFile, node).Pos():node.End()]
-	if len(text) > 40 {
-		return text[:37] + "..."
-	}
-	return text
-}
-
 func className(class *ast.Node) string {
 	if name := class.Name(); name != nil {
 		return name.Text()
@@ -128,7 +120,7 @@ func (m *measure) report(argument *ast.Node, check *model.Rejection, class *ast.
 	m.ctx.ReportNode(argument, rule.RuleMessage{
 		Id: "checkedBeforeHandOff",
 		Description: fmt.Sprintf("`%s` is checked at line %d, then handed to `%s`, which stores it without that check.",
-			m.text(argument), m.line(check.Node), callee),
+			model.Text(argument, 40), m.line(check.Node), callee),
 		Help: fmt.Sprintf("The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `%s` is not held to it. %s This often means `%s`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.",
 			name, fact, name),
 	})

@@ -1010,6 +1010,11 @@ no-caller-enforced-invariant/reported/injected-service-check.ts:6:26 aexlint(no-
   `command.crewId` is checked at line 5, then handed to `Ranger.enlist`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Ranger` is not held to it. The check also reads part of `this.registrations`, which `Ranger.enlist` does not receive. This often means `Ranger`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
+no-caller-enforced-invariant/reported/multibyte-argument.ts:9:23 aexlint(no-caller-enforced-invariant)
+  ~ { site, by: actor.userId, note: "été" }
+  `{ site, by: actor.userId, note: "ét...` is checked at line 8, then handed to `Leaflet.send`, which stores it without that check.
+  help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Leaflet` is not held to it. The check also reads part of `command.actor`, which `Leaflet.send` does not receive. This often means `Leaflet`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+
 no-caller-enforced-invariant/reported/nested-check.ts:6:22 aexlint(no-caller-enforced-invariant)
   ~ query.owner
   `query.owner` is checked at line 4, then handed to `Response.of`, which stores it without that check.
