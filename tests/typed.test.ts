@@ -208,8 +208,24 @@ test("without a backend, syntax rules run and typed rules fail with the reason",
   configure({ "aexlint/prefer-truthy-presence-check": "error" });
   const typed = lint(["input.ts"], missing);
   assert.equal(typed.status, 1);
-  assert.match(typed.output, /aexlint: The typed backend is missing for /);
+  assert.match(
+    typed.output,
+    /aexlint: The typed backend at .*missing.* or its rules\.json is missing\./,
+  );
   assert.doesNotMatch(typed.output, /\n\s+at /);
+  const fake = join(root, "fake");
+  mkdirSync(fake);
+  writeFileSync(join(fake, backendExecutable()), "", { mode: 0o755 });
+  writeFileSync(join(fake, "rules.json"), "{");
+  const malformedBackend = join(fake, backendExecutable());
+  configure({ "aexlint/max-expression-depth": ["error", { max: 1 }] });
+  assert.deepEqual(codes(lint(["input.ts"], malformedBackend)), [
+    "input.ts aexlint(max-expression-depth)",
+  ]);
+  configure({ "aexlint/prefer-truthy-presence-check": "error" });
+  const malformed = lint(["input.ts"], malformedBackend);
+  assert.equal(malformed.status, 1);
+  assert.match(malformed.output, /aexlint: The typed backend's rules\.json is invalid: /);
 });
 
 test("an invalid option stops the backend once, with its reason and no stack trace", (t) => {

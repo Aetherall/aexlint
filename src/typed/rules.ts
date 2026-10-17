@@ -53,7 +53,16 @@ function withoutStack<T>(run: () => T): T {
 }
 
 const backend = process.env.AEXLINT_TYPED_BACKEND || defaultBackend();
-const manifest = ruleManifest(backend);
+
+function readManifest(): { names: string[] | null; failure: Error | null } {
+  try {
+    return { names: ruleManifest(backend), failure: null };
+  } catch (error) {
+    return { names: null, failure: error as Error };
+  }
+}
+
+const { names: manifest, failure: manifestFailure } = readManifest();
 const environment = {
   ...process.env,
   OXLINT_TSGOLINT_DANGEROUSLY_SUPPRESS_PROGRAM_DIAGNOSTICS: "true",
@@ -186,10 +195,13 @@ function serveChannel(): Channel {
 
 function start(): Channel {
   if (!manifest) {
+    const reason = manifestFailure
+      ? manifestFailure.message
+      : process.env.AEXLINT_TYPED_BACKEND
+        ? `The typed backend at ${backend} or its rules.json is missing.`
+        : `The typed backend is missing for ${process.platform}-${process.arch}. Build with pnpm build, or install a complete release package.`;
     return () => {
-      throw new Error(
-        `The typed backend is missing for ${process.platform}-${process.arch}. Build with pnpm build, or install a complete release package.`,
-      );
+      throw new Error(reason);
     };
   }
   if (process.platform === "win32") return directChannel;

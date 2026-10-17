@@ -18,9 +18,16 @@ export function defaultBackend(): string {
 export function ruleManifest(backend = defaultBackend()): string[] | null {
   const manifest = join(dirname(backend), "rules.json");
   if (!existsSync(backend) || !existsSync(manifest)) return null;
-  const names: unknown = JSON.parse(readFileSync(manifest, "utf8"));
+  let names: unknown;
+  try {
+    names = JSON.parse(readFileSync(manifest, "utf8"));
+  } catch (error) {
+    throw new Error(`The typed backend's rules.json is invalid: ${(error as Error).message}`, {
+      cause: error,
+    });
+  }
   if (!Array.isArray(names) || !names.every((name) => typeof name === "string")) {
-    throw new Error("Invalid native rule manifest.");
+    throw new Error("The typed backend's rules.json is invalid: expected a list of rule names.");
   }
   return names;
 }
