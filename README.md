@@ -22,6 +22,7 @@ pnpx @aetherall/aexlint check src --typed --format json
 | `max-call-assembly`         | width 60, 3 outside names |
 | `max-interpretation-spread` | 4                         |
 | `max-projection-spread`     | 2                         |
+| `no-fact-outside-owner`     | 4                         |
 
 The limits are starting points, not validated thresholds. For other limits or a subset of rules, use the plugin.
 

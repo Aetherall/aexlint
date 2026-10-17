@@ -790,7 +790,7 @@ max-interpretation-spread/max-1/no-check-in-file/consumer2.ts:2:34 aexlint(max-i
   `Kind` ("blizzard" | "flurry" | "slush") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/no-check-in-file/consumer0.ts, max-interpretation-spread/max-1/no-check-in-file/consumer1.ts. Declared as: Kind (max-interpretation-spread/max-1/no-check-in-file/kinds.ts).
 
-max-interpretation-spread/max-1/numbers/consumer0.ts:2:50 aexlint(max-interpretation-spread)
+max-interpretation-spread/max-1/numbers/consumer0.ts:1:50 aexlint(max-interpretation-spread)
   ~ status
   `status` (9101 | 9102 | 9103) is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/numbers/file.ts. Declared as: status (max-interpretation-spread/max-1/numbers/consumer0.ts), status (max-interpretation-spread/max-1/numbers/file.ts).
