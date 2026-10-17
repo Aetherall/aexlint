@@ -805,19 +805,12 @@ func (a *flowAnalysis) visit(n *ast.Node, guards []*ast.Node, inTry bool) {
 	case ast.KindIfStatement:
 		statement := n.AsIfStatement()
 		a.visit(statement.Expression, guards, inTry)
-		then := guards
-		switch {
-		case a.m.Narrowing(statement.Expression):
-			then = nil
-		case a.reads(statement.Expression):
-			then = append(append([]*ast.Node{}, guards...), statement.Expression)
-		}
-		a.visit(statement.ThenStatement, then, inTry)
-		otherwise := guards
+		inner := guards
 		if a.reads(statement.Expression) && !a.m.Narrowing(statement.Expression) {
-			otherwise = then
+			inner = append(append([]*ast.Node{}, guards...), statement.Expression)
 		}
-		a.visit(statement.ElseStatement, otherwise, inTry)
+		a.visit(statement.ThenStatement, inner, inTry)
+		a.visit(statement.ElseStatement, inner, inTry)
 		return
 	case ast.KindSwitchStatement:
 		statement := n.AsSwitchStatement()

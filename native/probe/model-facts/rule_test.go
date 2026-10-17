@@ -339,6 +339,11 @@ export function parse(input: string, limit: number) {
   if (!/^[a-z]+$/.test(name)) throw new Error("pattern");
   return [value, name, count];
 }`, Options: only("rejection"), Errors: facts("rejection", 4)},
+			{Code: `export function read(input: { kind: "a" | "b"; extra?: string }) {
+  if (input.kind === "a") { if (input.extra !== undefined) throw new Error("then"); }
+  if (input.kind === "b") { if (input.extra === undefined) {} else throw new Error("else"); }
+  return input;
+}`, Options: only("rejection"), Errors: facts("rejection", 2)},
 			{Code: `type Pet = { kind: "cat"; lives: number } | { kind: "dog"; good: boolean };
 export function isCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat"; }
 export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }
