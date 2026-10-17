@@ -47,12 +47,12 @@ const (
 
 // Branch is an arm of a decision: Claim holds where it runs. Tested is false for the arm reached when no test holds.
 type Branch struct {
-	Claim    Claim
-	Complete bool
-	Tested   bool
-	Body     []*ast.Node
-	Outcome  Outcome
-	Logic    []*ast.Node
+	Claim       Claim
+	Complete    bool
+	Tested      bool
+	Body        []*ast.Node
+	Outcome     Outcome
+	ControlFlow []*ast.Node
 }
 
 type Decision struct {
@@ -75,10 +75,10 @@ type Decision struct {
 	Alternative []*ast.Node
 }
 
-// Domain is a guard a function makes on a literal-valued part of a parameter before its work, possibly through a
+// EntryNarrowing is a guard a function makes on a literal-valued part of a parameter before its work, possibly through a
 // forwarding call, and who narrows it: its own guard, or a sibling selector whose answer already implies it. Its test
 // claims what holds after the guard.
-type Domain struct {
+type EntryNarrowing struct {
 	Test
 	Property  string
 	Selector  string
@@ -89,13 +89,13 @@ type Domain struct {
 // Function is a function with a body. A selector or predicate answers a question about its parameters: Answer holds
 // when it returns true.
 type Function struct {
-	ID      int
-	Node    *ast.Node
-	Line    int
-	Name    string
-	Kind    FunctionKind
-	Answer  []Test
-	Domains []Domain
+	ID         int
+	Node       *ast.Node
+	Line       int
+	Name       string
+	Kind       FunctionKind
+	Answer     []Test
+	Narrowings []EntryNarrowing
 }
 
 // Gate is a selector and a handler of one object or class whose first parameters have the same type: code calling the
@@ -118,11 +118,11 @@ type builder struct {
 	m        *Analyzer
 	source   *ast.SourceFile
 	ids      map[*ast.Node]int
-	analyzed map[*ast.Node][]Domain
+	analyzed map[*ast.Node][]EntryNarrowing
 }
 
 func newBuilder(a *Analyzer, source *ast.SourceFile) *builder {
-	md := &builder{File: File{Functions: []*Function{}, Decisions: []*Decision{}}, m: a, source: source, ids: map[*ast.Node]int{}, analyzed: map[*ast.Node][]Domain{}}
+	md := &builder{File: File{Functions: []*Function{}, Decisions: []*Decision{}}, m: a, source: source, ids: map[*ast.Node]int{}, analyzed: map[*ast.Node][]EntryNarrowing{}}
 	root := source.AsNode()
 	md.collectFunctions(root)
 	md.visit(root)
@@ -144,7 +144,7 @@ func Build(a *Analyzer) *File {
 		md.selector(f)
 	}
 	for _, f := range md.Functions {
-		f.Domains = md.entryDomains(f.Node)
+		f.Narrowings = md.entryNarrowings(f.Node)
 	}
 	md.containers(root)
 	return &md.File
@@ -245,7 +245,7 @@ func breaks(n *ast.Node) bool {
 	return n.ForEachChild(breaks)
 }
 
-func logic(nodes []*ast.Node) []*ast.Node {
+func controlFlow(nodes []*ast.Node) []*ast.Node {
 	found := []*ast.Node{}
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
@@ -306,10 +306,10 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		}
 		complete := pure && len(a.claim.And(covered).Accepted) == 0
 		covered = covered.Or(a.claim)
-		d.Arms = append(d.Arms, Branch{Claim: a.claim, Complete: complete, Tested: true, Body: a.body, Outcome: md.m.OutcomeOf(a.body, value, tested), Logic: logic(a.body)})
+		d.Arms = append(d.Arms, Branch{Claim: a.claim, Complete: complete, Tested: true, Body: a.body, Outcome: md.m.OutcomeOf(a.body, value, tested), ControlFlow: controlFlow(a.body)})
 	}
 	if alternative != nil && pure {
-		d.Arms = append(d.Arms, Branch{Claim: covered.Not().And(left), Complete: true, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), Logic: logic(alternative)})
+		d.Arms = append(d.Arms, Branch{Claim: covered.Not().And(left), Complete: true, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), ControlFlow: controlFlow(alternative)})
 	}
 	work := 0
 	for _, a := range d.Arms {
@@ -667,17 +667,17 @@ func (md *builder) answer(fn, e *ast.Node, depth int) []Test {
 	return out
 }
 
-func (md *builder) entryDomains(fn *ast.Node) []Domain {
+func (md *builder) entryNarrowings(fn *ast.Node) []EntryNarrowing {
 	if d, ok := md.analyzed[fn]; ok {
 		return d
 	}
 	md.analyzed[fn] = nil
-	domains := []Domain{}
+	domains := []EntryNarrowing{}
 	for _, e := range md.m.Entries(fn) {
 		if e.Test.Claim.Presence() {
 			continue
 		}
-		domains = append(domains, Domain{Test: Test{Node: e.Test.Node, Value: e.Test.Value, Claim: e.Claim}, Property: md.label(e.Test.Value.Node)})
+		domains = append(domains, EntryNarrowing{Test: Test{Node: e.Test.Node, Value: e.Test.Value, Claim: e.Claim}, Property: md.label(e.Test.Value.Node)})
 	}
 	if len(domains) == 0 {
 		domains = md.passthrough(fn)
@@ -686,7 +686,7 @@ func (md *builder) entryDomains(fn *ast.Node) []Domain {
 	return domains
 }
 
-func (md *builder) passthrough(fn *ast.Node) []Domain {
+func (md *builder) passthrough(fn *ast.Node) []EntryNarrowing {
 	body := fn.Body()
 	if body == nil {
 		return nil
@@ -695,7 +695,7 @@ func (md *builder) passthrough(fn *ast.Node) []Domain {
 	if call = Unwrap(call); call == nil || call.Kind != ast.KindCallExpression {
 		return nil
 	}
-	out := []Domain{}
+	out := []EntryNarrowing{}
 	for _, argument := range call.Arguments() {
 		if _, ok := md.m.parameterOf(fn, argument); !ok {
 			continue
@@ -704,7 +704,7 @@ func (md *builder) passthrough(fn *ast.Node) []Domain {
 		if !ok {
 			continue
 		}
-		for _, d := range md.entryDomains(b.Callee) {
+		for _, d := range md.entryNarrowings(b.Callee) {
 			if v, ok := md.m.Outward(b, d.Value); ok {
 				d.Value = v
 				d.Node = call
@@ -775,8 +775,8 @@ func (md *builder) siblings(container *ast.Node, members []*ast.Node) {
 			}
 			g := Gate{Selector: sf, Handler: hf, Names: [2]string{s.name, h.name}, Container: container}
 			md.Gates = append(md.Gates, g)
-			for i := range hf.Domains {
-				if d := &hf.Domains[i]; md.implies(g, *d) {
+			for i := range hf.Narrowings {
+				if d := &hf.Narrowings[i]; md.implies(g, *d) {
 					d.Selector, d.Handler, d.Container = s.name, h.name, container
 				}
 			}
@@ -786,7 +786,7 @@ func (md *builder) siblings(container *ast.Node, members []*ast.Node) {
 
 // implies reports whether the selector's answer across g already ensures what d lets through: a test of the same part
 // of the first parameter accepting only values d accepts.
-func (md *builder) implies(g Gate, d Domain) bool {
+func (md *builder) implies(g Gate, d EntryNarrowing) bool {
 	selector, handler := g.Selector.Node.Parameters()[0].Symbol(), g.Handler.Node.Parameters()[0].Symbol()
 	if d.Value.Root != handler || d.Value.This != nil || d.Value.Base != nil {
 		return false

@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "check", "contract"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -199,7 +199,7 @@ func (p *probe) decision(d *model.Decision) {
 		if b.Tested {
 			flags = append(flags, "tested")
 		}
-		arms = append(arms, fmt.Sprintf("%s %s -> %s, logic %d, built %d", claim(b.Claim), strings.Join(flags, " "), outcome, len(b.Logic), len(p.a.Built(d, b))))
+		arms = append(arms, fmt.Sprintf("%s %s -> %s, control flow %d, built %d", claim(b.Claim), strings.Join(flags, " "), outcome, len(b.ControlFlow), len(p.a.Built(d, b))))
 	}
 	owner := "none"
 	if d.Owner != nil {
@@ -224,7 +224,7 @@ func (p *probe) function(f *model.Function) {
 		answer = append(answer, t.Value.String()+" in "+claim(t.Claim))
 	}
 	domains := []string{}
-	for _, d := range f.Domains {
+	for _, d := range f.Narrowings {
 		narrower := "own guard"
 		if d.Selector != "" {
 			narrower = "selector " + d.Selector
@@ -285,17 +285,17 @@ func indexed(m map[int][]model.Value) string {
 
 func (p *probe) flow(fn *ast.Node) {
 	f := p.a.Flow(fn)
-	if f == nil || len(f.Checks) == 0 && len(f.Calls) == 0 && len(f.Results) == 0 {
+	if f == nil || len(f.Rejections) == 0 && len(f.Calls) == 0 && len(f.Results) == 0 {
 		return
 	}
 	checks := []string{}
-	for _, c := range f.Checks {
+	for _, c := range f.Rejections {
 		owned := ""
 		if c.Owned {
 			owned = " owned"
 		}
 		checks = append(checks, fmt.Sprintf("%s checks %s reads %s%s", model.Text(c.Node, 40), values(c.Checked), values(c.Read), owned))
-		p.report("check", c.Node, fmt.Sprintf("check; checks %s reads %s%s", values(c.Checked), values(c.Read), owned))
+		p.report("rejection", c.Node, fmt.Sprintf("rejection; on %s reads %s%s", values(c.Checked), values(c.Read), owned))
 	}
 	calls := []string{}
 	for _, c := range f.Calls {
@@ -307,13 +307,13 @@ func (p *probe) flow(fn *ast.Node) {
 		if c.Thrown {
 			thrown = " thrown"
 		}
-		calls = append(calls, fmt.Sprintf("%s with %s after %d checks%s", model.Text(c.Node, 40), strings.Join(arguments, " "), len(c.Checks), thrown))
+		calls = append(calls, fmt.Sprintf("%s with %s after %d rejections%s", model.Text(c.Node, 40), strings.Join(arguments, " "), len(c.Rejections), thrown))
 	}
 	carried := []string{}
 	for _, index := range slices.Sorted(maps.Keys(f.Carried)) {
 		carried = append(carried, fmt.Sprint(index))
 	}
-	p.reportHead("flow", fn, fmt.Sprintf("flow; checks [%s]; calls [%s]; results %s; carried [%s]; checked {%s}; read {%s}",
+	p.reportHead("flow", fn, fmt.Sprintf("flow; rejections [%s]; calls [%s]; results %s; carried [%s]; rejected {%s}; read {%s}",
 		strings.Join(checks, " / "), strings.Join(calls, " / "), values(f.Results), strings.Join(carried, ", "), indexed(f.Checked), indexed(f.Read)))
 }
 

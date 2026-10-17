@@ -225,7 +225,7 @@ export class Shelf {
   const short = id;
   if (short.length > 10) throw new Error("long");
   return name;
-}`, Options: only("check"), Errors: facts("check", 1)},
+}`, Options: only("rejection"), Errors: facts("rejection", 1)},
 			{Code: `import type { Size } from "./items.js";
 const declared: readonly Size[] = ["S", "M"];
 const literal = ["S", "M"] as const;
@@ -320,7 +320,7 @@ export function parse(input: string, limit: number) {
   try { if (!input) throw new Error("empty"); } catch {}
   try { if (input === "x") throw new Error("reserved"); } finally { validate(input); }
   return input;
-}`, Options: only("check"), Errors: facts("check", 2)},
+}`, Options: only("rejection"), Errors: facts("rejection", 2)},
 			{Code: `type Pet = { kind: "cat"; lives: number } | { kind: "dog"; good: boolean };
 export function isCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat"; }
 export function isOldCat(pet: Pet): pet is Extract<Pet, { kind: "cat" }> { return pet.kind === "cat" && pet.lives !== 9; }

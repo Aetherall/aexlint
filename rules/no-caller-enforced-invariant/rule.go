@@ -62,7 +62,7 @@ func (m *measure) check(fn *ast.Node) {
 		return
 	}
 	for _, call := range f.Calls {
-		if len(call.Checks) == 0 || call.Thrown {
+		if len(call.Rejections) == 0 || call.Thrown {
 			continue
 		}
 		class, declaration := m.a.Member(call.Node)
@@ -75,7 +75,7 @@ func (m *measure) check(fn *ast.Node) {
 				continue
 			}
 			unchanged := model.Exact(call.Arguments[index])
-			for _, check := range call.Checks {
+			for _, check := range call.Rejections {
 				if !model.Definite(check.Read, unchanged) || !m.a.Precedes(check.Node, call.Node) || m.a.Exclusive(check.Node, call.Node) {
 					continue
 				}
@@ -105,7 +105,7 @@ func (m *measure) handed(call model.Call, declaration *ast.Node) [][]model.Value
 
 // uncovered returns the first datum a check reads that is not handed to the class, or false when every one is, so the
 // class could make the check itself.
-func uncovered(check *model.Check, handed [][]model.Value) (model.Value, bool) {
+func uncovered(check *model.Rejection, handed [][]model.Value) (model.Value, bool) {
 	for i := range check.Read {
 		found := false
 		for _, argument := range handed {
@@ -118,7 +118,7 @@ func uncovered(check *model.Check, handed [][]model.Value) (model.Value, bool) {
 	return model.Value{}, false
 }
 
-func (m *measure) report(argument *ast.Node, check *model.Check, class *ast.Node, declaration *ast.Node, handed [][]model.Value) {
+func (m *measure) report(argument *ast.Node, check *model.Rejection, class *ast.Node, declaration *ast.Node, handed [][]model.Value) {
 	callee := calleeName(class, declaration)
 	name := className(class)
 	fact := fmt.Sprintf("The check reads only data `%s` receives.", callee)

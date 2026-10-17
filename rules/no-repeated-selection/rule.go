@@ -30,7 +30,7 @@ var Rule = rule.Rule{
 		file := model.Build(analyzer)
 		for _, f := range file.Functions {
 			reported := map[*ast.Symbol]bool{}
-			for _, d := range f.Domains {
+			for _, d := range f.Narrowings {
 				if d.Selector == "" || reported[d.Value.Root] {
 					continue
 				}

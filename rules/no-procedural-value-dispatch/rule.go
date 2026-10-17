@@ -26,7 +26,7 @@ func report(ctx rule.RuleContext, d *model.Decision) {
 			continue
 		}
 		tested++
-		if len(a.Logic) > 0 {
+		if len(a.ControlFlow) > 0 {
 			procedural = append(procedural, a.Claim.Vocabulary.Display(a.Claim.Accepted))
 		}
 	}

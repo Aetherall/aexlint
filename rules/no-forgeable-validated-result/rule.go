@@ -33,7 +33,7 @@ func displayName(fn *ast.Node) string {
 	return "(anonymous function)"
 }
 
-func (m *measure) evidence(found *model.Check) string {
+func (m *measure) evidence(found *model.Rejection) string {
 	if found.Callee == nil {
 		return fmt.Sprintf("throw at line %d.", m.line(found.Node))
 	}
@@ -78,8 +78,8 @@ func (m *measure) check(n *ast.Node) {
 	if f == nil {
 		return
 	}
-	var found *model.Check
-	for _, candidate := range f.Checks {
+	var found *model.Rejection
+	for _, candidate := range f.Rejections {
 		if len(candidate.Checked) > 0 && model.Overlapping(candidate.Checked, f.Results) {
 			found = candidate
 			break

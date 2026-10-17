@@ -10,40 +10,40 @@ import (
 	"github.com/microsoft/typescript-go/shim/checker"
 )
 
-// Check is a place in a function body that rejects input: a throw under conditions reading input, or a call to a
-// function that checks what it receives. Its claim is not read; it is known by its data. Checked is the input its
-// conditions, or the arguments the callee checks, are built from; Read is all the data its conditions read, including
+// Rejection is a place in a function body that rejects input: a throw under conditions reading input, or a call to a
+// function that rejects what it receives. Its claim is not read; it is known by its data. Checked is the input its
+// conditions, or the arguments the callee rejects, are built from; Read is all the data its conditions read, including
 // data passed into calls whose result they test, and for a method call, an unknown part of its receiver.
-type Check struct {
+type Rejection struct {
 	Node    *ast.Node
 	Callee  *ast.Node
 	Checked []Value
 	Read    []Value
-	// Owned marks a check made by constructing a value whose type keeps the check: it belongs to that type, not to the
+	// Owned marks a rejection made by constructing a value whose type keeps the rejection: it belongs to that type, not to the
 	// function handing data on.
 	Owned bool
 }
 
 // Call is a call or construction in a function body, the input data and the data read through this that each argument
-// carries, and the checks reading data, not owned by a type, that precede it in source order. Thrown marks a call
+// carries, and the rejections reading data, not owned by a type, that precede it in source order. Thrown marks a call
 // building what a throw raises.
 type Call struct {
-	Thrown    bool
-	Node      *ast.Node
-	Arguments [][]Value
-	Checks    []*Check
+	Thrown     bool
+	Node       *ast.Node
+	Arguments  [][]Value
+	Rejections []*Rejection
 }
 
-// Flow is what a function does with its input, its parameters and the locals derived from them: the checks it makes,
+// Flow is what a function does with its input, its parameters and the locals derived from them: the rejections it makes,
 // the calls it passes data to, and the data it returns.
 type Flow struct {
-	// Checks lists every check in source order, including those whose checked data is not input.
-	Checks []*Check
-	Calls  []Call
+	// Rejections lists every rejection in source order, including those whose checked data is not input.
+	Rejections []*Rejection
+	Calls      []Call
 	// Results is the input data its return statements read, and Carried the parameters among them.
 	Results []Value
 	Carried map[int]bool
-	// Checked and Read give, by parameter position, the data its checks are built from and read, relative to it.
+	// Checked and Read give, by parameter position, the data its rejections are built from and read, relative to it.
 	Checked map[int][]Value
 	Read    map[int][]Value
 }
@@ -74,7 +74,7 @@ type flowAnalysis struct {
 	params map[*ast.Symbol]int
 	// direct marks parameters declared by an identifier rather than a binding pattern.
 	direct map[*ast.Symbol]bool
-	found  []*Check
+	found  []*Rejection
 	calls  []call
 	result []Value
 }
@@ -376,7 +376,7 @@ func (a *flowAnalysis) store(target *ast.Node, values []*ast.Node) {
 }
 
 // storeCall records a method call on a local as storing its arguments into it: for a project constructor or method,
-// only the arguments at parameters it stores into its class's state, so a check stores nothing; for a library method
+// only the arguments at parameters it stores into its class's state, so a rejection stores nothing; for a library method
 // such as `values.push(value)`, every argument.
 func (a *flowAnalysis) storeCall(n *ast.Node) {
 	values := n.Arguments()
@@ -527,8 +527,8 @@ func (a *flowAnalysis) allReads(n *ast.Node) []Value {
 	return values
 }
 
-// call records a check when a call or new expression passes input to a project function that checks its parameters
-// at those positions. Calls to type guards and assertion functions are narrowing tests, not checks.
+// call records a rejection when a call or new expression passes input to a project function that rejects on its parameters
+// at those positions. Calls to type guards and assertion functions are narrowing tests, not rejections.
 func (a *flowAnalysis) call(n *ast.Node) {
 	arguments := n.Arguments()
 	if !slices.ContainsFunc(arguments, a.reads) {
@@ -554,10 +554,10 @@ func (a *flowAnalysis) call(n *ast.Node) {
 		read = append(read, partial(a.readsAll(receiver.Expression()))...)
 	}
 	if a.m.Unforgeable(a.m.Unwrap(a.m.ctx.TypeChecker.GetTypeAtLocation(n))) {
-		a.found = append(a.found, &Check{Node: n, Callee: declaration, Read: read, Owned: true})
+		a.found = append(a.found, &Rejection{Node: n, Callee: declaration, Read: read, Owned: true})
 		return
 	}
-	a.found = append(a.found, &Check{Node: n, Callee: declaration, Checked: a.mapped(arguments, callee.Checked), Read: read})
+	a.found = append(a.found, &Rejection{Node: n, Callee: declaration, Checked: a.mapped(arguments, callee.Checked), Read: read})
 }
 
 // mapped returns the parts of each argument that a callee checks of the parameter at its position, or some part of an
@@ -602,7 +602,7 @@ func (a *flowAnalysis) visit(n *ast.Node, guards []*ast.Node, inTry bool) {
 				checked = append(checked, a.tested(guard)...)
 				read = append(read, a.testedReads(guard)...)
 			}
-			a.found = append(a.found, &Check{Node: n, Checked: checked, Read: read})
+			a.found = append(a.found, &Rejection{Node: n, Checked: checked, Read: read})
 		}
 		return
 	case ast.KindReturnStatement:
@@ -706,7 +706,7 @@ func (a *flowAnalysis) visitChildren(n *ast.Node, guards []*ast.Node, inTry bool
 }
 
 // inputs keeps the values rooted at input, and with withContext, those read through this. Data obtained without the
-// input, such as the current time, does not connect a check to the result.
+// input, such as the current time, does not connect a rejection to the result.
 func (a *flowAnalysis) inputs(values []Value, withContext bool) []Value {
 	kept := []Value{}
 	for _, v := range values {
@@ -765,7 +765,7 @@ func (m *Analyzer) Flow(fn *ast.Node) *Flow {
 			f.Carried[index] = true
 		}
 	}
-	f.Checks = a.found
+	f.Rejections = a.found
 	for _, found := range a.found {
 		found.Checked = a.inputs(found.Checked, false)
 		found.Read = a.inputs(found.Read, true)
@@ -779,7 +779,7 @@ func (m *Analyzer) Flow(fn *ast.Node) *Flow {
 		}
 		for _, found := range a.found[:site.prior] {
 			if len(found.Read) > 0 && !found.Owned {
-				c.Checks = append(c.Checks, found)
+				c.Rejections = append(c.Rejections, found)
 			}
 		}
 		f.Calls = append(f.Calls, c)
@@ -806,15 +806,15 @@ func encloses(outer *ast.Node, inner *ast.Node) bool {
 	return outer.Pos() <= inner.Pos() && inner.End() <= outer.End()
 }
 
-// leaves reports whether a statement list ends by leaving it, through a statement that does not contain check: the
-// check's own throw ending its guard does not count.
-func (m *Analyzer) leaves(list []*ast.Node, check *ast.Node) bool {
-	return len(list) > 0 && m.exits(list[len(list)-1]) && !encloses(list[len(list)-1], check)
+// leaves reports whether a statement list ends by leaving it, through a statement that does not contain the rejection: the
+// rejection's own throw ending its guard does not count.
+func (m *Analyzer) leaves(list []*ast.Node, rejection *ast.Node) bool {
+	return len(list) > 0 && m.exits(list[len(list)-1]) && !encloses(list[len(list)-1], rejection)
 }
 
-// Precedes reports whether a check can run before a call on the way to it: the statement holding the check comes
-// before the call in a statement list enclosing both, and no statement list between the check and that statement ends
-// by leaving it, as a branch that returns does. A check nested in conditions still precedes a call after them.
+// Precedes reports whether a rejection can run before a call on the way to it: the statement holding the rejection comes
+// before the call in a statement list enclosing both, and no statement list between the rejection and that statement ends
+// by leaving it, as a branch that returns does. A rejection nested in conditions still precedes a call after them.
 func (m *Analyzer) Precedes(check *ast.Node, call *ast.Node) bool {
 	for list := call.Parent; list != nil; list = list.Parent {
 		if statementList(list) == nil || !encloses(list, check) {

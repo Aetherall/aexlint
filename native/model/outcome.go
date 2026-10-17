@@ -70,9 +70,9 @@ func armStatements(body []*ast.Node) []*ast.Node {
 	return statements
 }
 
-// KeepsResult reports whether an arm leaves a result in a local of its function declared outside it, rather than returning
+// AssignsLocal reports whether an arm leaves a result in a local of its function declared outside it, rather than returning
 // it: the function goes on to use what the arm produced.
-func (m *Analyzer) KeepsResult(body []*ast.Node) bool {
+func (m *Analyzer) AssignsLocal(body []*ast.Node) bool {
 	statements := armStatements(body)
 	found := false
 	var walk func(*ast.Node) bool
