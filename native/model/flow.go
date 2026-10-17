@@ -88,12 +88,8 @@ func partial(values []Value) []Value {
 	return parts
 }
 
-// symbol returns the symbol an identifier refers to. The name of a shorthand property refers to the variable it reads.
 func (a *flowAnalysis) symbol(n *ast.Node) *ast.Symbol {
-	if parent := n.Parent; parent != nil && parent.Kind == ast.KindShorthandPropertyAssignment && parent.Name() == n {
-		return a.m.ctx.TypeChecker.GetShorthandAssignmentValueSymbol(parent)
-	}
-	return a.m.ctx.TypeChecker.GetSymbolAtLocation(n)
+	return a.m.SymbolOf(n)
 }
 
 // names returns the symbols a binding name declares.

@@ -10,7 +10,8 @@ import (
 
 func embedded(a *model.Analyzer, d *model.Decision, b model.Branch) bool {
 	reads := b.Outcome.Source == model.PartsResult || b.Outcome.Source == model.MixedResult
-	return b.Tested && reads && a.KeepsResult(b.Body) && len(a.VariantReads(d, b)) > 0
+	projection := !b.Outcome.Effects && a.OnlyReturned(d, b)
+	return b.Tested && reads && a.KeepsResult(b.Body) && len(a.VariantReads(d, b)) > 0 && !projection
 }
 
 func report(ctx rule.RuleContext, a *model.Analyzer, d *model.Decision) {

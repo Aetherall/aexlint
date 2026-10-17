@@ -46,9 +46,10 @@ function soundOf(instrument: Instrument): Sound | undefined {
 - The tested object's type is a union, and a tested branch reads a field that only some of its members have: content of a variant, not fields every variant shares.
 - That branch keeps its result in a local declared outside it, so the surrounding code goes on to use it.
 - Branches that return their result, run effects, pass the whole value to a handler, or read only shared fields are accepted. A mode flag on an object that is not a union is not a variant.
+- A branch without effects whose kept locals are each read once afterwards, inside what the function returns, is accepted: the function is then itself the projection.
 
 ## Reporting and limits
 
 Reports `embeddedTranslation` once per decision, on its subject; help lists the values of the embedded branches. No fixes.
 
-A branch whose fields only feed an effect, such as `list.push(x.name)` with nothing kept, is not reported. A returned result that mixes the variant's fields with other state is accepted. A kept local used once afterwards, returned or passed to a constructor, is still reported, although the function is then already a projection.
+A branch whose fields only feed an effect, such as `list.push(x.name)` with nothing kept, is not reported. A returned result that mixes the variant's fields with other state is accepted.

@@ -427,3 +427,62 @@ func (m *Analyzer) VariantReads(d *Decision, b Branch) []string {
 	}
 	return reads
 }
+
+// OnlyReturned reports whether every local an arm of d keeps is read exactly once after d, inside what its function
+// returns: the function builds its result through the local and is then itself the projection.
+func (m *Analyzer) OnlyReturned(d *Decision, b Branch) bool {
+	statements := armStatements(b.Body)
+	symbols := []*ast.Symbol{}
+	var collect func(*ast.Node) bool
+	collect = func(n *ast.Node) bool {
+		if ast.IsFunctionLike(n) || ast.IsClassLike(n) || n.Kind == ast.KindReturnStatement {
+			return false
+		}
+		if m.kept(n, statements) != nil {
+			left := Unwrap(Unwrap(n.Expression()).AsBinaryExpression().Left)
+			if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(left); symbol != nil && !slices.Contains(symbols, symbol) {
+				symbols = append(symbols, symbol)
+			}
+			return false
+		}
+		n.ForEachChild(collect)
+		return false
+	}
+	for _, statement := range statements {
+		collect(statement)
+	}
+	function := enclosingFunction(d.Root)
+	if len(symbols) == 0 || function == nil || function.Body() == nil {
+		return false
+	}
+	return !slices.ContainsFunc(symbols, func(symbol *ast.Symbol) bool { return !m.returnedOnce(symbol, d.Root, function) })
+}
+
+func (m *Analyzer) returnedOnce(symbol *ast.Symbol, decision, function *ast.Node) bool {
+	uses := []*ast.Node{}
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		if n == decision {
+			return false
+		}
+		if n.Kind == ast.KindIdentifier && n.Pos() >= decision.End() && m.SymbolOf(n) == symbol {
+			uses = append(uses, n)
+		}
+		n.ForEachChild(walk)
+		return false
+	}
+	walk(function.Body())
+	return len(uses) == 1 && returnedBy(uses[0], function)
+}
+
+func returnedBy(n, function *ast.Node) bool {
+	for p := n.Parent; p != nil && p != function; p = p.Parent {
+		if p.Kind == ast.KindReturnStatement || p == function.Body() && ast.IsExpression(p) {
+			return true
+		}
+		if ast.IsFunctionLike(p) {
+			return false
+		}
+	}
+	return false
+}

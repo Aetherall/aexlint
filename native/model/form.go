@@ -89,11 +89,16 @@ func (m *Analyzer) Form(n *ast.Node, source Value) string {
 	return "~" + m.replaced(n, source)
 }
 
-func (m *Analyzer) reference(n *ast.Node) string {
-	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
+// SymbolOf returns the symbol an identifier refers to. The name of a shorthand property refers to the variable it reads.
+func (m *Analyzer) SymbolOf(n *ast.Node) *ast.Symbol {
 	if parent := n.Parent; parent != nil && parent.Kind == ast.KindShorthandPropertyAssignment && parent.Name() == n {
-		symbol = m.ctx.TypeChecker.GetShorthandAssignmentValueSymbol(parent)
+		return m.ctx.TypeChecker.GetShorthandAssignmentValueSymbol(parent)
 	}
+	return m.ctx.TypeChecker.GetSymbolAtLocation(n)
+}
+
+func (m *Analyzer) reference(n *ast.Node) string {
+	symbol := m.SymbolOf(n)
 	if symbol != nil && symbol.Flags&ast.SymbolFlagsAlias != 0 {
 		symbol = m.ctx.TypeChecker.GetAliasedSymbol(symbol)
 	}
