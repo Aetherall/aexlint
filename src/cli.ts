@@ -40,10 +40,19 @@ function readIgnorePatterns(): string[] {
   return lines.map((line) => line.trim()).filter((line) => line && !line.startsWith("#"));
 }
 
+function failed(reason: string): Error {
+  return new Error(`no baseline recorded; the run failed:\n${reason}`);
+}
+
 function writeBaseline(file: string, output: string, recorded: string): number {
-  const { diagnostics } = JSON.parse(output) as { diagnostics: Reported[] };
+  let diagnostics: Reported[];
+  try {
+    ({ diagnostics } = JSON.parse(output) as { diagnostics: Reported[] });
+  } catch {
+    throw failed(output.trim());
+  }
   const failure = diagnostics.find(({ code, labels }) => !code && !labels.length);
-  if (failure) throw new Error(`no baseline recorded; the run failed:\n${failure.message}`);
+  if (failure) throw failed(failure.message);
   const entries = existsSync(recorded) ? parseBaseline(readFileSync(recorded, "utf8")) : [];
   writeFileSync(file, formatBaseline(entries));
   console.log(`aexlint: recorded ${entries.length} diagnostics in ${file}`);
@@ -140,9 +149,12 @@ function check(): number {
     };
     const result = spawnSync(process.execPath, args, options);
     if (result.error) throw result.error;
-    if (!record) return result.status ?? 1;
+    if (!record) return result.status ?? 2;
     const finished = result.status === 0 || result.status === 1;
-    if (!finished) return result.status ?? 1;
+    if (!finished) {
+      process.stdout.write(result.stdout);
+      return result.status ?? 2;
+    }
     return writeBaseline(record, result.stdout, recorded);
   } finally {
     rmSync(directory, { recursive: true, force: true });

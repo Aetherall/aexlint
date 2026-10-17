@@ -301,6 +301,13 @@ test("CLI rejects conflicting, missing, and malformed baselines", (t) => {
   assert.match(run(["check", "--baseline", baseline], 2), /Malformed baseline line/);
 });
 
+test("CLI --write-baseline shows why Oxlint failed and writes nothing", (t) => {
+  const { run, baseline } = consumer(t);
+  const output = run(["check", "--write-baseline", baseline, "missing.ts"], 2);
+  assert.match(output, /no baseline recorded; the run failed:\nNo files found to lint/);
+  assert.ok(!existsSync(baseline));
+});
+
 test("CLI --write-baseline replaces the file with the diagnostics of that run", (t) => {
   const { write, record } = consumer(t);
   write("first.ts", depthViolation);
