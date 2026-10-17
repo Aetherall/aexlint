@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { addProjectRule } from "./project.ts";
 
 export function newTypedRule(root: string, name: string): void {
   if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
@@ -9,7 +10,8 @@ export function newTypedRule(root: string, name: string): void {
   const docsDir = resolve(root, "docs/typed-rules");
   const docPath = resolve(docsDir, `${name}.md`);
   const jsRuleDir = resolve(root, "src/rules", name);
-  if (existsSync(ruleDir) || existsSync(docPath) || existsSync(jsRuleDir)) {
+  const fixtures = resolve(root, "tests/project", name);
+  if ([ruleDir, docPath, jsRuleDir, fixtures].some((path) => existsSync(path))) {
     throw new Error(`Rule or documentation already exists: ${name}`);
   }
   mkdirSync(ruleDir, { recursive: true });
@@ -30,30 +32,7 @@ var Rule = rule.Rule{
 `,
     { flag: "wx" },
   );
-  writeFileSync(
-    resolve(ruleDir, "rule_test.go"),
-    `package ${goPackage}
-
-import (
-	"path/filepath"
-	"testing"
-
-	"github.com/typescript-eslint/tsgolint/internal/rule_tester"
-)
-
-func TestRule(t *testing.T) {
-	root, err := filepath.Abs("../../fixtures")
-	if err != nil {
-		t.Fatal(err)
-	}
-	rule_tester.RunRuleTester(root, "tsconfig.json", t, &Rule,
-		[]rule_tester.ValidTestCase{{Code: "const value = 1;"}},
-		[]rule_tester.InvalidTestCase{{Code: "const value = 2;", Errors: []rule_tester.InvalidTestCaseError{{MessageId: "unexpected"}}}},
-	)
-}
-`,
-    { flag: "wx" },
-  );
+  addProjectRule(root, name, `aexlint-typed/${name}`);
   writeFileSync(
     resolve(ruleDir, "rule.json"),
     JSON.stringify(
@@ -101,7 +80,7 @@ if (import.meta.main) {
     if (!name || extra.length) throw new Error("Usage: pnpm rule:new:typed <kebab-case-name>");
     newTypedRule(process.cwd(), name);
     console.log(
-      `Created native ${name}. Replace the intentionally failing examples, then run pnpm native:test ${name}.`,
+      `Created native ${name}. Replace tests/project/${name}/ with real cases, then run pnpm test:project.`,
     );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));

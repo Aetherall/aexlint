@@ -1,0 +1,526 @@
+{
+  "jsPlugins": [
+    "../../src/index.ts",
+    "../../src/typed/plugin.ts"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "no-else-if/**"
+      ],
+      "rules": {
+        "aexlint/no-else-if": "error"
+      }
+    },
+    {
+      "files": [
+        "no-repeated-value-policy/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-repeated-value-policy": "error"
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-20-references-2/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 20,
+            "maxReferences": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-60-references-3/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 60,
+            "maxReferences": 3
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-24-references-2/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 24,
+            "maxReferences": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-27-references-2/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 27,
+            "maxReferences": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-20-references-4/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 20,
+            "maxReferences": 4
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-26-references-3/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 26,
+            "maxReferences": 3
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-23-references-2/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 23,
+            "maxReferences": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-call-assembly/max-width-19-references-2/**"
+      ],
+      "rules": {
+        "aexlint/max-call-assembly": [
+          "error",
+          {
+            "maxWidth": 19,
+            "maxReferences": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-decision-depth/max-1/**"
+      ],
+      "rules": {
+        "aexlint/max-decision-depth": [
+          "error",
+          {
+            "max": 1
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-decision-depth/max-2/**"
+      ],
+      "rules": {
+        "aexlint/max-decision-depth": [
+          "error",
+          {
+            "max": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-decision-depth/max-3/**"
+      ],
+      "rules": {
+        "aexlint/max-decision-depth": [
+          "error",
+          {
+            "max": 3
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-expression-complexity/max-1/**"
+      ],
+      "rules": {
+        "aexlint/max-expression-complexity": [
+          "error",
+          {
+            "max": 1
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-expression-complexity/max-2/**"
+      ],
+      "rules": {
+        "aexlint/max-expression-complexity": [
+          "error",
+          {
+            "max": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-expression-complexity/max-4/**"
+      ],
+      "rules": {
+        "aexlint/max-expression-complexity": [
+          "error",
+          {
+            "max": 4
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-expression-complexity/max-5/**"
+      ],
+      "rules": {
+        "aexlint/max-expression-complexity": [
+          "error",
+          {
+            "max": 5
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-expression-depth/max-1/**"
+      ],
+      "rules": {
+        "aexlint/max-expression-depth": [
+          "error",
+          {
+            "max": 1
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-expression-depth/max-2/**"
+      ],
+      "rules": {
+        "aexlint/max-expression-depth": [
+          "error",
+          {
+            "max": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-expression-depth/max-3/**"
+      ],
+      "rules": {
+        "aexlint/max-expression-depth": [
+          "error",
+          {
+            "max": 3
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-held-context/**"
+      ],
+      "rules": {
+        "aexlint/max-held-context": [
+          "error",
+          {
+            "max": 3
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-held-context/max-2/**"
+      ],
+      "rules": {
+        "aexlint/max-held-context": [
+          "error",
+          {
+            "max": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-held-context/max-1/**"
+      ],
+      "rules": {
+        "aexlint/max-held-context": [
+          "error",
+          {
+            "max": 1
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "no-multiline-condition/**"
+      ],
+      "rules": {
+        "aexlint/no-multiline-condition": "error"
+      }
+    },
+    {
+      "files": [
+        "prefer-domain-predicate/**"
+      ],
+      "rules": {
+        "aexlint/prefer-domain-predicate": "error"
+      }
+    },
+    {
+      "files": [
+        "max-interpretation-spread/**"
+      ],
+      "rules": {
+        "aexlint-typed/max-interpretation-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "max-interpretation-spread/max-1/**"
+      ],
+      "rules": {
+        "aexlint-typed/max-interpretation-spread": [
+          "error",
+          {
+            "max": 1
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-interpretation-spread/max-2/**"
+      ],
+      "rules": {
+        "aexlint-typed/max-interpretation-spread": [
+          "error",
+          {
+            "max": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-interpretation-spread/max-5/**"
+      ],
+      "rules": {
+        "aexlint-typed/max-interpretation-spread": [
+          "error",
+          {
+            "max": 5
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "max-projection-spread/**"
+      ],
+      "rules": {
+        "aexlint-typed/max-projection-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "max-projection-spread/max-3/**"
+      ],
+      "rules": {
+        "aexlint-typed/max-projection-spread": [
+          "error",
+          {
+            "max": 3
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "prefer-truthy-presence-check/**"
+      ],
+      "rules": {
+        "aexlint-typed/prefer-truthy-presence-check": "error"
+      }
+    },
+    {
+      "files": [
+        "prefer-truthy-presence-check/empty-options/**"
+      ],
+      "rules": {
+        "aexlint-typed/prefer-truthy-presence-check": [
+          "error",
+          {}
+        ]
+      }
+    },
+    {
+      "files": [
+        "no-external-variant-behavior/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-external-variant-behavior": "error"
+      }
+    },
+    {
+      "files": [
+        "no-repeated-conversion/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-repeated-conversion": "error"
+      }
+    },
+    {
+      "files": [
+        "no-fact-outside-owner/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-fact-outside-owner": "error"
+      }
+    },
+    {
+      "files": [
+        "no-fact-outside-owner/empty-options/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-fact-outside-owner": [
+          "error",
+          {}
+        ]
+      }
+    },
+    {
+      "files": [
+        "no-fact-outside-owner/max-1/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-fact-outside-owner": [
+          "error",
+          {
+            "max": 1
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "no-repeated-presence-check/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-repeated-presence-check": "error"
+      }
+    },
+    {
+      "files": [
+        "no-repeated-presence-check/empty-options/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-repeated-presence-check": [
+          "error",
+          {}
+        ]
+      }
+    },
+    {
+      "files": [
+        "no-caller-enforced-invariant/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-caller-enforced-invariant": "error"
+      }
+    },
+    {
+      "files": [
+        "no-forgeable-validated-result/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-forgeable-validated-result": "error"
+      }
+    },
+    {
+      "files": [
+        "no-overbroad-type-predicate/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-overbroad-type-predicate": "error"
+      }
+    },
+    {
+      "files": [
+        "no-procedural-value-dispatch/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-procedural-value-dispatch": "error"
+      }
+    },
+    {
+      "files": [
+        "no-repeated-selection/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-repeated-selection": "error"
+      }
+    },
+    {
+      "files": [
+        "no-repeated-value-group/**"
+      ],
+      "rules": {
+        "aexlint-typed/no-repeated-value-group": "error"
+      }
+    }
+  ]
+}

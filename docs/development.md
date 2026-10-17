@@ -14,18 +14,17 @@ The shell provides Node.js, pnpm, and Go. The first native build needs network a
 
 ## Everyday commands
 
-| Command                                          | Purpose                                                             |
-| ------------------------------------------------ | ------------------------------------------------------------------- |
-| `pnpm test:rule src/rules/<name>/<name>.test.ts` | Test one JS rule; accepts `--watch`                                 |
-| `pnpm native:test <name>`                        | Test one Go rule                                                    |
-| `pnpm native:test <name> --update`               | Update snapshots; review the changes                                |
-| `pnpm lint`                                      | Self-lint with both plugins; rebuilds the host backend              |
-| `pnpm lint:classifications`                      | Optional review with the rules self-lint does not enforce           |
-| `pnpm format`                                    | Format TS, docs, and Go                                             |
-| `pnpm check`                                     | Types, lint, formatting, Go/TS tests, and package integration       |
-| `pnpm build`                                     | Build JS, declarations, and the host binary                         |
-| `pnpm pack`                                      | Build all six native targets and create a tarball; does not publish |
-| `pnpm package:smoke <dir>`                       | Install the tarball in `<dir>` and run both plugins                 |
+| Command                        | Purpose                                                              |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `pnpm native:test [--update]`  | Run the model probes; review snapshot changes                        |
+| `pnpm test:project [--update]` | Lint `tests/project` with every rule and compare with `expected.txt` |
+| `pnpm lint`                    | Self-lint with both plugins; rebuilds the host backend               |
+| `pnpm lint:classifications`    | Optional review with the rules self-lint does not enforce            |
+| `pnpm format`                  | Format TS, docs, and Go                                              |
+| `pnpm check`                   | Types, lint, formatting, Go/TS tests, and package integration        |
+| `pnpm build`                   | Build JS, declarations, and the host binary                          |
+| `pnpm pack`                    | Build all six native targets and create a tarball; does not publish  |
+| `pnpm package:smoke <dir>`     | Install the tarball in `<dir>` and run both plugins                  |
 
 ## Adding a rule
 
@@ -34,13 +33,13 @@ The shell provides Node.js, pnpm, and Go. The first native build needs network a
 3. Replace the generated placeholders with a short rule contract, real valid/invalid tests, and an implementation.
 4. Run focused tests, then `pnpm format` and `pnpm check`.
 
-Use Oxlint's real RuleTester for JS and the upstream Go tester for typed rules. Include cross-file type changes where relevant. Generators handle registration and intentionally start with failing tests. See [AGENTS.md](../AGENTS.md) for constraints and [native.md](native.md) for backend details.
+Every rule is tested by its folder in `tests/project/`: one TypeScript project that `pnpm test:project` lints with all rules in a single Oxlint run, comparing the findings with `tests/project/expected.txt`. `tests/project/oxlint.json` enables each rule only for its own folder. Generators handle registration and create the folder and its override. See [AGENTS.md](../AGENTS.md) for constraints and [native.md](native.md) for backend details.
 
 ## Package contents
 
 Ship only `dist/`, rule docs, README, license, and package metadata. `dist/native/` includes six binaries, their rule manifests, source pins, and third-party notices. No tests, contributor guides, caches, or development scripts belong in the tarball.
 
-The `aexlint` executable uses the packaged, pinned Oxlint dependency and standalone rule defaults. Build before running `node dist/cli.js check` or `pnpm test:rule tests/cli.test.ts`. CLI tests use real temporary projects without installing tools into them and verify that project files remain unchanged.
+The `aexlint` executable uses the packaged, pinned Oxlint dependency and standalone rule defaults. Build before running `node dist/cli.js check` or `node --test tests/cli.test.ts`. CLI tests use real temporary projects without installing tools into them and verify that project files remain unchanged.
 
 Package tests resolve and fetch dependencies in a temporary consumer, then install offline from its lockfile and exercise the installed CLI executable. CI runs the full suite on Linux x64 and smoke-tests both the plugins and CLI from the same release tarball on Linux, macOS, and Windows, each on x64 and arm64.
 

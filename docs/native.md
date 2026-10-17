@@ -10,7 +10,7 @@ Oxlint's JS API has no type checker, and its built-in typed backend accepts only
 | `native/rules/<name>/` | Go rule, tests, and `rule.json` metadata                   |
 | `native/model/`        | Shared decision model used by rules                        |
 | `native/patches/`      | Changes to the pinned upstream backend                     |
-| `native/snapshots/`    | Reviewed diagnostic snapshots                              |
+| `native/snapshots/`    | Reviewed probe snapshots                                   |
 | `native/probe/`        | Test-only checker probe; never shipped                     |
 | `scripts/native.ts`    | Prepare sources, overlay rules, test, and build            |
 | `src/typed/`           | Oxlint wrappers, backend startup, and framing              |
@@ -58,13 +58,13 @@ Cross-file rules may share an index when it is:
 
 ## Tests and upgrades
 
-Use `pnpm native:test <name>`; add `--update` only for intentional snapshot changes. Normal tests reject changed or missing snapshots. JS tests use zero-based columns; Go tests use one-based columns; native ranges are byte offsets. The test-only probe checks imported and generic return types using real programs.
+Rules are tested through `tests/project/` (see [development](development.md#adding-a-rule)). `pnpm native:test` runs the test-only probes (`model-facts`, `decision-model`, `type-probe`); add `--update` only for intentional snapshot changes. Native ranges are byte offsets.
 
 To upgrade:
 
 1. Update both source revisions and hashes together, using tsgolint's matching typescript-go revision.
 2. Review patches, Go requirements, compiler APIs, protocol, and licenses.
 3. Rebuild from a fresh `.native/` cache; run native tests, package integration, and release builds.
-4. Review snapshot changes against the rule contracts, not just test output.
+4. Review `tests/project/expected.txt` and probe snapshot changes against the rule contracts, not just test output.
 
 `pnpm build` produces the host binary. `pnpm pack` builds all six targets with `CGO_ENABLED=0` and includes source pins and third-party notices. CI smoke-tests each target; full rule tests run on Linux x64. See [development.md](development.md#releasing) for publication. `node scripts/native.ts release <target>...` builds only the given targets. CI builds each target in its own job with a cached Go build, then packs those binaries with lifecycle scripts disabled instead of rebuilding them.

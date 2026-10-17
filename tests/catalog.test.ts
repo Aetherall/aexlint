@@ -6,7 +6,7 @@ import plugin from "../src/index.ts";
 const rulesDir = new URL("../src/rules/", import.meta.url);
 const docsDir = new URL("../docs/rules/", import.meta.url);
 
-test("every shipped rule is registered, documented and tested", () => {
+test("every shipped rule is registered and documented", () => {
   const names = readdirSync(rulesDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
@@ -31,9 +31,8 @@ test("every shipped rule is registered, documented and tested", () => {
     assert.ok(rule.meta.schema, `${name}: missing options schema`);
     assert.ok(Object.keys(rule.meta.messages ?? {}).length, `${name}: missing messages`);
     const source = readFileSync(new URL(`${name}/index.ts`, rulesDir), "utf8");
-    const tests = readFileSync(new URL(`${name}/${name}.test.ts`, rulesDir), "utf8");
     const docs = readFileSync(new URL(`${name}.md`, docsDir), "utf8");
-    for (const [kind, text] of Object.entries({ source, tests, docs })) {
+    for (const [kind, text] of Object.entries({ source, docs })) {
       assert.doesNotMatch(text, /\bTODO\b/, `${name}: unfinished ${kind}`);
     }
   }

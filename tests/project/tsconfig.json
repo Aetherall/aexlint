@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "strict": true,
+    "allowJs": true,
+    "jsx": "preserve",
+    "noEmit": true,
+    "types": []
+  },
+  "include": [
+    "**/*"
+  ],
+  "exclude": [
+    "*/project-*/**"
+  ]
+}

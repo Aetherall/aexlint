@@ -12,7 +12,7 @@
 
 - One general principle per rule, explaining the maintenance burden it finds. Check existing Oxlint rules first. Stop expanding a rule when special cases replace its principle.
 - Use types and control flow, never names or text as a substitute for types.
-- Syntax rules live in `src/rules/<name>/` (`defineRule`, real Oxlint RuleTester). Type-aware rules live in `native/rules/<name>/` (real Go program and checker, `var Rule = rule.Rule{...}` named `aexlint/<name>`, `rule.json`, options validated in Go). Type reasoning belongs in `native/model/`; rules query it.
+- Syntax rules live in `src/rules/<name>/` (`defineRule`). Type-aware rules live in `native/rules/<name>/` (real Go program and checker, `var Rule = rule.Rule{...}` named `aexlint/<name>`, `rule.json`, options validated in Go). Type reasoning belongs in `native/model/`; rules query it.
 - Our Go rules run through `@aetherall/aexlint/typed-plugin`, not `--type-aware`.
 - Keep state per invocation. Cross-file indexes follow [native](docs/native.md#shared-program-indexes).
 
@@ -20,8 +20,8 @@
 
 1. Generate with `pnpm rule:new <name>` or `pnpm rule:new:typed <name>`, one at a time.
 2. Write a short doc in `docs/rules/` or `docs/typed-rules/`: problem, reported and accepted examples, options, span, limitations.
-3. Write valid/invalid tests first. Typed rules cover imports, aliases, generics, unions, any/unknown/never, unresolved types, and a dependency-only type change.
+3. Write tests first: a `tests/project/<name>/` folder of reported and accepted files, enabled for the rule in `tests/project/oxlint.json`. Typed rules cover imports, aliases, generics, unions, any/unknown/never, unresolved types, and a dependency-only type change (two folders differing only in the dependency). Cross-file rules see the whole project, so use literal values no other folder uses. Cases needing other compiler options go in a `project-<name>/` folder with its own `tsconfig.json`; option variants go in a subfolder with its own override.
 4. Implement the smallest correct visitor.
-5. Run `pnpm test:rule src/rules/<name>/<name>.test.ts` or `pnpm native:test <name>` (`--update` for snapshots, reviewed), then `pnpm format` and `pnpm check`. Report actual results.
+5. Run `pnpm test:project`, which lints `tests/project` with every rule and compares the findings with `expected.txt`; review changes, then accept them with `--update`. Then `pnpm format` and `pnpm check`. Report actual results.
 
-JS columns are zero-based, Go columns one-based, native ranges byte offsets.
+Native ranges are byte offsets.

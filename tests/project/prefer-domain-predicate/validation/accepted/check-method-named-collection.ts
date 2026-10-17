@@ -1,0 +1,1 @@
+const supported = ['png', 'jpeg']; class Format { check() { if (!supported.includes(this.format)) throw new UnknownFormatError(this.format); if (this.quality !== undefined && (this.quality < 0 || this.quality > 100)) throw new RangeError(); } }

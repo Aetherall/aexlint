@@ -58,7 +58,7 @@
     "format": "oxfmt . && pnpm native:format",
     "format:check": "oxfmt --check . && node scripts/native.ts format:check",
     "test": "pnpm build && pnpm native:test && node scripts/test.ts",
-    "test:rule": "node --test",
+    "test:project": "node scripts/project.ts",
     "rule:new": "node scripts/new-rule.ts",
     "rule:new:typed": "node scripts/new-typed-rule.ts",
     "native:prepare": "node scripts/native.ts prepare",

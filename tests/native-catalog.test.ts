@@ -9,7 +9,7 @@ import { native as runNative, ruleNames } from "../scripts/native.ts";
 const native = new URL("../native/rules/", import.meta.url);
 const docs = new URL("../docs/typed-rules/", import.meta.url);
 
-test("native rules have contracts, real tests, unique names, and no unfinished placeholders", () => {
+test("native rules have contracts, unique names, and no unfinished placeholders", () => {
   const names = ruleNames();
   assert.deepEqual(
     readdirSync(docs)
@@ -39,7 +39,6 @@ test("native rules have contracts, real tests, unique names, and no unfinished p
     for (const text of [
       source,
       JSON.stringify(metadata),
-      readFileSync(new URL(`${name}/rule_test.go`, native), "utf8"),
       readFileSync(new URL(`${name}.md`, docs), "utf8"),
     ]) {
       assert.doesNotMatch(text, /\bTODO\b/, `Unfinished native rule: ${name}`);
@@ -59,10 +58,10 @@ test("native generator creates a checker-ready skeleton and refuses overwrites",
   const source = readFileSync(join(root, "native/rules/one-rule/rule.go"), "utf8");
   assert.match(source, /package one_rule/);
   assert.match(source, /panic\("TODO/);
-  assert.match(
-    readFileSync(join(root, "native/rules/one-rule/rule_test.go"), "utf8"),
-    /RunRuleTester/,
-  );
+  const config = JSON.parse(readFileSync(join(root, "tests/project/oxlint.json"), "utf8"));
+  assert.deepEqual(config.overrides, [
+    { files: ["one-rule/**"], rules: { "aexlint-typed/one-rule": "error" } },
+  ]);
   assert.match(readFileSync(join(root, "docs/typed-rules/one-rule.md"), "utf8"), /cross-file/);
   assert.throws(() => newTypedRule(root, "one-rule"), /already exists/);
   assert.equal(readFileSync(join(root, "native/rules/one-rule/rule.go"), "utf8"), source);

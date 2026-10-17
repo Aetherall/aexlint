@@ -8,5 +8,5 @@
     "aexlint/max-expression-depth": ["error", { "max": 3 }],
     "aexlint/max-decision-depth": ["error", { "max": 2 }]
   },
-  "ignorePatterns": ["dist", "node_modules"]
+  "ignorePatterns": ["dist", "node_modules", "tests/project"]
 }

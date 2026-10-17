@@ -8,5 +8,5 @@
     "aexlint-typed/no-repeated-value-policy": "error",
     "aexlint-typed/no-procedural-value-dispatch": "error"
   },
-  "ignorePatterns": ["dist", "node_modules"]
+  "ignorePatterns": ["dist", "node_modules", "tests/project"]
 }

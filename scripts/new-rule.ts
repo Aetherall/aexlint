@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { addProjectRule } from "./project.ts";
 
 export function newRule(root: string, name: string): void {
   if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(name)) {
@@ -11,7 +12,8 @@ export function newRule(root: string, name: string): void {
   const docsDir = resolve(root, "docs/rules");
   const docPath = resolve(docsDir, `${name}.md`);
   const typedRuleDir = resolve(root, "native/rules", name);
-  if (existsSync(ruleDir) || existsSync(docPath) || existsSync(typedRuleDir)) {
+  const fixtures = resolve(root, "tests/project", name);
+  if ([ruleDir, docPath, typedRuleDir, fixtures].some((path) => existsSync(path))) {
     throw new Error(`Rule or documentation already exists: ${name}`);
   }
 
@@ -36,24 +38,7 @@ export default defineRule({
 `,
     { flag: "wx" },
   );
-  writeFileSync(
-    resolve(ruleDir, `${name}.test.ts`),
-    `import { ruleTester } from "../../../tests/rule-tester.ts";
-import rule from "./index.ts";
-
-ruleTester.run("${name}", rule, {
-  valid: ["const value = 1;"],
-  invalid: [
-    {
-      code: "const value = 2;",
-      errors: [{ messageId: "unexpected" }],
-      output: null,
-    },
-  ],
-});
-`,
-    { flag: "wx" },
-  );
+  addProjectRule(root, name, `aexlint/${name}`);
   writeFileSync(
     docPath,
     `# ${name}
@@ -100,9 +85,9 @@ if (import.meta.main) {
     try {
       newRule(process.cwd(), name);
       console.log(
-        `Created ${name}. Define its contract and replace the intentionally failing examples.`,
+        `Created ${name}. Define its contract and replace tests/project/${name}/ with real cases.`,
       );
-      console.log(`Run: pnpm test:rule src/rules/${name}/${name}.test.ts`);
+      console.log("Run: pnpm test:project");
     } catch (error) {
       console.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;

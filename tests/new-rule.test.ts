@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
   copyFileSync,
-  mkdirSync,
+  existsSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -22,20 +22,22 @@ function temporaryRoot(t: { after: (fn: () => void) => void }): string {
   return root;
 }
 
-test("generates source, failing examples, docs and a sorted registry", (t) => {
+test("generates source, project cases, docs and a sorted registry", (t) => {
   const root = temporaryRoot(t);
   newRule(root, "z-rule");
   newRule(root, "a-rule");
   const registry = readFileSync(join(root, "src/rules/index.ts"), "utf8");
   assert.ok(registry.indexOf('"a-rule"') < registry.indexOf('"z-rule"'));
+  const config = JSON.parse(readFileSync(join(root, "tests/project/oxlint.json"), "utf8"));
+  assert.deepEqual(config.overrides, [
+    { files: ["z-rule/**"], rules: { "aexlint/z-rule": "error" } },
+    { files: ["a-rule/**"], rules: { "aexlint/a-rule": "error" } },
+  ]);
   for (const name of ["a-rule", "z-rule"]) {
     const source = readFileSync(join(root, `src/rules/${name}/index.ts`), "utf8");
     assert.match(source, /throw new Error/);
     assert.match(source, /requiresTypeChecking: false/);
-    assert.match(
-      readFileSync(join(root, `src/rules/${name}/${name}.test.ts`), "utf8"),
-      /ruleTester.run/,
-    );
+    assert.ok(existsSync(join(root, `tests/project/${name}/reported.ts`)));
     assert.match(readFileSync(join(root, `docs/rules/${name}.md`), "utf8"), /## Example/);
   }
 });
@@ -58,7 +60,7 @@ test("rejects invalid names and path traversal before writing", (t) => {
   assert.deepEqual(readdirSync(root), []);
 });
 
-test("generated TypeScript compiles and its real rule tests fail for unfinished behavior", (t) => {
+test("generated TypeScript compiles", (t) => {
   const root = temporaryRoot(t);
   newRule(root, "unfinished-rule");
   writeFileSync(join(root, "package.json"), JSON.stringify({ private: true, type: "module" }));
@@ -67,8 +69,6 @@ test("generated TypeScript compiles and its real rule tests fail for unfinished 
     join(root, "node_modules"),
     "dir",
   );
-  mkdirSync(join(root, "tests"));
-  copyFileSync(new URL("./rule-tester.ts", import.meta.url), join(root, "tests/rule-tester.ts"));
   copyFileSync(new URL("../tsconfig.json", import.meta.url), join(root, "tsconfig.json"));
   const compiler = fileURLToPath(
     new URL("./bin/tsc", import.meta.resolve("typescript/package.json")),
@@ -80,14 +80,4 @@ test("generated TypeScript compiles and its real rule tests fail for unfinished 
   });
   if (compiled.error) throw compiled.error;
   assert.equal(compiled.status, 0, compiled.stdout + compiled.stderr);
-  const env = { ...process.env };
-  delete env.NODE_TEST_CONTEXT;
-  const result = spawnSync(
-    process.execPath,
-    ["--test", "src/rules/unfinished-rule/unfinished-rule.test.ts"],
-    { cwd: root, env, encoding: "utf8", timeout: 30_000 },
-  );
-  if (result.error) throw result.error;
-  assert.equal(result.status, 1, result.stdout + result.stderr);
-  assert.match(result.stdout + result.stderr, /TODO: implement unfinished-rule/);
 });
