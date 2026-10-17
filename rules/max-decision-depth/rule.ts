@@ -49,7 +49,7 @@ export default defineRule({
           return;
         }
         const children = childNodes(context.sourceCode.visitorKeys, node);
-        let depth = Math.max(0, ...children.map(depthOf));
+        let depth = children.reduce((deepest, child) => Math.max(deepest, depthOf(child)), 0);
         if (isLogicalDecision(node)) {
           const branchDepth = (child: ESTree.Node) => {
             const childDepth = depthOf(child);
