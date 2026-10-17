@@ -12,16 +12,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineRule, type Context, type Rule } from "@oxlint/plugins";
-import { decodeFrames, defaultBackend, ruleManifest } from "./backend.ts";
+import { decodeFrames, defaultBackend, ruleManifest, type NativeDiagnostic } from "./backend.ts";
 import { readFrame, writeFrame, type ServeResult } from "./frames.ts";
-
-interface NativeDiagnostic {
-  kind: number;
-  file_path: string | null;
-  rule?: string;
-  range?: { pos: number; end: number };
-  message: { description: string; help?: string };
-}
 
 interface Request {
   name: string;
@@ -221,7 +213,7 @@ function runBatch(
   if (result.status !== 0) {
     throw new Error(`The typed backend exited ${result.status ?? result.signal}: ${result.stderr}`);
   }
-  const diagnostics = messages.diagnostics as NativeDiagnostic[];
+  const { diagnostics } = messages;
   if (!messages.programFiles.includes(file)) throw new Error(unbuiltProgram(file, diagnostics));
   const byFile = new Map<string, NativeDiagnostic[]>(messages.programFiles.map((f) => [f, []]));
   for (const diagnostic of diagnostics.filter((item) => item.kind === 0 && item.file_path)) {

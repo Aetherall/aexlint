@@ -32,8 +32,16 @@ function object(value: unknown, label: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+export interface NativeDiagnostic {
+  kind: number;
+  file_path: string | null;
+  rule?: string;
+  range?: { pos: number; end: number };
+  message: { id?: string; description: string; help?: string };
+}
+
 export interface NativeMessages {
-  diagnostics: unknown[];
+  diagnostics: NativeDiagnostic[];
   programFiles: string[];
 }
 
@@ -53,7 +61,7 @@ export function decodeFrames(input: Uint8Array): NativeMessages {
       case 0:
         throw new Error(String(object(payload, "error").error));
       case 1:
-        messages.diagnostics.push(payload);
+        messages.diagnostics.push(nativeDiagnostic(payload));
         break;
       case 2:
         break;
@@ -65,6 +73,15 @@ export function decodeFrames(input: Uint8Array): NativeMessages {
     }
   }
   return messages;
+}
+
+function nativeDiagnostic(payload: unknown): NativeDiagnostic {
+  const value = object(payload, "diagnostic");
+  const message = object(value.message, "diagnostic message");
+  const located = typeof value.file_path === "string" || value.file_path === null;
+  const valid = typeof value.kind === "number" && typeof message.description === "string";
+  if (!located || !valid) throw new Error("Invalid native diagnostic.");
+  return value as unknown as NativeDiagnostic;
 }
 
 function programFiles(payload: unknown): string[] {

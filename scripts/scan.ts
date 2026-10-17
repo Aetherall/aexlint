@@ -5,23 +5,6 @@ import { ruleNames } from "./native.ts";
 
 const usage = "Usage: node scripts/scan.ts <facts|rules> <backend> <project root> <seed file>...";
 
-interface Diagnostic {
-  rule: string;
-  file_path: string;
-  range: { pos: number; end: number };
-  message: { id: string; description: string; help?: string };
-}
-
-function diagnostic(value: unknown): Diagnostic {
-  const d = value as Diagnostic;
-  const valid =
-    typeof d?.rule === "string" &&
-    typeof d.file_path === "string" &&
-    typeof d.message?.id === "string";
-  if (!valid) throw new Error("Invalid native diagnostic.");
-  return d;
-}
-
 function rules(mode: string): { name: string }[] {
   if (mode === "facts") return [{ name: "aexlint/model-facts" }];
   if (mode !== "rules") throw new Error(usage);
@@ -43,18 +26,10 @@ function scan(mode: string, backend: string, root: string, seed: string): string
   const result = spawnSync(backend, ["headless"], options);
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${seed}: ${String(result.stderr).slice(0, 2000)}`);
-  return decodeFrames(result.stdout).diagnostics.map((value) => {
-    const d = diagnostic(value);
+  return decodeFrames(result.stdout).diagnostics.map((d) => {
     const text = `${d.message.description}\t${d.message.help ?? ""}`.replaceAll("\n", " ");
-    return [
-      seed,
-      d.rule,
-      relative(root, d.file_path),
-      d.range.pos,
-      d.range.end,
-      d.message.id,
-      text,
-    ].join("\t");
+    const file = relative(root, d.file_path ?? "");
+    return [seed, d.rule, file, d.range?.pos, d.range?.end, d.message.id, text].join("\t");
   });
 }
 
