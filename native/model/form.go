@@ -21,7 +21,12 @@ func (m *Analyzer) Form(n *ast.Node, source Value) string {
 		return m.reference(n)
 	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral:
 		return strconv.Quote(n.Text())
-	case ast.KindNumericLiteral, ast.KindTrueKeyword, ast.KindFalseKeyword, ast.KindNullKeyword:
+	case ast.KindNumericLiteral:
+		if value, ok := numberValue(n); ok {
+			return strconv.FormatFloat(value, 'g', -1, 64)
+		}
+		return written(n)
+	case ast.KindTrueKeyword, ast.KindFalseKeyword, ast.KindNullKeyword:
 		return written(n)
 	case ast.KindPropertyAccessExpression:
 		if n.Name().Kind == ast.KindIdentifier {
@@ -72,7 +77,7 @@ func (m *Analyzer) Form(n *ast.Node, source Value) string {
 			case ast.KindShorthandPropertyAssignment:
 				reorder = reorder && !keys[key] && m.pure(property.Name())
 				keys[key] = true
-				entries = append(entries, key+":"+m.reference(property.Name()))
+				entries = append(entries, key+":"+m.Form(property.Name(), source))
 			case ast.KindSpreadAssignment:
 				reorder = false
 				entries = append(entries, "..."+m.Form(property.Expression(), source))

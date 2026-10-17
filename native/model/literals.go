@@ -1,6 +1,7 @@
 package model
 
 import (
+	"math"
 	"slices"
 	"strconv"
 	"strings"
@@ -62,6 +63,12 @@ func literal(t *checker.Type) bool {
 }
 
 func NumberKey(value float64) string { return "n:" + strconv.FormatFloat(value, 'g', -1, 64) }
+
+// numberValue returns the value a numeric literal is written for, in any base.
+func numberValue(n *ast.Node) (float64, bool) {
+	value := float64(jsnum.FromString(n.Text()))
+	return value, !math.IsNaN(value)
+}
 
 func valueKey(t *checker.Type) string {
 	switch value := t.AsLiteralType().Value().(type) {

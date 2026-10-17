@@ -2,7 +2,6 @@ package model
 
 import (
 	"slices"
-	"strconv"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
@@ -203,7 +202,7 @@ func Constant(n *ast.Node) (string, bool) {
 	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral:
 		return "s:" + n.Text(), true
 	case ast.KindNumericLiteral:
-		if value, err := strconv.ParseFloat(n.Text(), 64); err == nil {
+		if value, ok := numberValue(n); ok {
 			return NumberKey(value), true
 		}
 	case ast.KindArrayLiteralExpression:

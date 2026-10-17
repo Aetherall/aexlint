@@ -2,7 +2,6 @@ package model
 
 import (
 	"slices"
-	"strconv"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/compiler"
@@ -27,12 +26,12 @@ func tokenKey(n *ast.Node) (string, bool) {
 	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral:
 		return "s:" + n.Text(), true
 	case ast.KindNumericLiteral:
-		if value, err := strconv.ParseFloat(n.Text(), 64); err == nil {
+		if value, ok := numberValue(n); ok {
 			return NumberKey(value), true
 		}
 	case ast.KindPrefixUnaryExpression:
 		if unary := n.AsPrefixUnaryExpression(); unary.Operator == ast.KindMinusToken && unary.Operand.Kind == ast.KindNumericLiteral {
-			if value, err := strconv.ParseFloat(unary.Operand.Text(), 64); err == nil {
+			if value, ok := numberValue(unary.Operand); ok {
 				return NumberKey(-value), true
 			}
 		}

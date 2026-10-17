@@ -1955,6 +1955,16 @@ no-repeated-conversion/reported/shadowed-callback.ts:6:10 aexlint(no-repeated-co
   This conversion of `group.kind` is written identically in another place.
   help: Other copies, nearest first: no-repeated-conversion/reported/shadowed-callback.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
 
+no-repeated-conversion/reported/spelled-differently.ts:3:38 aexlint(no-repeated-conversion)
+  ~ item.kind
+  This conversion of `item.kind` is written identically in another place.
+  help: Other copies, nearest first: no-repeated-conversion/reported/spelled-differently.ts:4. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+
+no-repeated-conversion/reported/spelled-differently.ts:4:40 aexlint(no-repeated-conversion)
+  ~ other.kind
+  This conversion of `other.kind` is written identically in another place.
+  help: Other copies, nearest first: no-repeated-conversion/reported/spelled-differently.ts:3. Write the conversion once, with the owner of the type or as a shared function, and call it from each place.
+
 no-repeated-conversion/reported/spread.ts:3:38 aexlint(no-repeated-conversion)
   ~ item.kind
   This conversion of `item.kind` is written identically in another place.
