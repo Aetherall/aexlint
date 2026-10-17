@@ -55,7 +55,8 @@ export function lintProject(): string {
   };
   const result = spawnSync(process.execPath, command, options);
   if (result.error) throw result.error;
-  if (result.status !== 0 && result.status !== 1) {
+  const finished = result.status === 0 || result.status === 1;
+  if (!finished) {
     throw new Error(`oxlint exited with ${result.status}\n${result.stderr}${result.stdout}`);
   }
   const { diagnostics } = JSON.parse(result.stdout) as { diagnostics: Diagnostic[] };

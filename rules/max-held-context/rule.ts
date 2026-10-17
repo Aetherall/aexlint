@@ -29,7 +29,8 @@ function isArgumentCallback(node: ESTree.Node): boolean {
   let value: ESTree.Node = node;
   while (value.parent !== null && unwrap(value.parent) !== value.parent) value = value.parent;
   const parent = value.parent;
-  if (parent?.type !== "CallExpression" && parent?.type !== "NewExpression") return false;
+  const invocation = parent?.type === "CallExpression" || parent?.type === "NewExpression";
+  if (!invocation) return false;
   return (parent.arguments as ESTree.Node[]).includes(value);
 }
 
@@ -206,7 +207,8 @@ class HeldContextMeasure {
   private head(node: ESTree.Node): { start: LineColumn; end: LineColumn } {
     const source = this.context.sourceCode;
     const at = (offset: number) => source.getLocFromIndex(offset);
-    if (node.type === "ConditionalExpression" || node.type === "DoWhileStatement") {
+    const conditionOnly = node.type === "ConditionalExpression" || node.type === "DoWhileStatement";
+    if (conditionOnly) {
       return { start: at(node.test.range[0]), end: at(node.test.range[1]) };
     }
     if (node.type === "CatchClause") return this.catchHead(node);

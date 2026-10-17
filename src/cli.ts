@@ -141,7 +141,8 @@ function check(): number {
     const result = spawnSync(process.execPath, args, options);
     if (result.error) throw result.error;
     if (!record) return result.status ?? 1;
-    if (result.status !== 0 && result.status !== 1) return result.status ?? 1;
+    const finished = result.status === 0 || result.status === 1;
+    if (!finished) return result.status ?? 1;
     const codes = new Set(Object.keys(rules).map((rule) => rule.replace(/\/(.*)$/, "($1)")));
     return writeBaseline(record, result.stdout, codes);
   } finally {
