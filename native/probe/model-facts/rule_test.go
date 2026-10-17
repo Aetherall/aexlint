@@ -178,6 +178,13 @@ export function f(trim: Trim) {
   else if (trim.kind === "c") log("c");
   else log("none");
 }`, Options: only("decision"), Errors: facts("decision", 1)},
+			{Code: `import type { Size } from "./items.js";
+declare function log(text: string): void;
+export function f(sizes: Size[], size: Size, ready: boolean) {
+  for (const each of sizes) if (each === "S") log("small"); else if (each === "M") log("medium");
+  if (ready) if (size === "S") log("small"); else log("large");
+  outer: if (size === "L") log("large"); else if (size === "M") log("medium");
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 3)},
 			{Code: `import type { Box, Size } from "./items.js";
 export function f(size: Size, ready: boolean) {
   if (size === "S" || (size === "M" && ready)) return 1;

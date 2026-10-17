@@ -839,6 +839,10 @@ func (md *builder) visit(n *ast.Node) bool {
 	switch n.Kind {
 	case ast.KindSourceFile, ast.KindBlock, ast.KindModuleBlock, ast.KindCaseClause, ast.KindDefaultClause:
 		md.statements(n.Statements())
+	case ast.KindIfStatement:
+		if statementList(n.Parent) == nil && !elseOf(n) {
+			md.statements([]*ast.Node{n})
+		}
 	case ast.KindSwitchStatement:
 		md.switchStatement(n)
 	case ast.KindConditionalExpression:
@@ -846,6 +850,11 @@ func (md *builder) visit(n *ast.Node) bool {
 	}
 	n.ForEachChild(md.visit)
 	return false
+}
+
+// elseOf reports whether n is the else branch of an if statement, read with that statement's chain.
+func elseOf(n *ast.Node) bool {
+	return n.Parent.Kind == ast.KindIfStatement && n.Parent.AsIfStatement().ElseStatement == n
 }
 
 func (md *builder) containers(n *ast.Node) bool {
