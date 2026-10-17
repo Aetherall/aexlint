@@ -88,7 +88,7 @@ function filenames(diagnostics: Diagnostic[]): string[] {
   return diagnostics.map(({ filename }) => filename).toSorted();
 }
 
-test("CLI defaults to the current directory and enforces stable limits as errors", (t) => {
+test("CLI defaults to the current directory and enforces limits as errors", (t) => {
   const { write, check } = consumer(t);
   write("depth.ts", depthViolation);
   write("complexity.ts", "result(a(), b(), c(), d());\n");
@@ -132,7 +132,7 @@ test("CLI ignores root and nested Oxlint configs and never enables builtin rules
   ]);
 });
 
-test("CLI enables every nonstable syntax rule only with --experimental", (t) => {
+test("CLI enables every syntax rule", (t) => {
   const { write, check } = consumer(t);
   write("else.ts", "if (a) work(); else if (b) other();\n");
   write("held.ts", "if (a) { if (b) { if (c) { if (d) work(); } } }\n");
@@ -142,8 +142,7 @@ test("CLI enables every nonstable syntax rule only with --experimental", (t) => 
     "assembly.ts",
     'export function start() {\n  spawn(command, [first, second, ...rest], { cwd: root, env, stdio: "inherit" });\n}\n',
   );
-  assert.deepEqual(check(), []);
-  assert.deepEqual(codes(check(["--experimental"], 1)), [
+  assert.deepEqual(codes(check([], 1)), [
     "aexlint(max-call-assembly)",
     "aexlint(max-held-context)",
     "aexlint(no-else-if)",
@@ -151,10 +150,10 @@ test("CLI enables every nonstable syntax rule only with --experimental", (t) => 
     "aexlint(prefer-domain-predicate)",
   ]);
   write("held.ts", "if (a) { if (b) { if (c) work(); } }\n");
-  assert.deepEqual(check(["--experimental", "held.ts"]), []);
+  assert.deepEqual(check(["held.ts"]), []);
 });
 
-test("CLI resolves imported types and gates experimental typed rules on both flags", (t) => {
+test("CLI resolves imported types and enables typed rules with --typed", (t) => {
   const { write, check } = consumer(t);
   write(
     "tsconfig.json",
@@ -174,17 +173,15 @@ test("CLI resolves imported types and gates experimental typed rules on both fla
     'import type { Clock } from "./clock.js";\nexport const label = (clock: Clock) => (clock.note !== undefined ? "noted" : "");\n',
   );
   assert.deepEqual(check(), []);
-  assert.deepEqual(check(["--experimental"]), []);
-  assert.deepEqual(codes(check(["--typed"], 1)), ["aexlint-typed(prefer-truthy-presence-check)"]);
-  assert.deepEqual(codes(check(["--typed", "--experimental"], 1)), [
+  assert.deepEqual(codes(check(["--typed"], 1)), [
     "aexlint-typed(no-fact-outside-owner)",
     "aexlint-typed(prefer-truthy-presence-check)",
   ]);
   write("dependency.ts", "export declare const value: string | undefined;\n");
-  assert.deepEqual(check(["--typed"]), []);
+  assert.deepEqual(codes(check(["--typed"], 1)), ["aexlint-typed(no-fact-outside-owner)"]);
 });
 
-test("CLI gates predicate-contract diagnostics and observes dependency-only changes", (t) => {
+test("CLI reports predicate contracts and observes dependency-only changes", (t) => {
   const { write, check } = consumer(t);
   write(
     "tsconfig.json",
@@ -199,14 +196,12 @@ test("CLI gates predicate-contract diagnostics and observes dependency-only chan
     'import type { Product } from "./product.js";\nexport const isPhysical = (value: Product | undefined): value is Product => !!value && value.category === "physical";\n',
   );
   assert.deepEqual(check(), []);
-  assert.deepEqual(check(["--experimental"]), []);
-  assert.deepEqual(check(["--typed"]), []);
-  const diagnostics = check(["--typed", "--experimental"], 1);
+  const diagnostics = check(["--typed"], 1);
   assert.deepEqual(codes(diagnostics), ["aexlint-typed(no-overbroad-type-predicate)"]);
   assert.match(diagnostics[0]!.message, /false|reject/i);
   assert.doesNotMatch(diagnostics[0]!.message, /"restrictions"|"observedHarm"/);
   write("product.ts", 'export interface Product { category: "physical"; id: string }\n');
-  assert.deepEqual(check(["--typed", "--experimental"]), []);
+  assert.deepEqual(check(["--typed"]), []);
 });
 
 test("CLI respects ignore files, repeated ignore patterns, and disable comments", (t) => {
@@ -290,7 +285,7 @@ test("CLI --write-baseline replaces the file with the diagnostics of that run", 
   const { write, record } = consumer(t);
   write("first.ts", depthViolation);
   write("second.ts", "if (a) work(); else if (b) other();\n");
-  const all = record(["--experimental"]);
+  const all = record();
   assert.ok(all.some((line) => line.startsWith("second.ts\taexlint(no-else-if)")));
   assert.deepEqual(
     record(["first.ts"]).map((line) => line.split("\t").slice(0, 2)),
@@ -334,7 +329,7 @@ test("CLI skips baseline typed diagnostics", (t) => {
 
 test("CLI baselines report only the file joining an over-limit spread", (t) => {
   const { write, check, record, baseline } = consumer(t);
-  const flags = ["--typed", "--experimental"];
+  const flags = ["--typed"];
   write(
     "tsconfig.json",
     JSON.stringify({

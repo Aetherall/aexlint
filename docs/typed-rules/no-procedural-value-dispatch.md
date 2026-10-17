@@ -1,29 +1,20 @@
 # no-procedural-value-dispatch
 
-Report branching on a literal union where a branch contains its own control flow. Such a branch is a procedure for its values, written inline in a function with another job. It is easier to name, test and change when it stands on its own.
-
-**Status:** experimental. Diagnostic-only; no fixes or suggestions. Usefulness and generality remain unestablished; review findings before adopting it.
-
-## Enable
+Reports branching on a literal union where a branch has its own control flow. That branch is a procedure for its values, written inline in a function with another job; it is easier to name, test and change on its own.
 
 ```json
-{
-  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
-  "rules": { "aexlint-typed/no-procedural-value-dispatch": "warn" }
-}
+{ "rules": { "aexlint-typed/no-procedural-value-dispatch": "warn" } }
 ```
 
-**Options:** none. Omitted options, `null`, and `{}` are accepted; anything else is a configuration error. See [typed-plugin setup](../../README.md#type-aware-setup-and-limits). Run `tsc` separately; editor integration is unsupported.
+No options.
 
 ## Example
 
-Reported on `order.delivery`: the letter branch handles destination and failure cases inside a shipping loop.
+Reported on `order.delivery`:
 
 ```ts
 orders.map(async (order) => {
-  if (order.delivery === "parcel") {
-    return { order, label: await weigh(order) };
-  }
+  if (order.delivery === "parcel") return { order, label: await weigh(order) };
   if (order.delivery === "letter" && !abroad) {
     try {
       return { order, label: await insure(order) };
@@ -35,39 +26,17 @@ orders.map(async (order) => {
 });
 ```
 
-Accepted when each branch returns a value, renders an element, makes one call or runs a straight sequence of effects:
-
-```ts
-switch (event) {
-  case "paid":
-    record(order);
-    notify(order);
-    break;
-  case "refunded":
-    notify(order);
-    return;
-}
-```
+Accepted: branches that return a value, make one call, or run a straight sequence of effects.
 
 ## What counts
 
-- Vocabularies follow [no-repeated-value-group](no-repeated-value-group.md#what-counts).
-- A dispatch is a `switch` on a vocabulary, an `if`/`else if` chain whose tests all test the same subject of one vocabulary, consecutive `if` statements without `else` testing the same subject, or a chain of conditional expressions doing so. Tests may combine the subject with other conditions, as long as the condition restricts the subject's values: `x === "a" && ready` is a branch for `"a"`, `x === "a" || (x === "b" && ready)` one for `"a"` and `"b"`, and `!item || item.kind === "a"` one for `"a"`, while `x !== "a" || ready` restricts nothing and is not a branch. Help lists what each condition implies about the subject. An `if` with one tested branch counts only when it has an `else`.
-- A branch is procedural when it contains an `if`, `switch`, conditional expression, loop or `try`, including inside arrow functions and function expressions written in the branch. Nested function declarations and methods are not searched.
-- `default` branches, `else` branches after the last test, and statements after an `if` sequence are not examined.
-- Where the vocabulary is declared does not matter.
+- A dispatch is a `switch` on a vocabulary, or an `if`/`else if` chain, a run of `if`s, or a ternary chain testing the same subject. A test may combine the subject with other conditions if it still restricts the subject's values. A single tested `if` needs an `else`.
+- A branch is procedural when it contains an `if`, `switch`, ternary, loop or `try`, including in inline callbacks. `&&`, `||` and `??` are not control flow.
+- `default`, trailing `else` and code after an `if` run are not examined.
+- Subjects are compared as values: `const { type } = a` makes `type` the same subject as `a.type`.
 
-## Reporting scope
+## Reporting and limits
 
-Reports `proceduralBranch` once per dispatch, on the subject of its first test. Help lists the values of the procedural branches.
+Reports `proceduralBranch` once per dispatch, on its first subject; help lists the procedural values. No fixes.
 
-## Boundaries
-
-Deserializers that translate every variant may contain per-variant logic. Turn the rule off for them with Oxlint overrides, as shown for [no-repeated-value-group](no-repeated-value-group.md#boundaries).
-
-## Limitations
-
-- Any nested decision makes a branch procedural, including a short ternary or optional default. The rule does not measure how much work a branch does.
-- Logical `&&`, `||` and `??` inside a branch are not control flow for this rule.
-- Dispatches written as object lookups, maps of handlers, `switch (true)` or tests of different subjects are not recognized.
-- Subjects are compared as values: the same variable or `this` and the same property path, written with `.`, `?.` or a literal key. A variable that only names a value, such as `const { type } = a`, is that value, so `type` and `a.type` are one subject; two calls written alike are different subjects.
+Any nested decision counts, even a short ternary. Lookup tables, handler maps and `switch (true)` are not recognized. Deserializers translating every variant may need an override.

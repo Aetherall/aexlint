@@ -204,7 +204,7 @@ export default defineRule({
     type: "suggestion",
     docs: {
       description:
-        "Experimental: identify classifications reconstructed from multiple representation checks of one subject.",
+        "Identify classifications reconstructed from multiple representation checks of one subject.",
       requiresTypeChecking: false,
     },
     schema: [],

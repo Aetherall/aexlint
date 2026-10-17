@@ -1,34 +1,35 @@
 # aexlint
 
-Readability rules for [Oxlint](https://oxc.rs/docs/guide/usage/linter). Run standalone checks or choose individual rules in your Oxlint configuration. No autofix.
+Readability rules for [Oxlint](https://oxc.rs/docs/guide/usage/linter): syntax rules that measure how much a reader must hold at once, and type-aware rules that find knowledge about values repeated, re-checked, or held outside its owner. No autofix.
 
 ## Standalone CLI
 
-Requires Node.js 24+ and aexlint 0.2.3 or later.
+Requires Node.js 24+.
 
 ```sh
 pnpx @aetherall/aexlint check
-pnpx @aetherall/aexlint check src --typed
-pnpx @aetherall/aexlint check src --typed --experimental --format json
+pnpx @aetherall/aexlint check src --typed --format json
 ```
 
-pnpx downloads and caches aexlint and its pinned Oxlint runtime without adding dependencies or configuration to your project. The first download includes all six native backends (about 46 MB, plus dependencies). No Go installation is needed.
+`check` defaults to the current directory and runs every syntax rule as an error. `--typed` adds every type-aware rule; the project needs its dependencies installed and a TypeScript project (see below). Default limits:
 
-`check` defaults to the current directory and enables these stable syntax rules as errors:
+| Rule                        | Limit                     |
+| --------------------------- | ------------------------- |
+| `max-expression-depth`      | 3                         |
+| `max-expression-complexity` | 4                         |
+| `max-decision-depth`        | 2                         |
+| `max-held-context`          | 3                         |
+| `max-call-assembly`         | width 60, 3 outside names |
+| `max-interpretation-spread` | 4                         |
+| `max-projection-spread`     | 2                         |
 
-| Rule                        | Maximum |
-| --------------------------- | ------- |
-| `max-expression-depth`      | 3       |
-| `max-expression-complexity` | 4       |
-| `max-decision-depth`        | 2       |
+The limits are starting points, not validated thresholds. For other limits or a subset of rules, use the plugins.
 
-These are CLI starting points, not validated universal limits. `--typed` adds `prefer-truthy-presence-check`; your project still needs its dependencies installed and a usable TypeScript project (see below). `--experimental` adds experimental/prototype syntax rules, including `max-held-context` with maximum 3 and `max-call-assembly` with maximum width 60 and maximum 3 outside names. Combined with `--typed`, it also adds all experimental typed rules, with interpretation spread maximum 4 and projection spread maximum 2.
-
-The CLI ignores root and nested Oxlint configurations and does not enable unrelated built-in checks. Oxlint's normal file exclusions, ignore files, and disable comments apply. Add repeatable `--ignore-pattern <glob>` options for extra exclusions, or list globs one per line in `.aexlintignore` in the current directory (blank lines and `#` comments are skipped). Use `--` before paths starting with a dash. `--format`/`-f` accepts Oxlint output formats. Findings fail the command; Oxlint's exit code is preserved. Run `--help` or `--version` for CLI information.
+The CLI ignores Oxlint configurations and enables no built-in checks. Oxlint's file exclusions, ignore files and disable comments apply. Add exclusions with repeatable `--ignore-pattern <glob>` or in `.aexlintignore` (one glob per line, `#` comments). `--format`/`-f` accepts Oxlint output formats. Findings fail the command. Use `--` before paths starting with a dash.
 
 ### Reporting only new findings
 
-To check a branch without fixing existing findings first, record the findings of its base revision in a baseline file, then check the branch against it. Only findings missing from the baseline are reported and fail the command. In CI, for example:
+Record the findings of the base revision, then check the branch against them:
 
 ```sh
 aexlint="$PWD/node_modules/.bin/aexlint"
@@ -37,92 +38,75 @@ git worktree add ../base "$(git merge-base origin/master HEAD)"
 "$aexlint" check --baseline /tmp/aexlint-baseline
 ```
 
-Use the same aexlint version, flags and paths for both runs. The base needs its dependencies installed only for `--typed`. The baseline is meant to be generated for each check, not committed.
-
-Each line records a file, a rule and the exact message, without the `help:` text that typed rules append. Paths are relative to the directory aexlint runs from, so run both checks from the root of their checkouts. Findings survive moved lines but come back when the flagged code changes enough to change the message, for example when a measured depth grows. Identical findings in one file are counted: adding another one reports one. Findings caused by changes elsewhere, such as a type change in another file, are reported because they are not in the baseline. Renamed or moved files report all their findings again. Parse errors are never skipped. `--write-baseline` overwrites the file and cannot be combined with `--baseline` or `--format`. Baselines apply only to the CLI, not to the plugins.
-
-For custom rule thresholds, overrides, or additional Oxlint options, use the plugin integration below. Installing the package also provides `pnpm exec aexlint check`.
+Use the same version, flags and paths for both runs, from the root of each checkout. A finding is its file, rule and message: it survives moved lines, but comes back when its message changes, when its file is renamed, or when it is caused by a change elsewhere. Identical findings in a file are counted. Parse errors are never skipped. Baselines apply only to the CLI.
 
 ## Plugin setup
 
-Requires Node.js 24+ and Oxlint 1.83.0 (the tested version).
-
-The plugins enable no rules by default; configure the rules and thresholds you want.
+Requires Node.js 24+ and Oxlint 1.83.0.
 
 ```sh
 pnpm add -D oxlint@1.83.0 @aetherall/aexlint
 ```
 
-Add to `.oxlintrc.json`:
+`.oxlintrc.json`:
 
 ```json
 {
   "jsPlugins": ["@aetherall/aexlint", "@aetherall/aexlint/typed-plugin"],
   "rules": {
     "aexlint/max-expression-depth": ["warn", { "max": 3 }],
-    "aexlint/max-expression-complexity": ["warn", { "max": 4 }],
-    "aexlint/max-decision-depth": ["warn", { "max": 2 }],
-    "aexlint-typed/prefer-truthy-presence-check": "warn"
+    "aexlint-typed/no-repeated-value-policy": "warn"
   }
 }
 ```
 
-These limits are examples, not recommendations. Remove `@aetherall/aexlint/typed-plugin` and its rule if you only want syntax checks.
-
-```sh
-pnpm exec oxlint src
-```
-
-Normal Oxlint severities, overrides, ignore patterns, and disable comments apply.
+The plugins enable no rules by default. Drop the typed plugin for syntax checks only.
 
 ## Rules
 
 ### Syntax — `aexlint/`
 
-| Rule                                                                 | Checks                                            | Status       |
-| -------------------------------------------------------------------- | ------------------------------------------------- | ------------ |
-| [max-expression-depth](docs/rules/max-expression-depth.md)           | Nested calls                                      | Stable       |
-| [max-expression-complexity](docs/rules/max-expression-complexity.md) | Work inside one expression                        | Stable       |
-| [max-decision-depth](docs/rules/max-decision-depth.md)               | Nested logical groups and ternaries               | Stable       |
-| [max-call-assembly](docs/rules/max-call-assembly.md)                 | Wide calls drawing on many outside names          | Experimental |
-| [max-held-context](docs/rules/max-held-context.md)                   | Enclosing decisions, loops, and callbacks         | Prototype    |
-| [no-else-if](docs/rules/no-else-if.md)                               | `else if` chains                                  | Experimental |
-| [no-multiline-condition](docs/rules/no-multiline-condition.md)       | Conditions spanning multiple lines                | Experimental |
-| [prefer-domain-predicate](docs/rules/prefer-domain-predicate.md)     | Unnamed classifications built from several checks | Experimental |
+| Rule                                                                 | Reports                                           |
+| -------------------------------------------------------------------- | ------------------------------------------------- |
+| [max-expression-depth](docs/rules/max-expression-depth.md)           | Nested calls                                      |
+| [max-expression-complexity](docs/rules/max-expression-complexity.md) | Work inside one expression                        |
+| [max-decision-depth](docs/rules/max-decision-depth.md)               | Nested logical groups and ternaries               |
+| [max-call-assembly](docs/rules/max-call-assembly.md)                 | Wide calls drawing on many outside names          |
+| [max-held-context](docs/rules/max-held-context.md)                   | Enclosing decisions, loops, and callbacks         |
+| [no-else-if](docs/rules/no-else-if.md)                               | `else if` chains                                  |
+| [no-multiline-condition](docs/rules/no-multiline-condition.md)       | Conditions spanning multiple lines                |
+| [prefer-domain-predicate](docs/rules/prefer-domain-predicate.md)     | Unnamed classifications built from several checks |
 
 ### Type-aware — `aexlint-typed/`
 
-| Rule                                                                               | Checks                                                           | Status       |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------ |
-| [prefer-truthy-presence-check](docs/typed-rules/prefer-truthy-presence-check.md)   | Nullish comparisons equivalent to truthiness checks              | Stable       |
-| [max-interpretation-spread](docs/typed-rules/max-interpretation-spread.md)         | Literal unions interpreted across too many files                 | Experimental |
-| [no-forgeable-validated-result](docs/typed-rules/no-forgeable-validated-result.md) | Validated results callers can construct without validation       | Experimental |
-| [max-projection-spread](docs/typed-rules/max-projection-spread.md)                 | Repeated object projections across files                         | Experimental |
-| [no-caller-enforced-invariant](docs/typed-rules/no-caller-enforced-invariant.md)   | Caller-side checks that a receiving class does not enforce       | Experimental |
-| [no-repeated-value-group](docs/typed-rules/no-repeated-value-group.md)             | Groups of literal values written out in several places           | Experimental |
-| [no-repeated-value-policy](docs/typed-rules/no-repeated-value-policy.md)           | The same literal test and outcome in several files               | Experimental |
-| [no-procedural-value-dispatch](docs/typed-rules/no-procedural-value-dispatch.md)   | Branches on literal values that contain their own control flow   | Experimental |
-| [no-external-variant-behavior](docs/typed-rules/no-external-variant-behavior.md)   | Variant representations built outside a known owner              | Experimental |
-| [no-repeated-selection](docs/typed-rules/no-repeated-selection.md)                 | Handlers repeating a test their sibling selector already made    | Experimental |
-| [no-repeated-conversion](docs/typed-rules/no-repeated-conversion.md)               | Conversions written identically in several places                | Experimental |
-| [no-repeated-presence-check](docs/typed-rules/no-repeated-presence-check.md)       | Presence checks a called function already makes                  | Experimental |
-| [no-fact-outside-owner](docs/typed-rules/no-fact-outside-owner.md)                 | Facts about a type's values established outside its owner        | Experimental |
-| [no-overbroad-type-predicate](docs/typed-rules/no-overbroad-type-predicate.md)     | Type predicates that reject values their declared target permits | Experimental |
+| Rule                                                                               | Reports                                                          |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| [prefer-truthy-presence-check](docs/typed-rules/prefer-truthy-presence-check.md)   | Nullish comparisons equivalent to truthiness checks              |
+| [max-interpretation-spread](docs/typed-rules/max-interpretation-spread.md)         | Literal unions interpreted across too many files                 |
+| [max-projection-spread](docs/typed-rules/max-projection-spread.md)                 | Repeated object projections across files                         |
+| [no-forgeable-validated-result](docs/typed-rules/no-forgeable-validated-result.md) | Validated results callers can construct without validation       |
+| [no-caller-enforced-invariant](docs/typed-rules/no-caller-enforced-invariant.md)   | Caller-side checks that a receiving class does not enforce       |
+| [no-repeated-value-group](docs/typed-rules/no-repeated-value-group.md)             | Groups of literal values written out in several places           |
+| [no-repeated-value-policy](docs/typed-rules/no-repeated-value-policy.md)           | The same literal test and outcome in several files               |
+| [no-procedural-value-dispatch](docs/typed-rules/no-procedural-value-dispatch.md)   | Branches on literal values that contain their own control flow   |
+| [no-external-variant-behavior](docs/typed-rules/no-external-variant-behavior.md)   | Variant representations built outside a known owner              |
+| [no-repeated-selection](docs/typed-rules/no-repeated-selection.md)                 | Handlers repeating a test their sibling selector already made    |
+| [no-repeated-conversion](docs/typed-rules/no-repeated-conversion.md)               | Conversions written identically in several places                |
+| [no-repeated-presence-check](docs/typed-rules/no-repeated-presence-check.md)       | Presence checks a called function already makes                  |
+| [no-fact-outside-owner](docs/typed-rules/no-fact-outside-owner.md)                 | Facts about a type's values established outside its owner        |
+| [no-overbroad-type-predicate](docs/typed-rules/no-overbroad-type-predicate.md)     | Type predicates that reject values their declared target permits |
 
-Rule pages describe options and limits. Experimental rules have narrower coverage; review their findings before adopting them.
+`no-else-if` and `max-held-context` disagree on uniform `else if` chains; pick one if that matters to you.
 
 ## Type-aware setup and limits
 
 - Each file must belong to a TypeScript 7-compatible `tsconfig.json` project with dependencies installed. Referenced projects may need declaration outputs built first.
-- `prefer-truthy-presence-check` requires `strictNullChecks` or `strict`.
-- Run `tsc` too: type errors are not lint diagnostics, and unresolved types can cause rules to skip checks.
-- Use plain `oxlint`, not `--type-aware` or `OXLINT_TSGOLINT_PATH`. The plugin runs its own bundled backend; no Go installation is needed.
-- Some rules inspect the whole TypeScript program, including files outside the lint command. Results are reused within a run.
-- Project code is every file of the program that is not a declaration file and whose real path is outside `node_modules`. Workspace packages linked into `node_modules` count as project code. Files inside `node_modules` are dependencies.
-- Setup errors and backend failures fail the lint run. Editor integration (`oxlint --lsp`) is not supported.
-
-Linux, macOS, and Windows on x64 and arm64 are smoke-tested in CI. All six binaries ship in one package, so the download is larger than a JS-only plugin.
+- `prefer-truthy-presence-check` requires `strictNullChecks`.
+- Run `tsc` too: type errors are not reported, and unresolved types make rules skip checks.
+- Use plain `oxlint`, not `--type-aware`. The plugin runs its own bundled backend for Linux, macOS and Windows on x64 and arm64; no Go needed.
+- Some rules read the whole program, including files outside the lint command. Project code is every non-declaration file outside `node_modules`; linked workspace packages count.
+- Setup errors fail the run. Editor integration (`oxlint --lsp`) is not supported.
 
 ## Development
 
-See the repository's [development guide](https://github.com/Aetherall/aexlint/blob/master/docs/development.md).
+See the [development guide](https://github.com/Aetherall/aexlint/blob/master/docs/development.md).

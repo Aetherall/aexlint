@@ -1,33 +1,16 @@
 # max-held-context
 
-Prototype, syntax-only Oxlint JS rule. Limits enclosing contexts a reader must remember where a decision is made, including across callbacks. The boundaries are provisional; procedure length is not measured.
-
-## Configuration
+Limits how many enclosing contexts a reader must keep in mind where a decision is made, including across callbacks.
 
 ```json
-{
-  "jsPlugins": ["@aetherall/aexlint"],
-  "rules": { "aexlint/max-held-context": ["warn", { "max": 3 }] }
-}
+{ "rules": { "aexlint/max-held-context": ["warn", { "max": 3 }] } }
 ```
 
-Exactly one options object is required. `max` must be a positive safe integer; unknown keys and extra options are rejected. There is no default or recommended limit.
-
-## What counts
-
-A decision's depth is the number of open contexts plus one. Decisions are `if`, loops, `switch`, `catch` and ternaries. Logical groups, nullish defaulting and optional access are not decisions; see [max-decision-depth](max-decision-depth.md).
-
-Each branch body, loop body, switch case, catch body, ternary alternative and directly passed callback body opens one context. An `else if` chain keeps all alternatives at the same depth.
-
-An `if` without `else` whose body is only `return`, `throw`, `continue` or `break` opens no context. The guard itself is still a decision; its condition and exit argument are checked at the current depth.
-
-The program and functions start at zero, except functions passed directly as call or constructor arguments: those carry the caller's contexts into their bodies. Class bodies reset depth; methods and local, returned or object-property functions are measured separately. Only function bodies are traversed, not parameter defaults.
-
-Only decisions report. Nested callbacks with no decisions never report, however deep they are.
+`max` is a required positive integer.
 
 ## Example
 
-With `max: 3`, the guard below reports depth 4: loop, branch, callback, then decision.
+Reported at `max: 3`: the guard sits under a loop, a branch and a callback (depth 4).
 
 ```ts
 for (const item of items) {
@@ -40,7 +23,7 @@ for (const item of items) {
 }
 ```
 
-Independent guards are accepted at depth 1:
+Accepted: independent guards at depth 1.
 
 ```ts
 function validate(a, b) {
@@ -50,10 +33,15 @@ function validate(a, b) {
 }
 ```
 
+## What counts
+
+- Decisions are `if`, loops, `switch`, `catch` and ternaries. A decision's depth is its open contexts plus one.
+- Branch, loop, case, catch and ternary bodies open a context, and so does a callback passed directly as an argument. An `else if` chain stays at one depth.
+- An `if` without `else` whose body only returns, throws, continues or breaks opens no context.
+- Other functions and class bodies start again at zero.
+
 ## Reporting and limits
 
-Reports `tooDeep` with open-context count, depth and maximum. The span covers the decision head through its closing parenthesis; ternaries and `do … while` report only their condition, and parameterless `catch` reports its keyword. Only the first over-limit decision in an open context reports; its siblings and descendants are suppressed. Separate contexts, including opposite branches, can report separately.
+Reports `tooDeep` on the decision head; only the first over-limit decision in a context is reported. No fixes. Callback aliases and when callbacks run are not tracked. Nested test and promise callbacks count like any others; use overrides for test files.
 
-No fixes or suggestions. Restructuring can change early exits, evaluation order and captured state. The rule does not follow callback identifiers/aliases or know when callbacks run. It does not measure decision breadth, interacting state or closure ownership.
-
-Test and asynchronous callbacks count like any others: nested `describe`/`it` or timer/promise callbacks can make a simple guard exceed the limit. Use Oxlint `overrides` to disable the rule or raise `max` for test files when appropriate.
+[no-else-if](no-else-if.md) takes the opposite view of uniform `else if` chains.

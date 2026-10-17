@@ -1,24 +1,24 @@
 # no-multiline-condition
 
-Experimental, syntax-only Oxlint JS rule. Keeps statement conditions on one line so the decision can be read before its body.
-
-## Configuration
+Keeps statement conditions on one line so the decision can be read before its body.
 
 ```json
-{
-  "jsPlugins": ["@aetherall/aexlint"],
-  "rules": { "aexlint/no-multiline-condition": "warn" }
-}
+{ "rules": { "aexlint/no-multiline-condition": "warn" } }
 ```
 
-No options, fixes or suggestions.
+No options.
 
 ## Example
 
 Reported:
 
 ```ts
-if (user.isActive && user.subscription.plan !== "free" && !user.flags.suspended) {
+if (
+  user.isActive &&
+  user.subscription.plan !== "free" &&
+  !user.flags.suspended &&
+  !user.flags.locked
+) {
   grantAccess(user);
 }
 ```
@@ -26,18 +26,13 @@ if (user.isActive && user.subscription.plan !== "free" && !user.flags.suspended)
 Accepted:
 
 ```ts
-const canAccess = user.isActive && user.subscription.plan !== "free" && !user.flags.suspended;
-if (canAccess) {
-  grantAccess(user);
-}
+const canAccess =
+  user.isActive && user.subscription.plan !== "free" && !user.flags.suspended && !user.flags.locked;
+if (canAccess) grantAccess(user);
 ```
 
 ## Reporting and limits
 
-Checks `if`/`else if`, `while`, `do … while` and the test clause of ordinary `for` loops. Reports `multiline` when the condition's first and last characters are on different lines, spanning the condition without the statement's parentheses. The message includes statement kind and line count.
+Checks `if`, `while`, `do … while` and the test of `for`. Reports `multiline` on a condition whose first and last characters are on different lines, excluding the statement's parentheses. Every line break counts, including in comments, templates and callbacks. Ternaries, `switch` and `for … of`/`in` heads are not checked.
 
-Only the condition is measured. Parentheses on separate lines or a multiline `for` header pass when the test itself is on one line. Every internal line break counts, including those in comments, templates, callbacks and object literals.
-
-Ternaries, switch discriminants, case tests, `for … in`/`for … of` heads and expressions outside statement conditions are not checked.
-
-This measures layout, not complexity. A formatter's wrapping choices affect reports. Naming a decision is one possible response, but moving expressions can change evaluation order or short-circuiting, especially in loop tests; no automatic rewrite is offered.
+This measures layout, so formatter wrapping affects it. No fixes: moving a loop test can change evaluation order.

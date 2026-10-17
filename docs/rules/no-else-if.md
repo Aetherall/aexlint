@@ -1,46 +1,33 @@
 # no-else-if
 
-Experimental, syntax-only Oxlint JS style rule. Reports every `else if`: reaching that branch depends on its condition being true and every earlier condition being false.
-
-This conflicts with [max-held-context](max-held-context.md), which treats uniform `else if` chains as clear alternatives. Choose the view that suits your code.
-
-## Configuration
+Reports every `else if`: reaching that branch depends on its own condition and on every earlier one being false.
 
 ```json
-{
-  "jsPlugins": ["@aetherall/aexlint"],
-  "rules": { "aexlint/no-else-if": "warn" }
-}
+{ "rules": { "aexlint/no-else-if": "warn" } }
 ```
 
-No options, fixes or suggestions.
+No options.
 
 ## Example
 
 Reported:
 
 ```ts
-function label(user: User) {
-  if (day.isStormy) return "stormy";
-  else if (day.isCloudy) return "cloudy";
-  return "sunny";
-}
+if (day.isStormy) return "stormy";
+else if (day.isCloudy) return "cloudy";
+return "sunny";
 ```
 
 Accepted:
 
 ```ts
-function label(user: User) {
-  if (day.isStormy) return "stormy";
-  if (day.isCloudy) return "cloudy";
-  return "sunny";
-}
+if (day.isStormy) return "stormy";
+if (day.isCloudy) return "cloudy";
+return "sunny";
 ```
 
 ## Reporting and limits
 
-Reports `elseIf` once per `else if`, from the start of `else` through the end of `if`, including intervening whitespace or comments. A chain with three `else if` branches produces three reports.
+Reports `elseIf` once per `else if`, from `else` through `if`. Plain `else`, ternaries and `else { if … }` are not checked. No fixes: early returns, switches and lookup tables are not interchangeable in general.
 
-Plain `else`, nested ternaries and `else { if (…) … }` are not checked, even when the block contains only that `if`. The rule checks statement shape, not equivalent behavior.
-
-Early returns, lookup tables, switches and independent conditions are not interchangeable in general. No rewrite is applied automatically.
+[max-held-context](max-held-context.md) treats uniform `else if` chains as clear alternatives; pick the view that suits your code.

@@ -28,7 +28,7 @@ declare const node: { type: string };
 if (node.type === 'Array' || node.type === 'Object') step(node);
 `;
 
-test("mandatory and experimental lint configurations cover every rule and TS directory", (t) => {
+test("enforced and review lint configurations cover every rule and TS directory", (t) => {
   const configured = { ...syntaxConfig.rules, ...classificationConfig.rules };
   const enabled = Object.keys(configured)
     .filter((name) => name.startsWith("aexlint/"))

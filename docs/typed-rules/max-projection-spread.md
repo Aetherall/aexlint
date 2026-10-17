@@ -1,25 +1,16 @@
 # max-projection-spread
 
-Limit how many files repeat how a project-owned value becomes an output object. Repeated member calls can leave several places to update when the meaning of an output field changes.
-
-**Status:** experimental research candidate; not ready for promotion. Diagnostic-only, with no fixes or suggestions. Deliberate copies and unrelated projections sharing getters can report without implying a useful design change.
-
-## Enable
+Limits how many files repeat how a project value becomes an output object. When an output field's meaning changes, each copy needs the same change.
 
 ```json
-{
-  "jsPlugins": ["@aetherall/aexlint/typed-plugin"],
-  "rules": { "aexlint-typed/max-projection-spread": ["warn", { "max": 2 }] }
-}
+{ "rules": { "aexlint-typed/max-projection-spread": ["warn", { "max": 2 }] } }
 ```
 
-**Options:** optional `max`, a positive safe integer; default **2**. Unknown keys and invalid values are configuration errors. The default is not a validated design boundary.
-
-See [typed-plugin setup](../../README.md#type-aware-setup-and-limits) for project requirements. Run `tsc` separately; editor integration is unsupported.
+`max` is an optional positive integer, default 2.
 
 ## Example
 
-Reported when three files build this projection of the same project `Site` type:
+Reported when three files build:
 
 ```ts
 return {
@@ -28,37 +19,23 @@ return {
 };
 ```
 
-Accepted alternative, when these sites should share one representation: define the projection on `Site` and call it from each site.
+Accepted: the projection lives on `Site`, and callers use `site.toResponse()`.
 
 ```ts
 toResponse() {
-  return {
-    id: this.id.serialize(),
-    shining: this.getBrightness().is("shining"),
-  };
+  return { id: this.id.serialize(), shining: this.getBrightness().is("shining") };
 }
 ```
 
-The callers then use `site.toResponse()` rather than rebuilding the object.
-
 ## What counts
 
-- A derivation is an object-literal property with a static key, built from an identifier through member accesses and at least one method call. Call arguments must be literals (string, number, boolean or `null`) or absent. The identifier must be a variable or parameter holding the projected value: a static call on a class, enum or namespace, such as `Id.generate()`, makes a new value rather than project one.
-- The root's non-nullable object type must have an alias or symbol declared entirely in project source files. Library types and types without that identity are excluded.
-- A projection needs at least two derivations from the same variable and owner type. A single method call in an object is not enough.
-- Derivations match when the output key, the owner type, including its type arguments, and the [form](../design/decision-model.md#value) of the value relative to its root match: member names and literal argument values. Variable spelling alone does not determine identity.
-- Each derivation counts distinct files, not whole-object copies. The search covers the TypeScript program, including unlinted source files and tests, but not declaration files or files inside `node_modules`.
+- A derivation is an object property with a static key, built from a variable through member reads and at least one method call with literal or no arguments. Its type must be declared in project code.
+- A projection needs at least two derivations from the same variable.
+- Derivations match on output key, owner type (with type arguments) and the chain of members and literal arguments; variable names do not matter. Files are counted per derivation across the whole program.
+- Plain copies (`id: site.id`), shorthand, `this` roots, helper calls and non-literal arguments do not count.
 
-## Reporting scope
+## Reporting and limits
 
-Above `max`, reports `spreadProjection` once per projection, on the key of its first over-limit derivation. The message names repeated derivations, ordered by output key, and the limit. It describes only this projection, so another file restating it does not change it. Help gives each derivation's file count and lists other files.
+Above `max`, reports `spreadProjection` once per projection, on its first over-limit key. Help gives each derivation's file count. No fixes.
 
-Copies such as `id: site.id`, shorthand properties, roots at `this`, calls to standalone helpers, and calls with nonliteral arguments do not count. Projections within the limit are accepted.
-
-## Limitations
-
-- Versioned serializers, separate read models and external formats may repeat derivations deliberately. A report does not prove they should share code.
-- Common getters can exceed the limit even when the surrounding objects differ substantially. The rule does not measure similarity of whole objects.
-- Intermediate variables, helper functions, computed arguments, assignments into fresh objects and constructor-built projections are not compared.
-- Other tsconfig programs are not searched. Program-wide indexing and per-file type resolution add cost on large projects.
-- Usefulness and generality remain unestablished. Raising the limit or suppressing deliberate copies may be appropriate; the rule is not ready for promotion.
+Versioned serializers and read models may repeat derivations on purpose; turn the rule off for them with overrides. Whole-object similarity, intermediate variables and other tsconfig programs are not considered.

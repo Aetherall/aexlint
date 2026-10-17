@@ -71,37 +71,25 @@ func TestRule(t *testing.T) {
     docPath,
     `# ${name}
 
-## Intent
+TODO: the problem this rule finds and the maintenance burden it causes.
 
-TODO: describe the behavior and why existing rules do not cover it.
+\`\`\`json
+{ "rules": { "aexlint-typed/${name}": "warn" } }
+\`\`\`
 
-## Runtime
+No options.
 
-Native Go rule, run by Oxlint through the @aetherall/aexlint/typed-plugin JavaScript plugin as aexlint-typed/${name}.
+## Example
 
-## Type information
+TODO: a reported example, and an accepted one where only an imported type changes the result (cross-file).
 
-TODO: specify the exact type queries, handling of any/unknown/unions/generics, and unresolved imports.
+## What counts
 
-## Reported code
+TODO: the type queries, including any/unknown/unions/generics and unresolved imports.
 
-TODO: examples and precise reporting locations.
+## Reporting and limits
 
-## Accepted code
-
-TODO: near misses and a cross-file example where only the imported type changes the result.
-
-## Options
-
-None. Validate options in Go before using them.
-
-## Fixes
-
-None. The typed plugin does not forward fixes; Go rule tests can verify fixes and suggestions.
-
-## Limitations
-
-Requires a TypeScript 7-compatible tsconfig.json. TypeScript's own errors are left to tsc. No editor integration yet.
+TODO: message ID, span, and limitations. No fixes.
 `,
     { flag: "wx" },
   );

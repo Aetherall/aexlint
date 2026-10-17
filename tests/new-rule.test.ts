@@ -36,7 +36,7 @@ test("generates source, failing examples, docs and a sorted registry", (t) => {
       readFileSync(join(root, `src/rules/${name}/${name}.test.ts`), "utf8"),
       /ruleTester.run/,
     );
-    assert.match(readFileSync(join(root, `docs/rules/${name}.md`), "utf8"), /## Accepted code/);
+    assert.match(readFileSync(join(root, `docs/rules/${name}.md`), "utf8"), /## Example/);
   }
 });
 

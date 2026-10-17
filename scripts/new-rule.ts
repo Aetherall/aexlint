@@ -58,33 +58,21 @@ ruleTester.run("${name}", rule, {
     docPath,
     `# ${name}
 
-## Intent
+TODO: the problem this rule finds and why existing Oxlint rules do not cover it.
 
-TODO: define the problem and why existing Oxlint rules do not cover it.
+\`\`\`json
+{ "rules": { "aexlint/${name}": "warn" } }
+\`\`\`
 
-## Runtime
+No options.
 
-Oxlint JavaScript plugin; syntax/scope only. No TypeScript type information.
+## Example
 
-## Reported code
+TODO: a reported example and an accepted near miss.
 
-TODO: minimal invalid examples and the precise reporting location.
+## Reporting and limits
 
-## Accepted code
-
-TODO: valid examples, near misses, and false-positive boundaries.
-
-## Options
-
-None.
-
-## Fixes
-
-None. Only add a fix when preserving behavior can be demonstrated.
-
-## Limitations
-
-TODO: syntax variants, deliberate exclusions, and known trade-offs.
+TODO: message ID, span, and limitations. No fixes.
 `,
     { flag: "wx" },
   );

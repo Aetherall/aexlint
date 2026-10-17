@@ -20,7 +20,7 @@ The shell provides Node.js, pnpm, and Go. The first native build needs network a
 | `pnpm native:test <name>`                        | Test one Go rule                                                    |
 | `pnpm native:test <name> --update`               | Update snapshots; review the changes                                |
 | `pnpm lint`                                      | Self-lint with both plugins; rebuilds the host backend              |
-| `pnpm lint:classifications`                      | Optional experimental rule review                                   |
+| `pnpm lint:classifications`                      | Optional review with the rules self-lint does not enforce           |
 | `pnpm format`                                    | Format TS, docs, and Go                                             |
 | `pnpm check`                                     | Types, lint, formatting, Go/TS tests, and package integration       |
 | `pnpm build`                                     | Build JS, declarations, and the host binary                         |

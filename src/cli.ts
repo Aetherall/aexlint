@@ -19,8 +19,7 @@ const help = `Usage: aexlint check [options] [paths...]
 
 Check the current directory when no paths are supplied.
 
-  --typed                  Include stable type-aware rules (requires a TS project)
-  --experimental           Include experimental and prototype rules
+  --typed                  Include type-aware rules (requires a TS project)
   -f, --format <format>     Oxlint output format (default: default)
   --ignore-pattern <glob>   Additional ignore pattern; repeatable
   --baseline <file>        Skip diagnostics recorded in a baseline file
@@ -31,7 +30,6 @@ Check the current directory when no paths are supplied.
 Uses standalone defaults, not project Oxlint configurations.
 Reads ignore globs from .aexlintignore in the current directory.
 Baseline paths are relative to the current directory.
-Typed experimental rules require both --typed and --experimental.
 Use -- before paths beginning with a dash.
 `;
 
@@ -60,7 +58,6 @@ function check(): number {
     allowPositionals: true,
     options: {
       typed: { type: "boolean" },
-      experimental: { type: "boolean" },
       format: { type: "string", short: "f" },
       "ignore-pattern": { type: "string", multiple: true },
       baseline: { type: "string" },
@@ -93,37 +90,31 @@ function check(): number {
     "aexlint/max-expression-depth": ["error", { max: 3 }],
     "aexlint/max-expression-complexity": ["error", { max: 4 }],
     "aexlint/max-decision-depth": ["error", { max: 2 }],
+    "aexlint/max-call-assembly": ["error", { maxWidth: 60, maxReferences: 3 }],
+    "aexlint/max-held-context": ["error", { max: 3 }],
+    "aexlint/no-else-if": "error",
+    "aexlint/no-multiline-condition": "error",
+    "aexlint/prefer-domain-predicate": "error",
   };
   const jsPlugins = [fileURLToPath(new URL("./baseline-plugin.js", import.meta.url))];
-  if (values.experimental) {
-    Object.assign(rules, {
-      "aexlint/max-call-assembly": ["error", { maxWidth: 60, maxReferences: 3 }],
-      "aexlint/max-held-context": ["error", { max: 3 }],
-      "aexlint/no-else-if": "error",
-      "aexlint/no-multiline-condition": "error",
-      "aexlint/prefer-domain-predicate": "error",
-    });
-  }
   if (values.typed) {
     jsPlugins.push(fileURLToPath(new URL("./baseline-typed-plugin.js", import.meta.url)));
-    rules["aexlint-typed/prefer-truthy-presence-check"] = "error";
-    if (values.experimental) {
-      Object.assign(rules, {
-        "aexlint-typed/max-interpretation-spread": ["error", { max: 4 }],
-        "aexlint-typed/max-projection-spread": ["error", { max: 2 }],
-        "aexlint-typed/no-forgeable-validated-result": "error",
-        "aexlint-typed/no-caller-enforced-invariant": "error",
-        "aexlint-typed/no-repeated-value-group": "error",
-        "aexlint-typed/no-repeated-value-policy": "error",
-        "aexlint-typed/no-procedural-value-dispatch": "error",
-        "aexlint-typed/no-external-variant-behavior": "error",
-        "aexlint-typed/no-repeated-selection": "error",
-        "aexlint-typed/no-repeated-conversion": "error",
-        "aexlint-typed/no-repeated-presence-check": "error",
-        "aexlint-typed/no-fact-outside-owner": "error",
-        "aexlint-typed/no-overbroad-type-predicate": "error",
-      });
-    }
+    Object.assign(rules, {
+      "aexlint-typed/prefer-truthy-presence-check": "error",
+      "aexlint-typed/max-interpretation-spread": ["error", { max: 4 }],
+      "aexlint-typed/max-projection-spread": ["error", { max: 2 }],
+      "aexlint-typed/no-forgeable-validated-result": "error",
+      "aexlint-typed/no-caller-enforced-invariant": "error",
+      "aexlint-typed/no-repeated-value-group": "error",
+      "aexlint-typed/no-repeated-value-policy": "error",
+      "aexlint-typed/no-procedural-value-dispatch": "error",
+      "aexlint-typed/no-external-variant-behavior": "error",
+      "aexlint-typed/no-repeated-selection": "error",
+      "aexlint-typed/no-repeated-conversion": "error",
+      "aexlint-typed/no-repeated-presence-check": "error",
+      "aexlint-typed/no-fact-outside-owner": "error",
+      "aexlint-typed/no-overbroad-type-predicate": "error",
+    });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));
   try {
