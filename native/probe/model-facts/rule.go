@@ -186,8 +186,8 @@ func (p *probe) decision(d *model.Decision) {
 	arms := []string{}
 	for _, b := range d.Arms {
 		outcome := string(b.Outcome.Source)
-		if b.Outcome.Effects {
-			outcome += " with effects"
+		if b.Outcome.Commands {
+			outcome += " with commands"
 		}
 		if len(b.Outcome.Values) > 0 {
 			outcome += " " + strings.Join(b.Outcome.Values, " | ")

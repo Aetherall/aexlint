@@ -24,9 +24,9 @@ The logic then works on the project's model and does not test variants itself. A
 
 ## Telling them apart
 
-The decision model records, for each branch, what its result depends on and whether it has effects (see [outcome](decision-model.md)). A pilot on `max-expression-depth` showed that this alone does not separate the cases: an inline switch extracting a node's parts looks like a projection, and a projection reading a second parameter looks mixed. What separates them is where the result goes:
+The decision model records, for each branch, what its result depends on and whether it runs commands (see [outcome](decision-model.md)). A pilot on `max-expression-depth` showed that this alone does not separate the cases: an inline switch extracting a node's parts looks like a projection, and a projection reading a second parameter looks mixed. What separates them is where the result goes:
 
-- **Embedded translation:** a tested branch reads the value's parts and keeps the result in a local of its function, or has effects. The function goes on to do other work with it.
+- **Embedded translation:** a tested branch reads the value's parts and keeps the result in a local of its function. The function goes on to do other work with it.
 - **Projection:** the tested branches return their result.
 - **Dispatch to a handler:** a branch passes the whole value on. This is not a translation.
 

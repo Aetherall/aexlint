@@ -17,7 +17,8 @@
 - **Flow**: what a function does with its input: the data each value is built from, the checks it makes, the calls it passes data to, and what it returns.
 - **Owner**: who a type belongs to: its class, a runtime value merged with it, or its declaring module or namespace. Importing a type does not transfer ownership.
 - **Predicate**: a parameterless member whose whole body is a field test of `this`. A **helper predicate** is an exported one-parameter function doing the same for its parameter. A **selector** is a function whose result is a boolean of tests on its parameters, or a type predicate.
-- **Outcome**: what an arm produces: whether it has effects, and what its result depends on: none, empty, constant, the value, parts of it, other data, or a mix. A constant result without effects is a **lookup**.
+- **Outcome**: what an arm produces: whether it runs **commands**, and what its result depends on: none, empty, constant, the value, parts of it, other data, or a mix. A constant result without effects is a **lookup**.
+- **Command**: something an arm runs for what it does rather than for a value: an expression statement whose value is discarded (a call, an update, an assignment to data other than a local of its function), or a returned call typed `void`. This is not purity: `const r = await save(x)` is not a command, and `list.push(x)` on a fresh local array is.
 - **Logic**: the `if`, `switch`, ternary, loop and `try` nodes written in an arm.
 - **Decision**: a place choosing between arms on one value, each guarded by tests of its literal values. A branch's claim is **complete** when its conditions test only that value and do not overlap earlier arms.
 - **Site**: a written question about vocabularies (a condition, `case` labels, or a typed list), indexed per program by the literal values it mentions.

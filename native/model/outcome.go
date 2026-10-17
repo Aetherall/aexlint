@@ -11,7 +11,7 @@ import (
 type Source string
 
 const (
-	// NoResult is an arm that produces no value: it leaves, or only has effects.
+	// NoResult is an arm that produces no value: it leaves, or only runs commands.
 	NoResult Source = "none"
 	// EmptyResult is nothing new: missing or empty values, a boolean, 0 or -1.
 	EmptyResult Source = "empty"
@@ -27,21 +27,24 @@ const (
 	MixedResult Source = "mixed"
 )
 
-// Outcome is what an arm produces when it runs: the data its result depends on, and whether it does more than produce
-// it. Values identify a constant result: the literals it picks, or its form.
+// Outcome is what an arm produces when it runs: the data its result depends on, and whether it runs commands. Values
+// identify a constant result: the literals it picks, or its form.
 type Outcome struct {
-	Source  Source
-	Effects bool
-	Values  []string
+	Source Source
+	// Commands is whether the arm runs something for what it does rather than for a value: an expression statement whose
+	// value is discarded, such as a call, an update or an assignment to data other than a local of its function, or a
+	// returned call typed void. It is not a purity analysis: calls in declarations and conditions are not commands.
+	Commands bool
+	Values   []string
 }
 
-// Fallback reports whether the arm does no work: it produces nothing new and has no effects.
+// Fallback reports whether the arm does no work: it produces nothing new and runs no commands.
 func (o Outcome) Fallback() bool {
-	return !o.Effects && (o.Source == NoResult || o.Source == EmptyResult)
+	return !o.Commands && (o.Source == NoResult || o.Source == EmptyResult)
 }
 
 // Lookup reports whether the arm only picks a constant.
-func (o Outcome) Lookup() bool { return !o.Effects && o.Source == ConstantResult }
+func (o Outcome) Lookup() bool { return !o.Commands && o.Source == ConstantResult }
 
 // OutcomeOf reads what an arm produces. value is the value its decision tests, and tag the property of value it tests,
 // or "" when it tests value itself.
@@ -50,7 +53,7 @@ func (m *Analyzer) OutcomeOf(body []*ast.Node, value Value, tag string) Outcome 
 		return m.result([]*ast.Node{body[0]}, value, tag, false)
 	}
 	statements := armStatements(body)
-	return m.result(m.returned(statements), value, tag, m.effectful(statements))
+	return m.result(m.returned(statements), value, tag, m.commands(statements))
 }
 
 func armStatements(body []*ast.Node) []*ast.Node {
@@ -147,11 +150,11 @@ func enclosingFunction(n *ast.Node) *ast.Node {
 	return nil
 }
 
-// effectful reports whether statements run an expression statement, such as a call or an assignment, outside the
+// commands reports whether statements run an expression statement, such as a call or an assignment, outside the
 // functions they declare: what it does, rather than any value, is why it runs. Calls inside declarations and conditions
 // compute values; whether they also have effects is not known. A call returning never leaves, like a throw, and an
 // assignment leaving a result in a local produces it.
-func (m *Analyzer) effectful(statements []*ast.Node) bool {
+func (m *Analyzer) commands(statements []*ast.Node) bool {
 	found := false
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
@@ -172,24 +175,24 @@ func (m *Analyzer) effectful(statements []*ast.Node) bool {
 }
 
 // result reads what an arm produces from the expressions it can result in: nothing new when each is empty, the
-// data they read together, or the constants they pick. A call returning void or undefined is an effect, not a result.
-func (m *Analyzer) result(expressions []*ast.Node, value Value, tag string, effects bool) Outcome {
+// data they read together, or the constants they pick. A call returning void or undefined is a command, not a result.
+func (m *Analyzer) result(expressions []*ast.Node, value Value, tag string, commands bool) Outcome {
 	produced, emptied := []*ast.Node{}, false
 	for _, e := range expressions {
 		switch u := Unwrap(e); {
 		case empty(e):
 			emptied = true
 		case (u.Kind == ast.KindCallExpression || u.Kind == ast.KindNewExpression || u.Kind == ast.KindAwaitExpression) && m.void(u):
-			effects = true
+			commands = true
 		default:
 			produced = append(produced, e)
 		}
 	}
 	if len(produced) == 0 {
 		if emptied {
-			return Outcome{Source: EmptyResult, Effects: effects}
+			return Outcome{Source: EmptyResult, Commands: commands}
 		}
-		return Outcome{Source: NoResult, Effects: effects}
+		return Outcome{Source: NoResult, Commands: commands}
 	}
 	whole, parts, other := false, false, false
 	for _, e := range produced {
@@ -198,13 +201,13 @@ func (m *Analyzer) result(expressions []*ast.Node, value Value, tag string, effe
 	}
 	switch {
 	case (whole || parts) && other:
-		return Outcome{Source: MixedResult, Effects: effects}
+		return Outcome{Source: MixedResult, Commands: commands}
 	case whole:
-		return Outcome{Source: ValueResult, Effects: effects}
+		return Outcome{Source: ValueResult, Commands: commands}
 	case parts:
-		return Outcome{Source: PartsResult, Effects: effects}
+		return Outcome{Source: PartsResult, Commands: commands}
 	case other:
-		return Outcome{Source: OtherResult, Effects: effects}
+		return Outcome{Source: OtherResult, Commands: commands}
 	}
 	values := []string{}
 	for _, e := range produced {
@@ -214,7 +217,7 @@ func (m *Analyzer) result(expressions []*ast.Node, value Value, tag string, effe
 			}
 		}
 	}
-	return Outcome{Source: ConstantResult, Effects: effects, Values: values}
+	return Outcome{Source: ConstantResult, Commands: commands, Values: values}
 }
 
 func (m *Analyzer) void(n *ast.Node) bool {

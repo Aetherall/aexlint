@@ -26,7 +26,7 @@ orders.map(async (order) => {
 });
 ```
 
-Accepted: branches that return a value, make one call, or run a straight sequence of effects.
+Accepted: branches that return a value, make one call, or run a straight sequence of statements.
 
 ## What counts
 

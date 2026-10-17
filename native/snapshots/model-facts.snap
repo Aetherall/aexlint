@@ -112,7 +112,7 @@ Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fi
    5 |     case "text": return render(item);
 
 Diagnostic 2: decision (10:7 - 10:15)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> value, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> none with effects, logic 0, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> value, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> none with commands, logic 0, built 0; constructions []
    9 | export function more(item: Item) {
   10 |   if (item.kind === "text") return item;
      |       ~~~~~~~~~
@@ -126,7 +126,7 @@ Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fi
   15 | }
 
 Diagnostic 4: decision (17:11 - 17:19)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> none with effects, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> constant with effects 1, logic 1, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> none with commands, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> constant with commands 1, logic 1, built 0; constructions []
   16 | export function steps(item: Item) {
   17 |   switch (item.kind) {
      |           ~~~~~~~~~
@@ -179,14 +179,14 @@ Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fi
 
 [TestModelFacts/invalid-5 - 1]
 Diagnostic 1: decision (5:11 - 5:19)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant Text, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> parts with effects, logic 0, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant Text, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete tested -> parts with commands, logic 0, built 0; constructions []
    4 |   let text = "";
    5 |   switch (item.kind) {
      |           ~~~~~~~~~
    6 |     case "text": text = "Text"; break;
 
 Diagnostic 2: decision (12:7 - 12:15)
-Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> none with effects, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> none with effects, logic 0, built 0; constructions []
+Message: dispatch on item.kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> none with commands, logic 0, built 0 / {"stock"} of {"stock" | "text"} complete -> none with commands, logic 0, built 0; constructions []
   11 | export function remember(item: Item) {
   12 |   if (item.kind === "text") last = "Text";
      |       ~~~~~~~~~
