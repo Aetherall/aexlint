@@ -27,7 +27,7 @@ const LABELS: Record<Plan, string> = { free: "Free", team: "Team", business: "Bu
 
 ## What counts
 
-- A vocabulary is a union of at least two string or number literals (enum members included), ignoring `null` and `undefined`, read from the declared type, not the narrowed one.
+- A vocabulary is a union of at least two string or number literals (enum members included), ignoring `null` and `undefined`, read from the declared type, not the narrowed one. A vocabulary declared only in dependencies or declaration files, such as an AST node type, does not count: you interpret it but do not own it. [no-embedded-translation](../no-embedded-translation/README.md) asks where those interpretations belong.
 - A check is a comparison with a literal, constant, enum member or single-literal property; `includes` on a literal array or tuple of its values; or a `switch` with a `default` or a missing value. Exhaustive switches, tables and `typeof` do not count.
 - Vocabularies with the same set of values are one vocabulary. Each file counts once. The whole program counts, including unlinted files and tests, but not declaration files or `node_modules`.
 

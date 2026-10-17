@@ -1,6 +1,7 @@
 package model
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
@@ -83,4 +84,13 @@ func firstDeclaration(symbol *ast.Symbol) *ast.Node {
 		return nil
 	}
 	return symbol.Declarations[0]
+}
+
+// FromDependency reports whether the vocabulary n reads is declared only outside project code: every origin has a
+// declaration, in a declaration file or inside node_modules.
+func (m *Analyzer) FromDependency(n *ast.Node) bool {
+	origins := m.Origins(n)
+	return len(origins) > 0 && !slices.ContainsFunc(origins, func(o Origin) bool {
+		return o.Declaration == nil || ProjectFile(ast.GetSourceFileOfNode(o.Declaration))
+	})
 }

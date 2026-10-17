@@ -26,7 +26,9 @@ type Site struct {
 }
 
 // sites returns the checks of particular values a root makes. A typed list defines a group of values rather than
-// checking one, and an exhaustive switch without default fails to compile when a value is added.
+// checking one, and an exhaustive switch without default fails to compile when a value is added. A vocabulary declared
+// only in dependencies is interpreted, not owned, here: where its interpretations belong is no-embedded-translation's
+// question.
 func sites(c *model.Analyzer, root *ast.Node) []Site {
 	check := root
 	switch root.Kind {
@@ -43,6 +45,9 @@ func sites(c *model.Analyzer, root *ast.Node) []Site {
 	}
 	found := []Site{}
 	for _, t := range s.Tests {
+		if c.FromDependency(t.Value.Node) {
+			continue
+		}
 		found = append(found, Site{strings.Join(t.Claim.Vocabulary.Values, "\x00"), t.Claim.Vocabulary, t.Value.Node, check})
 	}
 	return found

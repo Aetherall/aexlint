@@ -34,7 +34,7 @@ This uses data flow and types only, no names.
 
 ## Relation to existing rules
 
-`no-external-variant-behavior`, `no-fact-outside-owner`, `max-interpretation-spread` and `no-procedural-value-dispatch` look like facets of this principle. For dependency-owned variants, `max-interpretation-spread` counts projections and embedded translations alike. Counting only embedded ones would follow the principle.
+`no-external-variant-behavior`, `no-fact-outside-owner`, `max-interpretation-spread` and `no-procedural-value-dispatch` look like facets of this principle. For dependency-owned variants, `max-interpretation-spread` used to count projections and embedded translations alike. It now skips vocabularies declared only in dependencies, and `no-embedded-translation` covers them.
 
 ## Risks
 
@@ -45,5 +45,4 @@ This uses data flow and types only, no names.
 
 ## Next steps
 
-1. Evidence: run the rule on real code and review a blind sample.
-2. Decide what it means for `max-interpretation-spread` on dependency-owned variants.
+1. Evidence: fresh findings: 2 smell, 1 partly, 2 fine of 5, no false statement.
