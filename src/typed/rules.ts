@@ -29,6 +29,7 @@ interface Pending {
   file: string;
   requests: Request[];
   diagnostics: NativeDiagnostic[] | null;
+  offsets?: (pos: number) => number;
 }
 
 interface BackendRun {
@@ -294,20 +295,31 @@ function diagnosticsFor(context: Context): NativeDiagnostic[] {
   return found;
 }
 
-function textOffset(text: string, bytes: Buffer, pos: number): number {
-  return bytes.length === text.length ? pos : bytes.subarray(0, pos).toString("utf8").length;
+function textOffsets(text: string): (pos: number) => number {
+  const length = Buffer.byteLength(text, "utf8");
+  if (length === text.length) return (pos) => pos;
+  const offsets = new Uint32Array(length + 1);
+  let byte = 0;
+  let index = 0;
+  for (const character of text) {
+    const size = Buffer.byteLength(character, "utf8");
+    offsets.fill(index, byte, byte + size);
+    byte += size;
+    index += character.length;
+  }
+  offsets[byte] = text.length;
+  return (pos) => offsets[pos]!;
 }
 
-function report(context: Context, name: string, diagnostic: NativeDiagnostic): void {
-  if (diagnostic.rule !== name) return;
-  const text = context.sourceCode.text;
-  const bytes = Buffer.from(text, "utf8");
+function report(context: Context, diagnostic: NativeDiagnostic): void {
+  pending.offsets ??= textOffsets(context.sourceCode.text);
   const range = diagnostic.range ?? { pos: 0, end: 0 };
   const { description, help } = diagnostic.message;
-  const from = textOffset(text, bytes, range.pos);
-  const to = textOffset(text, bytes, range.end);
   const message = help ? `${description}\nhelp: ${help}` : description;
-  context.report({ message, node: { range: [from, to] } });
+  context.report({
+    message,
+    node: { range: [pending.offsets(range.pos), pending.offsets(range.end)] },
+  });
 }
 
 function wrap(name: string): Rule {
@@ -322,7 +334,9 @@ function wrap(name: string): Rule {
       return {
         Program() {
           withoutStack(() => {
-            for (const diagnostic of diagnosticsFor(context)) report(context, name, diagnostic);
+            for (const diagnostic of diagnosticsFor(context)) {
+              if (diagnostic.rule === name) report(context, diagnostic);
+            }
           });
         },
       };
