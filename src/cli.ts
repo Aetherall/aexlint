@@ -11,8 +11,9 @@ const ignoreFile = ".aexlintignore";
 
 interface Reported {
   filename: string;
-  code: string;
+  code?: string;
   message: string;
+  labels: unknown[];
 }
 
 const help = `Usage: aexlint check [options] [paths...]
@@ -41,13 +42,14 @@ function readIgnorePatterns(): string[] {
 
 function writeBaseline(file: string, output: string, codes: Set<string>): number {
   const { diagnostics } = JSON.parse(output) as { diagnostics: Reported[] };
+  const failure = diagnostics.find(({ code, labels }) => !code && !labels.length);
+  if (failure) throw new Error(`no baseline recorded; the run failed:\n${failure.message}`);
   const root = process.cwd();
-  const recorded = diagnostics.filter(({ code }) => codes.has(code));
-  const entries = recorded.map(({ filename, code, message }) => ({
-    file: projectPath(root, resolve(filename)),
-    code,
-    message: findingOf(message),
-  }));
+  const entries = diagnostics.flatMap(({ filename, code, message }) =>
+    code && codes.has(code)
+      ? [{ file: projectPath(root, resolve(filename)), code, message: findingOf(message) }]
+      : [],
+  );
   writeFileSync(file, formatBaseline(entries));
   console.log(`aexlint: recorded ${entries.length} diagnostics in ${file}`);
   return 0;
