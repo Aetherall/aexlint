@@ -170,6 +170,14 @@ export function f(size: Size) {
   }
 }
 declare function log(text: string): void;`, Files: files, Options: only("decision"), Errors: facts("decision", 1)},
+			{Code: `type Trim = { kind?: "a" | "b" | "c" };
+declare function log(text: string): void;
+export function f(trim: Trim) {
+  if (trim.kind === "a") log("a");
+  else if (trim.kind === "b") log("b");
+  else if (trim.kind === "c") log("c");
+  else log("none");
+}`, Options: only("decision"), Errors: facts("decision", 1)},
 			{Code: `import type { Box, Size } from "./items.js";
 export function f(size: Size, ready: boolean) {
   if (size === "S" || (size === "M" && ready)) return 1;

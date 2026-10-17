@@ -314,7 +314,9 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		d.Arms = append(d.Arms, Branch{Claim: a.claim, Complete: complete, Tested: true, Body: a.body, Outcome: md.m.OutcomeOf(a.body, value, tested), ControlFlow: controlFlow(a.body)})
 	}
 	if alternative != nil && pure {
-		d.Arms = append(d.Arms, Branch{Claim: covered.Not().And(left), Complete: true, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), ControlFlow: controlFlow(alternative)})
+		held, _ := md.m.Holds(subjectNode)
+		missing := held&(AbsentUndefined|AbsentNull) != 0
+		d.Arms = append(d.Arms, Branch{Claim: covered.Not().And(left), Complete: !missing, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), ControlFlow: controlFlow(alternative)})
 	}
 	work := 0
 	for _, a := range d.Arms {
