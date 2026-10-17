@@ -241,21 +241,36 @@ export default {
   const combined = report(depthArgs, 1);
   assert.equal(combined.diagnostics.length, 1);
   assert.match(combined.diagnostics[0].message, /classification of node/);
-  for (const ruleName of [depthRule, complexityRule, decisionRule, heldRule]) {
-    for (const setting of [
-      "error",
-      ["error", {}],
-      ["error", { max: 0 }],
-      ["error", { max: 1.5 }],
-      ["error", { max: "2" }],
-      ["error", { max: Number.MAX_SAFE_INTEGER + 1 }],
-      ["error", { max: 2, extra: true }],
-      ["error", { max: 2 }, {}],
-    ]) {
+  const maxSettings = [
+    "error",
+    ["error", {}],
+    ["error", { max: 0 }],
+    ["error", { max: 1.5 }],
+    ["error", { max: "2" }],
+    ["error", { max: Number.MAX_SAFE_INTEGER + 1 }],
+    ["error", { max: 2, extra: true }],
+    ["error", { max: 2 }, {}],
+  ];
+  const assemblySettings = [
+    "error",
+    ["error", {}],
+    ["error", { maxWidth: 60 }],
+    ["error", { maxWidth: -1, maxReferences: 3 }],
+    ["error", { maxWidth: 60, maxReferences: 3, extra: true }],
+  ];
+  const invalidSettings: [string, unknown[]][] = [
+    ...[depthRule, complexityRule, decisionRule, heldRule].map((ruleName): [string, unknown[]] => [
+      ruleName,
+      maxSettings,
+    ]),
+    ["aexlint/max-call-assembly", assemblySettings],
+  ];
+  for (const [ruleName, settings] of invalidSettings) {
+    for (const setting of settings) {
       syntaxConfig(ruleName, setting);
       const result = attempt(depthArgs);
       assert.notEqual(result.status, 0, JSON.stringify(setting));
-      assert.match(result.output, /(?:config|option|schema|max)/i);
+      assert.match(result.output, /requires .*max|Options validation failed/, result.output);
     }
   }
   const typedRules = JSON.parse(

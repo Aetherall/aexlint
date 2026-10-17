@@ -85,8 +85,10 @@ export default defineRule({
     },
   },
   create(context) {
-    const option = context.options[0] as { maxWidth?: unknown; maxReferences?: unknown };
-    const { maxWidth, maxReferences } = option;
+    const option = context.options[0] as
+      | { maxWidth?: unknown; maxReferences?: unknown }
+      | undefined;
+    const { maxWidth, maxReferences } = option ?? {};
     if (!isLimit(maxWidth) || !isLimit(maxReferences)) {
       throw new Error(
         "max-call-assembly requires non-negative safe integer maxWidth and maxReferences.",
