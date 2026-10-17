@@ -10,14 +10,31 @@ type storedKey struct {
 	index  int
 }
 
+// Implementation returns the declaration that runs for signature: its declaration, or for an overload signature the
+// declaration with a body among the overloads, or nil when the signature has no declaration.
+func Implementation(signature *checker.Signature) *ast.Node {
+	if signature == nil || signature.Declaration() == nil {
+		return nil
+	}
+	declaration := signature.Declaration()
+	if declaration.Body() != nil || declaration.Symbol() == nil {
+		return declaration
+	}
+	for _, overload := range declaration.Symbol().Declarations {
+		if overload.Kind == declaration.Kind && overload.Body() != nil {
+			return overload
+		}
+	}
+	return declaration
+}
+
 // Member returns the class and declaration of a call's callee when it is a constructor or method with a body, declared
 // in a project source file.
 func (m *Analyzer) Member(call *ast.Node) (*ast.Node, *ast.Node) {
-	signature := m.ctx.TypeChecker.GetResolvedSignature(call)
-	if signature == nil || signature.Declaration() == nil {
+	declaration := Implementation(m.ctx.TypeChecker.GetResolvedSignature(call))
+	if declaration == nil {
 		return nil, nil
 	}
-	declaration := signature.Declaration()
 	if declaration.Kind != ast.KindConstructor && declaration.Kind != ast.KindMethodDeclaration {
 		return nil, nil
 	}

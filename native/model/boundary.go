@@ -25,10 +25,7 @@ func (m *Analyzer) BoundaryOf(call, argument *ast.Node) (Boundary, bool) {
 		return Boundary{}, false
 	}
 	signature := m.ctx.TypeChecker.GetResolvedSignature(call)
-	if signature == nil {
-		return Boundary{}, false
-	}
-	fn := checker.Signature_declaration(signature)
+	fn := Implementation(signature)
 	if fn == nil || !ast.IsFunctionLike(fn) || fn.Body() == nil || !ProjectFile(ast.GetSourceFileOfNode(fn)) {
 		return Boundary{}, false
 	}

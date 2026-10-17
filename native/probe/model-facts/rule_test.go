@@ -308,6 +308,23 @@ export function f(text: string | undefined) {
   const c = text ? fallback(text) : 0;
   return a + b + c;
 }`, Options: only("boundary"), Errors: facts("boundary", 3)},
+			{Code: `function loose(text: string): number;
+function loose(text: string | undefined): number;
+function loose(text: string | undefined) {
+  if (!text) return 0;
+  return text.length;
+}
+export function f(text: string | undefined) {
+  const length = text ? loose(text) : 0;
+  return length;
+}`, Options: only("boundary"), Errors: facts("boundary", 1)},
+			{Code: `function check(value: string): string;
+function check(value: number): number;
+function check(value: string | number) {
+  if (value === "") throw new Error("empty");
+  return value;
+}
+export function parse(input: string) { return check(input); }`, Options: only("rejection"), Errors: facts("rejection", 2)},
 			{Code: `declare function validate(value: string): void;
 class Rejected extends Error { constructor(readonly input: string) { super(input); } }
 export function parse(input: string, limit: number) {

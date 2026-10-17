@@ -338,11 +338,10 @@ func (a *flowAnalysis) built(n *ast.Node, asArgument bool) []Value {
 // callee is a project function or method: those its return statements read, or none when it has no body to establish
 // it. It returns nil for library functions and constructors, whose object arguments are assumed to flow.
 func (m *Analyzer) carried(n *ast.Node) map[int]bool {
-	signature := m.ctx.TypeChecker.GetResolvedSignature(n)
-	if signature == nil || signature.Declaration() == nil {
+	declaration := Implementation(m.ctx.TypeChecker.GetResolvedSignature(n))
+	if declaration == nil {
 		return nil
 	}
-	declaration := signature.Declaration()
 	if declaration.Kind == ast.KindConstructor || !ProjectFile(ast.GetSourceFileOfNode(declaration)) {
 		return nil
 	}
@@ -675,10 +674,10 @@ func (a *flowAnalysis) call(n *ast.Node) {
 		return
 	}
 	signature := a.m.ctx.TypeChecker.GetResolvedSignature(n)
-	if signature == nil || signature.Declaration() == nil || a.m.ctx.TypeChecker.GetTypePredicateOfSignature(signature) != nil {
+	declaration := Implementation(signature)
+	if declaration == nil || a.m.ctx.TypeChecker.GetTypePredicateOfSignature(signature) != nil {
 		return
 	}
-	declaration := signature.Declaration()
 	if !ast.IsFunctionLike(declaration) || declaration.Body() == nil || !ProjectFile(ast.GetSourceFileOfNode(declaration)) {
 		return
 	}

@@ -1024,6 +1024,11 @@ no-caller-enforced-invariant/reported/nested-check.ts:6:22 aexlint(no-caller-enf
   `query.owner` is checked at line 4, then handed to `Response.of`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Response` is not held to it. The check also reads `query.root`, which `Response.of` does not receive. This often means `Response`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
+no-caller-enforced-invariant/reported/overloaded-constructor.ts:8:18 aexlint(no-caller-enforced-invariant)
+  ~ input.tag
+  `input.tag` is checked at line 7, then handed to `new Tag`, which stores it without that check.
+  help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Tag` is not held to it. The check reads only data `new Tag` receives. This often means `Tag`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
+
 no-caller-enforced-invariant/reported/receiver-state-check.ts:5:23 aexlint(no-caller-enforced-invariant)
   ~ command.crewId
   `command.crewId` is checked at line 4, then handed to `Leaflet.send`, which stores it without that check.
