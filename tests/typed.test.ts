@@ -342,6 +342,19 @@ test("a backend server that stops reading requests fails the run instead of hang
   assert.ok(performance.now() - started < 5_000);
 });
 
+test("a backend that crashes reports its exit before its partial output", (t) => {
+  const { root, lint } = project(t);
+  const header = '{"status":2,"signal":null,"error":null,"stderr":"panic: boom"}';
+  const fake = fakeServer(root, [
+    "printf '\\005\\000\\000\\000ready' >&4",
+    `printf '\\076\\000\\000\\000%s\\003\\000\\000\\000abc' '${header}' >&4`,
+    "sleep 1",
+  ]);
+  const run = lint(["input.ts"], fake);
+  assert.equal(run.status, 1);
+  assert.match(run.diagnostics[0]!.message, /aexlint: The typed backend exited 2: panic: boom$/);
+});
+
 test("a backend that cannot be set up reports the same reason for every file", (t) => {
   const { root, lint } = project(t);
   const run = lint(["input.ts", "dependency.ts"], backend, { TMPDIR: join(root, "missing") });

@@ -12,7 +12,13 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { defineRule, type Context, type Rule } from "@oxlint/plugins";
-import { decodeFrames, defaultBackend, ruleManifest, type NativeDiagnostic } from "./backend.ts";
+import {
+  decodeFrames,
+  defaultBackend,
+  ruleManifest,
+  type NativeDiagnostic,
+  type NativeMessages,
+} from "./backend.ts";
 import { readFrame, writeFrame, type ServeResult } from "./frames.ts";
 
 interface Request {
@@ -222,10 +228,17 @@ function runBatch(
   };
   const { result, stdout } = channel(Buffer.from(JSON.stringify(payload)));
   if (result.error) throw new Error(result.error);
-  const messages = decodeFrames(stdout);
-  if (result.status !== 0) {
-    throw new Error(`The typed backend exited ${result.status ?? result.signal}: ${result.stderr}`);
+  const exit = new Error(
+    `The typed backend exited ${result.status ?? result.signal}: ${result.stderr}`,
+  );
+  const crashed = result.status !== 0 && result.stderr.trim() !== "";
+  let messages: NativeMessages;
+  try {
+    messages = decodeFrames(stdout);
+  } catch (error) {
+    throw crashed ? exit : error;
   }
+  if (result.status !== 0) throw exit;
   const { diagnostics } = messages;
   if (!messages.programFiles.includes(file)) throw new Error(unbuiltProgram(file, diagnostics));
   const byFile = new Map<string, NativeDiagnostic[]>(messages.programFiles.map((f) => [f, []]));
