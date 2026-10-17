@@ -250,11 +250,19 @@ export async function native(action: string, args: string[] = []): Promise<void>
     cpSync(join(root, "native/snapshots"), snapshotDir, { recursive: true });
     const before = snapshots();
     const packages = testPackages(filter, names);
+    let stale: string[] = [];
+    if (update) {
+      const files = [...before.keys()].filter((file) => file.endsWith(".snap"));
+      stale = files.filter((file) => !filter.length || filter.includes(basename(file, ".snap")));
+      for (const file of stale) rmSync(join(snapshotDir, file));
+    }
     const testEnv = { ...goEnv, UPDATE_SNAPS: update ? "true" : "false" };
     const command = ["test", "-mod=readonly", "-count=1", ...packages];
     process.stdout.write(run("go", command, source, testEnv));
-    if (update) cpSync(snapshotDir, join(root, "native/snapshots"), { recursive: true });
-    else {
+    if (update) {
+      for (const file of stale) rmSync(join(root, "native/snapshots", file));
+      cpSync(snapshotDir, join(root, "native/snapshots"), { recursive: true });
+    } else {
       const actualSnapshots = JSON.stringify([...snapshots()].toSorted());
       const expectedSnapshots = JSON.stringify([...before].toSorted());
       if (actualSnapshots !== expectedSnapshots) {
