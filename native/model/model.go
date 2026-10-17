@@ -592,37 +592,41 @@ func (md *builder) selector(f *Function) {
 		}
 		f.Kind = SelectorFunction
 	}
-	f.Answer = md.answer(fn, e, 0)
+	f.Answer, _ = md.answer(fn, e, 0)
 	if len(f.Answer) == 0 {
 		f.Kind = PlainFunction
 	}
 }
 
 // answer returns the tests of literal values on fn's parameters that hold where e is true: joined with &&, merged
-// across || on one value, negated with !, and read through calls to project functions, up to three calls deep.
-func (md *builder) answer(fn, e *ast.Node, depth int) []Test {
+// across || on one value, negated with !, and read through calls to project functions, up to three calls deep. It
+// reports whether the tests are exact, holding only where e is true; only an exact answer is negated.
+func (md *builder) answer(fn, e *ast.Node, depth int) ([]Test, bool) {
 	e = Unwrap(e)
 	if t, ok := md.m.literalTest(e); ok {
 		if _, ok := md.m.parameterOf(fn, t.Value.Node); !ok {
-			return nil
+			return nil, false
 		}
-		return []Test{t}
+		return []Test{t}, true
 	}
 	if e.Kind == ast.KindBinaryExpression {
 		switch e.AsBinaryExpression().OperatorToken.Kind {
 		case ast.KindAmpersandAmpersandToken:
-			out := []Test{}
+			out, exact := []Test{}, true
 			for _, part := range parts(e, ast.KindAmpersandAmpersandToken) {
-				out = append(out, md.answer(fn, part, depth)...)
+				found, partExact := md.answer(fn, part, depth)
+				out, exact = append(out, found...), exact && partExact
 			}
-			return out
+			return out, exact
 		case ast.KindBarBarToken:
 			var merged *Test
+			exact := true
 			for _, part := range parts(e, ast.KindBarBarToken) {
-				found := md.answer(fn, part, depth)
+				found, partExact := md.answer(fn, part, depth)
 				if len(found) != 1 || merged != nil && !found[0].Value.Same(merged.Value) {
-					return nil
+					return nil, false
 				}
+				exact = exact && partExact
 				if merged == nil {
 					merged = &Test{Node: e, Value: found[0].Value, Claim: found[0].Claim}
 				} else {
@@ -630,22 +634,22 @@ func (md *builder) answer(fn, e *ast.Node, depth int) []Test {
 				}
 			}
 			if merged == nil {
-				return nil
+				return nil, false
 			}
-			return []Test{*merged}
+			return []Test{*merged}, exact
 		}
 	}
 	if e.Kind == ast.KindPrefixUnaryExpression && e.AsPrefixUnaryExpression().Operator == ast.KindExclamationToken {
-		found := md.answer(fn, e.AsPrefixUnaryExpression().Operand, depth)
-		if len(found) != 1 {
-			return nil
+		found, exact := md.answer(fn, e.AsPrefixUnaryExpression().Operand, depth)
+		if len(found) != 1 || !exact {
+			return nil, false
 		}
-		return []Test{{Node: e, Value: found[0].Value, Claim: found[0].Claim.Not()}}
+		return []Test{{Node: e, Value: found[0].Value, Claim: found[0].Claim.Not()}}, true
 	}
 	if e.Kind != ast.KindCallExpression || depth >= 3 {
-		return nil
+		return nil, false
 	}
-	out := []Test{}
+	out, exact, unmapped := []Test{}, true, -1
 	for _, argument := range e.Arguments() {
 		if _, ok := md.m.parameterOf(fn, argument); Unwrap(argument).Kind != ast.KindIdentifier || !ok {
 			continue
@@ -658,13 +662,19 @@ func (md *builder) answer(fn, e *ast.Node, depth int) []Test {
 		if body == nil {
 			continue
 		}
-		for _, t := range md.answer(b.Callee, body, depth+1) {
+		found, calleeExact := md.answer(b.Callee, body, depth+1)
+		exact = exact && calleeExact
+		if unmapped < 0 {
+			unmapped = len(found)
+		}
+		for _, t := range found {
 			if v, ok := md.m.Outward(b, t.Value); ok {
 				out = append(out, Test{Node: e, Value: v, Claim: t.Claim})
+				unmapped--
 			}
 		}
 	}
-	return out
+	return out, exact && unmapped == 0
 }
 
 func (md *builder) entryNarrowings(fn *ast.Node) []EntryNarrowing {

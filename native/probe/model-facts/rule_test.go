@@ -54,6 +54,8 @@ export function decode(value: unknown, input: unknown, record: { kind: unknown; 
   if (!valid) throw new Error("fields");
   return [value, input, record];
 }`, Options: only("rejection")},
+			{Code: `import type { Item } from "./items.js";
+export const isPlain = (item: Item) => !(item.kind === "text" && item.text.length > 0);`, Files: files, Options: only("function")},
 		},
 		[]rule_tester.InvalidTestCase{
 			{Code: `import type { Size } from "./items.js";
@@ -351,6 +353,10 @@ export const view = {
 };`, Files: files, Options: only("function", "gate"), Errors: []rule_tester.InvalidTestCaseError{
 				{MessageId: "function"}, {MessageId: "function"}, {MessageId: "gate"},
 			}},
+			{Code: `import type { Item } from "./items.js";
+const filled = (item: Item) => item.kind === "text" && item.text.length > 0;
+export const unfilled = (item: Item) => !filled(item);
+export const notText = (item: Item) => !(item.kind === "text");`, Files: files, Options: only("function"), Errors: facts("function", 2)},
 		},
 	)
 }

@@ -657,3 +657,18 @@ Message: gate matches -> render
      |            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    4 |   render(item: Item) {
 ---
+
+[TestModelFacts/invalid-27 - 1]
+Diagnostic 1: function (2:16 - 2:30)
+Message: selector filled; answer [item.kind in {"text"} of {"stock" | "text"}]; narrowings [item.kind in {"text"} of {"stock" | "text"} by own guard]
+   1 | import type { Item } from "./items.js";
+   2 | const filled = (item: Item) => item.kind === "text" && item.text.length > 0;
+     |                ~~~~~~~~~~~~~~~
+   3 | export const unfilled = (item: Item) => !filled(item);
+
+Diagnostic 2: function (4:24 - 4:38)
+Message: selector notText; answer [item.kind in {"stock"} of {"stock" | "text"}]; narrowings []
+   3 | export const unfilled = (item: Item) => !filled(item);
+   4 | export const notText = (item: Item) => !(item.kind === "text");
+     |                        ~~~~~~~~~~~~~~~
+---
