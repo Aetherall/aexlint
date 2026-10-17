@@ -1775,6 +1775,21 @@ no-procedural-value-dispatch/dependency-closed/f.ts:4:11 aexlint(no-procedural-v
   Branches on `kind` contain their own control flow.
   help: Branches with nested decisions, loops or error handling: "ibis". Each is a procedure for its values, written inline instead of standing on its own.
 
+no-procedural-value-dispatch/reported/aliases-generics-unions.ts:5:7 aexlint(no-procedural-value-dispatch)
+  ~ kind
+  Branches on `kind` contain their own control flow.
+  help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
+
+no-procedural-value-dispatch/reported/aliases-generics-unions.ts:8:11 aexlint(no-procedural-value-dispatch)
+  ~ order.delivery
+  Branches on `order.delivery` contain their own control flow.
+  help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
+
+no-procedural-value-dispatch/reported/aliases-generics-unions.ts:11:7 aexlint(no-procedural-value-dispatch)
+  ~ kind
+  Branches on `kind` contain their own control flow.
+  help: Branches with nested decisions, loops or error handling: "heron". Each is a procedure for its values, written inline instead of standing on its own.
+
 no-procedural-value-dispatch/reported/awaits-and-tries.ts:7:9 aexlint(no-procedural-value-dispatch)
   ~ order.delivery
   Branches on `order.delivery` contain their own control flow.
