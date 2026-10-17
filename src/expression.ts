@@ -38,10 +38,33 @@ export function isComputationBoundary(node: ESTree.Node): boolean {
   return isFunctionNode(node) || isClass(node) || node.type === "ObjectExpression";
 }
 
-export function invokedExpression(
-  node: ESTree.CallExpression | ESTree.TaggedTemplateExpression,
-): ESTree.Node {
-  return unwrap(node.type === "CallExpression" ? node.callee : node.tag);
+export interface InvocationStage {
+  receiver: ESTree.Node | null;
+  inputs: ESTree.Node[];
+}
+
+function fluentStage(invoked: ESTree.Node, inputs: ESTree.Node[]): InvocationStage {
+  const callee = unwrap(invoked);
+  if (callee.type !== "MemberExpression") return { receiver: null, inputs: [callee, ...inputs] };
+  return { receiver: callee.object, inputs: [...inputs, ...computedProperty(callee)] };
+}
+
+export function invocationStage(
+  visitorKeys: Readonly<Record<string, readonly string[]>>,
+  node: ESTree.Node,
+): InvocationStage | undefined {
+  switch (node.type) {
+    case "CallExpression":
+      return fluentStage(node.callee, [...node.arguments]);
+    case "TaggedTemplateExpression":
+      return fluentStage(node.tag, [node.quasi]);
+    case "NewExpression":
+      return { receiver: null, inputs: [node.callee, ...node.arguments] };
+    case "ImportExpression":
+      return { receiver: null, inputs: childNodes(visitorKeys, node) };
+    default:
+      return undefined;
+  }
 }
 
 export function continuesGroup(child: ESTree.Node, group: ESTree.LogicalExpression): boolean {

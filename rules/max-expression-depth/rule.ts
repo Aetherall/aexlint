@@ -2,9 +2,8 @@ import { defineRule, type ESTree } from "@oxlint/plugins";
 import {
   childNodes,
   closestAncestor,
-  computedProperty,
+  invocationStage,
   isFunctionNode,
-  unwrap,
 } from "../../src/expression.ts";
 
 function isBoundary(node: ESTree.Node): boolean {
@@ -57,34 +56,13 @@ export default defineRule({
           depths.set(node, 0);
           return;
         }
-        let inputs: ESTree.Node[];
-        let callee: ESTree.Node | undefined;
-        let receiverDepth = 0;
-        switch (node.type) {
-          case "CallExpression":
-            callee = unwrap(node.callee);
-            inputs = [...node.arguments];
-            break;
-          case "TaggedTemplateExpression":
-            callee = unwrap(node.tag);
-            inputs = [node.quasi];
-            break;
-          case "NewExpression":
-            inputs = [node.callee, ...node.arguments];
-            break;
-          case "ImportExpression":
-            inputs = childrenOf(node);
-            break;
-          default:
-            depths.set(node, greatestDepth(childrenOf(node)));
-            return;
+        const stage = invocationStage(context.sourceCode.visitorKeys, node);
+        if (!stage) {
+          depths.set(node, greatestDepth(childrenOf(node)));
+          return;
         }
-        if (callee && callee.type !== "MemberExpression") inputs.push(callee);
-        if (callee?.type === "MemberExpression") {
-          receiverDepth = depthOf(callee.object);
-          inputs.push(...computedProperty(callee));
-        }
-        const depth = 1 + greatestDepth(inputs);
+        const receiverDepth = stage.receiver ? depthOf(stage.receiver) : 0;
+        const depth = 1 + greatestDepth(stage.inputs);
         depths.set(node, Math.max(depth, receiverDepth));
         if (depth > max) candidates.set(node, depth);
       },

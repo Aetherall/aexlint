@@ -2,9 +2,8 @@ import { defineRule, type ESTree } from "@oxlint/plugins";
 import {
   childNodes,
   closestAncestor,
-  computedProperty,
   continuesGroup,
-  invokedExpression,
+  invocationStage,
   isComputationBoundary,
   isLogicalDecision,
   isSignedExpression,
@@ -13,12 +12,6 @@ import {
 
 function isIndependentContainer(node: ESTree.Node): boolean {
   return ["ArrayExpression", "JSXElement", "JSXFragment", "JSXOpeningElement"].includes(node.type);
-}
-
-function canHaveFluentReceiver(
-  node: ESTree.Node,
-): node is ESTree.CallExpression | ESTree.TaggedTemplateExpression {
-  return node.type === "CallExpression" || node.type === "TaggedTemplateExpression";
 }
 
 function isAddition(node: ESTree.Node): node is ESTree.BinaryExpression & { operator: "+" } {
@@ -62,10 +55,6 @@ function unaryCost(node: ESTree.UnaryExpression): number {
 }
 
 const operationCosts: ByNodeType<number> = {
-  CallExpression: () => 1,
-  NewExpression: () => 1,
-  TaggedTemplateExpression: () => 1,
-  ImportExpression: () => 1,
   BinaryExpression: () => 1,
   ConditionalExpression: () => 1,
   UpdateExpression: () => 1,
@@ -163,16 +152,11 @@ export default defineRule({
           scores.set(node, 0);
           return;
         }
-        if (canHaveFluentReceiver(node)) {
-          const callee = invokedExpression(node);
-          if (callee.type === "MemberExpression") {
-            const inputs: ESTree.Node[] =
-              node.type === "CallExpression" ? [...node.arguments] : [node.quasi];
-            inputs.push(...computedProperty(callee));
-            const stageScore = 1 + sum(inputs);
-            scores.set(node, Math.max(scoreOf(callee.object), stageScore));
-            return;
-          }
+        const stage = invocationStage(context.sourceCode.visitorKeys, node);
+        if (stage) {
+          const receiverScore = stage.receiver ? scoreOf(stage.receiver) : 0;
+          scores.set(node, Math.max(receiverScore, 1 + sum(stage.inputs)));
+          return;
         }
         if (isIndependentContainer(node)) {
           let score = 0;

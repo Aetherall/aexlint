@@ -115,6 +115,7 @@ function check(): number {
       "aexlint/no-repeated-presence-check": "error",
       "aexlint/no-fact-outside-owner": "error",
       "aexlint/no-overbroad-type-predicate": "error",
+      "aexlint/no-embedded-translation": "error",
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));

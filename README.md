@@ -79,22 +79,23 @@ The plugin enables no rules by default. Type-aware rules need the TypeScript set
 
 ### Type-aware
 
-| Rule                                                                           | Reports                                                          |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| [prefer-truthy-presence-check](rules/prefer-truthy-presence-check/README.md)   | Nullish comparisons equivalent to truthiness checks              |
-| [max-interpretation-spread](rules/max-interpretation-spread/README.md)         | Literal unions interpreted across too many files                 |
-| [max-projection-spread](rules/max-projection-spread/README.md)                 | Repeated object projections across files                         |
-| [no-forgeable-validated-result](rules/no-forgeable-validated-result/README.md) | Validated results callers can construct without validation       |
-| [no-caller-enforced-invariant](rules/no-caller-enforced-invariant/README.md)   | Caller-side checks that a receiving class does not enforce       |
-| [no-repeated-value-group](rules/no-repeated-value-group/README.md)             | Groups of literal values written out in several places           |
-| [no-repeated-value-policy](rules/no-repeated-value-policy/README.md)           | The same literal test and outcome in several files               |
-| [no-procedural-value-dispatch](rules/no-procedural-value-dispatch/README.md)   | Branches on literal values that contain their own control flow   |
-| [no-external-variant-behavior](rules/no-external-variant-behavior/README.md)   | Variant representations built outside a known owner              |
-| [no-repeated-selection](rules/no-repeated-selection/README.md)                 | Handlers repeating a test their sibling selector already made    |
-| [no-repeated-conversion](rules/no-repeated-conversion/README.md)               | Conversions written identically in several places                |
-| [no-repeated-presence-check](rules/no-repeated-presence-check/README.md)       | Presence checks a called function already makes                  |
-| [no-fact-outside-owner](rules/no-fact-outside-owner/README.md)                 | Facts about a type's values established outside its owner        |
-| [no-overbroad-type-predicate](rules/no-overbroad-type-predicate/README.md)     | Type predicates that reject values their declared target permits |
+| Rule                                                                           | Reports                                                                |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| [prefer-truthy-presence-check](rules/prefer-truthy-presence-check/README.md)   | Nullish comparisons equivalent to truthiness checks                    |
+| [max-interpretation-spread](rules/max-interpretation-spread/README.md)         | Literal unions interpreted across too many files                       |
+| [max-projection-spread](rules/max-projection-spread/README.md)                 | Repeated object projections across files                               |
+| [no-forgeable-validated-result](rules/no-forgeable-validated-result/README.md) | Validated results callers can construct without validation             |
+| [no-caller-enforced-invariant](rules/no-caller-enforced-invariant/README.md)   | Caller-side checks that a receiving class does not enforce             |
+| [no-repeated-value-group](rules/no-repeated-value-group/README.md)             | Groups of literal values written out in several places                 |
+| [no-repeated-value-policy](rules/no-repeated-value-policy/README.md)           | The same literal test and outcome in several files                     |
+| [no-procedural-value-dispatch](rules/no-procedural-value-dispatch/README.md)   | Branches on literal values that contain their own control flow         |
+| [no-external-variant-behavior](rules/no-external-variant-behavior/README.md)   | Variant representations built outside a known owner                    |
+| [no-repeated-selection](rules/no-repeated-selection/README.md)                 | Handlers repeating a test their sibling selector already made          |
+| [no-repeated-conversion](rules/no-repeated-conversion/README.md)               | Conversions written identically in several places                      |
+| [no-repeated-presence-check](rules/no-repeated-presence-check/README.md)       | Presence checks a called function already makes                        |
+| [no-fact-outside-owner](rules/no-fact-outside-owner/README.md)                 | Facts about a type's values established outside its owner              |
+| [no-embedded-translation](rules/no-embedded-translation/README.md)             | Variant fields read into the surrounding state instead of a projection |
+| [no-overbroad-type-predicate](rules/no-overbroad-type-predicate/README.md)     | Type predicates that reject values their declared target permits       |
 
 `max-held-context` allows `else if` chains and `no-else-if` reports them; early returns satisfy both.
 

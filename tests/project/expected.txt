@@ -1056,6 +1056,31 @@ no-else-if/script.js:2:11 aexlint(no-else-if)
   ~ else if
   This `else if` applies only when every earlier condition in its chain is false, so its meaning depends on the conditions above it.
 
+no-embedded-translation/dependency-closed/use.ts:5:7 aexlint(no-embedded-translation)
+  ~ part.kind
+  Branches on `part.kind` read its fields into this code's own state.
+  help: Branches for "viola" turn the value into this code's own model in the middle of other work. A projection, a function from the value to that model that returns it, keeps the translation in one place and leaves this logic free of variant tests.
+
+no-embedded-translation/reported/destructured.ts:6:7 aexlint(no-embedded-translation)
+  ~ kind
+  Branches on `kind` read its fields into this code's own state.
+  help: Branches for "oboe" turn the value into this code's own model in the middle of other work. A projection, a function from the value to that model that returns it, keeps the translation in one place and leaves this logic free of variant tests.
+
+no-embedded-translation/reported/effect-branch.ts:7:7 aexlint(no-embedded-translation)
+  ~ instrument.kind
+  Branches on `instrument.kind` read its fields into this code's own state.
+  help: Branches for "timpani" turn the value into this code's own model in the middle of other work. A projection, a function from the value to that model that returns it, keeps the translation in one place and leaves this logic free of variant tests.
+
+no-embedded-translation/reported/generic.ts:5:7 aexlint(no-embedded-translation)
+  ~ instrument.kind
+  Branches on `instrument.kind` read its fields into this code's own state.
+  help: Branches for "violin" turn the value into this code's own model in the middle of other work. A projection, a function from the value to that model that returns it, keeps the translation in one place and leaves this logic free of variant tests.
+
+no-embedded-translation/reported/inline-switch.ts:8:11 aexlint(no-embedded-translation)
+  ~ instrument.kind
+  Branches on `instrument.kind` read its fields into this code's own state.
+  help: Branches for "violin"; "oboe" turn the value into this code's own model in the middle of other work. A projection, a function from the value to that model that returns it, keeps the translation in one place and leaves this logic free of variant tests.
+
 no-external-variant-behavior/conversions/declaration-file/consumer.ts:4:11 aexlint(no-external-variant-behavior)
   ~ value.kind
   This code reconstructs behavior for `Figure` outside its owner.

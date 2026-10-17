@@ -49,6 +49,11 @@ func (m *Analyzer) OutcomeOf(body []*ast.Node, value Value, tag string) Outcome 
 	if len(body) == 1 && body[0] != nil && ast.IsExpression(body[0]) {
 		return m.result([]*ast.Node{body[0]}, value, tag, false)
 	}
+	statements := armStatements(body)
+	return m.result(m.returned(statements), value, tag, m.effectful(statements))
+}
+
+func armStatements(body []*ast.Node) []*ast.Node {
 	statements := []*ast.Node{}
 	for _, n := range body {
 		switch {
@@ -59,7 +64,30 @@ func (m *Analyzer) OutcomeOf(body []*ast.Node, value Value, tag string) Outcome 
 			statements = append(statements, n)
 		}
 	}
-	return m.result(m.returned(statements), value, tag, m.effectful(statements))
+	return statements
+}
+
+// KeepsResult reports whether an arm leaves a result in a local of its function declared outside it, rather than returning
+// it: the function goes on to use what the arm produced.
+func (m *Analyzer) KeepsResult(body []*ast.Node) bool {
+	statements := armStatements(body)
+	found := false
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		if found || ast.IsFunctionLike(n) || ast.IsClassLike(n) || n.Kind == ast.KindReturnStatement {
+			return found
+		}
+		if m.kept(n, statements) != nil {
+			found = true
+			return true
+		}
+		n.ForEachChild(walk)
+		return found
+	}
+	for _, statement := range statements {
+		walk(statement)
+	}
+	return found
 }
 
 // returned lists the expressions return statements return, and the values assignments to a local of the arm's function

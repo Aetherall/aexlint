@@ -520,6 +520,14 @@
       "rules": {
         "aexlint/no-repeated-value-group": "error"
       }
+    },
+    {
+      "files": [
+        "no-embedded-translation/**"
+      ],
+      "rules": {
+        "aexlint/no-embedded-translation": "error"
+      }
     }
   ]
 }

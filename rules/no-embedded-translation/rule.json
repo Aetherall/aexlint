@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-embedded-translation",
+  "description": "Report branches on a variant that read its fields into the surrounding code's state instead of returning them from a projection.",
+  "requiresTypeChecking": true
+}

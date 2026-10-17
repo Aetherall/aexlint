@@ -59,8 +59,7 @@ export default defineRule({
           if (depth > max) candidates.set(node, depth);
         }
         if (node.type === "ConditionalExpression") {
-          const branchDepth = Math.max(depthOf(node.consequent), depthOf(node.alternate));
-          depth = 1 + Math.max(depthOf(node.test), branchDepth);
+          depth += 1;
           if (depth > max) candidates.set(node, depth);
         }
         depths.set(node, depth);
