@@ -914,6 +914,21 @@ max-interpretation-spread/max-5/forms/file.ts:2:34 aexlint(max-interpretation-sp
   `Kind` ("brume" | "smog" | "vapor") is checked for particular values in more than 5 files. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 6 files. Other files, nearest first: max-interpretation-spread/max-5/forms/a.ts, max-interpretation-spread/max-5/forms/b.ts, max-interpretation-spread/max-5/forms/c.ts, and 2 more. Declared as: Kind (max-interpretation-spread/max-5/forms/kinds.ts).
 
+max-projection-spread/dependency-closed/a.ts:2:37 aexlint(max-projection-spread)
+  ~ id
+  This projection of `Site` restates 2 derivations, each found in more than 2 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("foggy")`).
+  help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 3 files, `shining` in 3 files. Other files, nearest first: max-projection-spread/dependency-closed/b.ts, max-projection-spread/dependency-closed/c.ts.
+
+max-projection-spread/dependency-closed/b.ts:2:37 aexlint(max-projection-spread)
+  ~ id
+  This projection of `Site` restates 2 derivations, each found in more than 2 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("foggy")`).
+  help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 3 files, `shining` in 3 files. Other files, nearest first: max-projection-spread/dependency-closed/a.ts, max-projection-spread/dependency-closed/c.ts.
+
+max-projection-spread/dependency-closed/c.ts:2:37 aexlint(max-projection-spread)
+  ~ id
+  This projection of `Site` restates 2 derivations, each found in more than 2 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("foggy")`).
+  help: Changing one of these derivations requires finding each file by hand. Restated in: `id` in 3 files, `shining` in 3 files. Other files, nearest first: max-projection-spread/dependency-closed/a.ts, max-projection-spread/dependency-closed/b.ts.
+
 max-projection-spread/max-3/four-files/list.ts:2:63 aexlint(max-projection-spread)
   ~ id
   This projection of `Site` restates 2 derivations, each found in more than 3 files: `id` (`id.serialize()`), `shining` (`getBrightness().is("hazy")`).
