@@ -1,0 +1,28 @@
+--- a/cmd/tsgolint/headless.go
++++ b/cmd/tsgolint/headless.go
+@@ -284,9 +284,10 @@
+ 	}
+ 
+ 	result := tsConfigResolver.FindTsConfigParallel(normalizedFiles)
++	unmatchedFiles := []string{}
+ 	for file, tsconfig := range result {
+ 		if tsconfig == "" {
+-			workload.UnmatchedFiles = append(workload.UnmatchedFiles, file)
++			unmatchedFiles = append(unmatchedFiles, file)
+ 		} else {
+ 			workload.Programs[tsconfig] = append(workload.Programs[tsconfig], file)
+ 		}
+@@ -301,11 +302,11 @@
+ 			log.Printf("Got tsconfig for file %s: %s", file, tsconfigStr)
+ 		}
+ 
+-		log.Printf("Done assigning files to programs. Total programs: %d. Unmatched files: %d", len(workload.Programs), len(workload.UnmatchedFiles))
++		log.Printf("Done assigning files to programs. Total programs: %d. Unmatched files: %d", len(workload.Programs), len(unmatchedFiles))
+ 		for program, files := range workload.Programs {
+ 			log.Printf("  Program %s: %d files", program, len(files))
+ 		}
+-		for _, file := range workload.UnmatchedFiles {
++		for _, file := range unmatchedFiles {
+ 			log.Printf("  Unmatched file: %s", file)
+ 		}
+ 	}

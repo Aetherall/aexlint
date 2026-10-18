@@ -50,11 +50,12 @@ export interface NativeDiagnostic {
 export interface NativeMessages {
   diagnostics: NativeDiagnostic[];
   programFiles: string[];
+  unmatchedFiles: string[];
 }
 
 export function decodeFrames(input: Uint8Array): NativeMessages {
   const bytes = Buffer.from(input.buffer, input.byteOffset, input.byteLength);
-  const messages: NativeMessages = { diagnostics: [], programFiles: [] };
+  const messages: NativeMessages = { diagnostics: [], programFiles: [], unmatchedFiles: [] };
   let offset = 0;
   while (offset < bytes.length) {
     if (bytes.length - offset < 5) throw new Error("Truncated native message header.");
@@ -74,6 +75,9 @@ export function decodeFrames(input: Uint8Array): NativeMessages {
         break;
       case 3:
         messages.programFiles.push(...programFiles(payload));
+        break;
+      case 4:
+        messages.unmatchedFiles.push(...programFiles(payload));
         break;
       default:
         throw new Error(`Unknown native message type: ${type}`);

@@ -409,18 +409,12 @@ test("CLI baselines report only the file joining an over-limit spread", (t) => {
   );
 });
 
-test("CLI preserves visible failures for missing typed projects and malformed source", (t) => {
+test("CLI skips typed rules outside TypeScript projects and fails on malformed source", (t) => {
   const { write, run, baseline } = consumer(t);
   write("input.ts", "export const value = 1;\n");
-  assert.match(
-    run(["check", "--format", "default", "--typed", "input.ts"], 1),
-    /aexlint: File .*input\.ts is not included in a TypeScript project.*tsconfig\.json/,
-  );
-  assert.match(
-    run(["check", "--typed", "--write-baseline", baseline, "input.ts"], 2),
-    /input\.ts is not included in a TypeScript project/,
-  );
-  assert.ok(!existsSync(baseline));
+  run(["check", "--format", "default", "--typed", "input.ts"]);
+  run(["check", "--typed", "--write-baseline", baseline, "input.ts"]);
+  assert.ok(existsSync(baseline));
   write("broken.ts", "export const = ;\n");
   const report = JSON.parse(run(["check", "--format", "json", "broken.ts"], 1));
   assert.equal(report.diagnostics[0].filename, "broken.ts");

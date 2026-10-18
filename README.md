@@ -39,7 +39,7 @@ git worktree add ../base "$(git merge-base origin/master HEAD)"
 "$aexlint" check --baseline /tmp/aexlint-baseline
 ```
 
-Use the same version, flags and paths for both runs, from the root of each checkout. A finding is its file, rule and message: it survives moved lines, but comes back when its message changes, when its file is renamed, or when it is caused by a change elsewhere. Identical findings in a file are counted, including those silenced by disable comments. Parse errors are never skipped. When a rule cannot run, such as a typed rule outside a TypeScript project, `--write-baseline` fails and writes nothing. Baselines apply only to the CLI.
+Use the same version, flags and paths for both runs, from the root of each checkout. A finding is its file, rule and message: it survives moved lines, but comes back when its message changes, when its file is renamed, or when it is caused by a change elsewhere. Identical findings in a file are counted, including those silenced by disable comments. Parse errors are never skipped. When a rule cannot run, such as a typed rule without its backend, `--write-baseline` fails and writes nothing. Baselines apply only to the CLI.
 
 ## Plugin setup
 
@@ -104,7 +104,7 @@ The plugin enables no rules by default. Type-aware rules need the TypeScript set
 
 ## Type-aware setup and limits
 
-- Each file must belong to a TypeScript 7-compatible `tsconfig.json` project with dependencies installed. Referenced projects may need declaration outputs built first.
+- Typed rules analyse files that belong to a TypeScript 7-compatible `tsconfig.json` project with dependencies installed. Files outside every project, such as scripts or configuration files no `tsconfig.json` includes, get syntax rules only. Referenced projects may need declaration outputs built first.
 - `prefer-truthy-presence-check` requires `strictNullChecks`.
 - Run `tsc` too: type errors are not reported, and unresolved types make rules skip checks.
 - Use plain `oxlint`, not `--type-aware`. The plugin runs its own bundled backend for Linux, macOS and Windows on x64 and arm64; no Go needed. It starts with every run, which adds about 10 ms when only syntax rules are enabled.

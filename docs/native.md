@@ -17,7 +17,7 @@ Oxlint's JS API has no type checker, and its built-in typed backend accepts only
 
 Preparation verifies source archives and applies upstream patches plus our patches. Rules are copied into the upstream tree under `.native/`, where they can use Go's internal compiler APIs. A generated registry selects our rules. Do not edit this generated tree.
 
-Our patches require a configured TypeScript project, add a persistent server, and support linting whole programs. Review them when upgrading; internal compiler APIs are not stable.
+Our patches skip files outside every configured TypeScript project instead of building an inferred one, add a persistent server, and support linting whole programs. Review them when upgrading; internal compiler APIs are not stable.
 
 ## Type-aware rules in the plugin
 
@@ -27,6 +27,7 @@ Our patches require a configured TypeScript project, add a persistent server, an
 - Responses use upstream headless V2 framing. The server adds a length frame around each request and response. Invalid frames and backend failures fail the lint run.
 - The upstream backend drops a diagnostic without notice when its message is not valid UTF-8. Compiler-internal symbol names start with `ast.InternalSymbolNamePrefix` (`\xFE`), so never put them in messages.
 - Diagnostics convert UTF-8 byte ranges to JS offsets. Oxlint handles severities and disable comments. Fixes are not forwarded.
+- A file no `tsconfig.json` project includes gets no typed diagnostics: the backend names it as unmatched instead of linting it with default compiler options.
 - TypeScript diagnostics are left to `tsc`. Program-diagnostic suppression lets the backend check projects with config errors; unresolved types may still make rules skip cases.
 - Invalid options can stop the backend. The first error gives the reason; later files fail rather than silently pass.
 - Results are reused only when the current file matches disk. A changed file is sent as an override, but other cached files are not invalidated. Editor integration and multiple Oxlint workspaces are unsupported or unverified.

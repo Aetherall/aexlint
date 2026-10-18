@@ -256,6 +256,7 @@ function runBatch(
   }
   if (result.status !== 0) throw exit;
   const { diagnostics } = messages;
+  if (messages.unmatchedFiles.includes(file)) return new Map([[file, []]]);
   if (!messages.programFiles.includes(file)) throw new Error(unbuiltProgram(file, diagnostics));
   const byFile = new Map<string, NativeDiagnostic[]>(messages.programFiles.map((f) => [f, []]));
   for (const diagnostic of diagnostics.filter((item) => item.kind === 0 && item.file_path)) {

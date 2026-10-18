@@ -271,22 +271,26 @@ test("presence rule validates options and requires strict null checking", (t) =>
 });
 
 test("setup mistakes fail rather than silently passing", (t) => {
-  const { root, write, configure, lint } = project(t);
+  const { configure, lint } = project(t);
   configure({ "aexlint/unknown": "error" });
   const unknown = lint(["input.ts"]);
   assert.notEqual(unknown.status, 0);
   assert.match(unknown.output, /unknown/);
-  configure({ "aexlint/type-probe": "error" });
+});
+
+test("typed rules skip files outside every TypeScript project", (t) => {
+  const { root, write, lint } = project(t);
+  const probed = "function identity<T>(x: T): T { return x; } identity(42);\n";
+  write("input.ts", probed);
   mkdirSync(join(root, "loose"));
-  write("loose/loose.ts", "export const loose = 1;\n");
-  const outside = lint(["loose/loose.ts"]);
-  assert.equal(outside.status, 1);
-  assert.match(outside.output, /aexlint: File .* is not included in a TypeScript project/);
-  assert.doesNotMatch(outside.output, /\n\s+at /);
+  write("loose/loose.ts", probed);
+  const outside = lint(["input.ts", "loose/loose.ts"]);
+  assert.deepEqual(codes(outside), ["input.ts aexlint(type-probe)"]);
+  assert.doesNotMatch(outside.output, /error running JS plugin|TypeScript project/i);
   rmSync(join(root, "tsconfig.json"));
   const missing = lint(["input.ts"]);
-  assert.equal(missing.status, 1);
-  assert.match(missing.output, /is not included in a TypeScript project/);
+  assert.equal(missing.status, 0);
+  assert.deepEqual(missing.diagnostics, []);
 });
 
 test("tsconfig errors are left to the compiler and the files are still linted", (t) => {
@@ -439,7 +443,11 @@ export function transform(value: Figure) {
 });
 
 test("native framing rejects truncated messages", () => {
-  assert.deepEqual(decodeFrames(Buffer.alloc(0)), { diagnostics: [], programFiles: [] });
+  assert.deepEqual(decodeFrames(Buffer.alloc(0)), {
+    diagnostics: [],
+    programFiles: [],
+    unmatchedFiles: [],
+  });
   assert.throws(() => decodeFrames(Buffer.alloc(3)), /Truncated native message header/);
   const header = Buffer.alloc(5);
   header.writeUInt32LE(50);
