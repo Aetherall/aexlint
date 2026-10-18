@@ -30,7 +30,7 @@ if (account.plan === "free") return null;
 
 - Tests and vocabularies follow [no-repeated-value-group](../no-repeated-value-group/README.md#what-counts), with any number of accepted values.
 - Tests match on the values accepted and the text of other operands; subject spelling does not matter.
-- The outcome is the `then` branch, the ternary's true branch, the right side of a `&&` guard, or a `case` body. Blocks are unwrapped and a final `break` dropped. Outcomes are compared as text with whitespace collapsed.
+- The outcome is the `then` branch, the ternary's true branch, the right side of a `&&` guard, or a `case` body. An `if` without `else` whose branch ends in `return`, `throw`, `break` or `continue` also leads, when its test is false, to the statements after it in the same list: `if (plan !== "free") return; work();` matches `if (plan === "free") { work(); }`. Blocks are unwrapped and a final `break` dropped. Outcomes are compared as text with whitespace collapsed.
 - Trivial outcomes do not count: nothing, `return`, `break`, `continue`, `null`, `undefined`, booleans, `void`, `""`, `0`, `-1`, `[]`, `{}`.
 - Matches must be in different files of the program.
 
@@ -38,4 +38,4 @@ if (account.plan === "free") return null;
 
 Reports `repeatedValuePolicy` on each such test in the linted file; help lists the other files. No fixes.
 
-Identical text can refer to different things, and the same work written differently is missed. `else` branches are not compared. Versioned serializers repeat mappings on purpose; turn the rule off for them with [overrides](../no-repeated-value-group/README.md#reporting-and-limits).
+Identical text can refer to different things, and the same work written differently is missed. `else` branches are not compared, and the statements after a guard are compared up to the end of their list, not as far as the guard's test still holds. Versioned serializers repeat mappings on purpose; turn the rule off for them with [overrides](../no-repeated-value-group/README.md#reporting-and-limits).

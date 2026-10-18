@@ -56,3 +56,11 @@ f(g(), h(), j(), k()); a(b(), c(), d(), e());
 f(g(), h(), j(), k(), () => a(b(), c(), d(), e()));
 f(g(), h(), j(), k(), class { field = a(b(), c(), d(), e()); });
 const fields = {one: f(a(),b(),c(),d()), two: g(a(),b(),c(),d())};
+function eagerBranch(policy, screen, measure, left, start) {
+  const screenCentered = Math.floor((screen - measure) / 2) - left;
+  return policy.center === "screen" ? screenCentered : start;
+}
+function eagerFallback(cached, screen, measure, left) {
+  const computed = Math.floor((screen - measure) / 2) - left;
+  return cached || computed;
+}

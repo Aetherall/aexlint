@@ -38,3 +38,32 @@ const concatenated = 'Name: ' + first + ' ' + last + ' (' + role + ')';
 const templated = `Name: ${first} ${last} (${role})`;
 const docs = 'one' + 'two' + 'three' + 'four' + 'five' + 'six';
 const s = ('prefix' as string) + value;
+function eagerTest(policy, screen, measure, left, start) {
+  const screenCentered = Math.floor((screen - measure) / 2) - left;
+  return screenCentered > 0 ? start : 0;
+}
+function eagerReused(policy, screen, measure, left, start) {
+  const screenCentered = Math.floor((screen - measure) / 2) - left;
+  record(screenCentered);
+  return policy.center === "screen" ? screenCentered : start;
+}
+function eagerStatementBranch(policy, screen, measure, left, start) {
+  const screenCentered = Math.floor((screen - measure) / 2) - left;
+  if (policy.center === "screen") return screenCentered;
+  return start;
+}
+function eagerCallback(policy, screen, measure, left, start) {
+  const screenCentered = Math.floor((screen - measure) / 2) - left;
+  return items.map(() => (policy.center === "screen" ? screenCentered : start));
+}
+function namedConditions(value, message) {
+  const located = typeof value.path === "string" || value.path === null;
+  const valid = typeof value.kind === "number" && typeof message.text === "string";
+  if (!located || !valid) throw new Error("invalid");
+}
+function deadlineBeforeLoop(screen, measure, left) {
+  const limit = Math.floor((screen - measure) / 2) - left;
+  for (;;) {
+    if (poll() || measure > 0 ? limit : 0) break;
+  }
+}

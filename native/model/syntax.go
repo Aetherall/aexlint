@@ -55,7 +55,7 @@ func question(n *ast.Node) bool {
 		unary := n.AsPrefixUnaryExpression()
 		return unary.Operator == ast.KindExclamationToken && question(unary.Operand)
 	case ast.KindCallExpression:
-		_, ok := includes(n)
+		_, ok := membership(n)
 		return ok
 	}
 	return false
@@ -118,6 +118,30 @@ func list(n *ast.Node) bool {
 	return p != nil && (p.Kind != ast.KindPropertyAccessExpression || p.Expression() != outer)
 }
 
+// booleanTable reports whether n is an object literal mapping at least two plain keys to true or false.
+func booleanTable(n *ast.Node) bool {
+	properties := n.AsObjectLiteralExpression().Properties.Nodes
+	if len(properties) < 2 {
+		return false
+	}
+	for _, property := range properties {
+		if property.Kind != ast.KindPropertyAssignment {
+			return false
+		}
+		switch property.Name().Kind {
+		case ast.KindIdentifier, ast.KindStringLiteral:
+		default:
+			return false
+		}
+		switch Unwrap(property.Initializer()).Kind {
+		case ast.KindTrueKeyword, ast.KindFalseKeyword:
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func groupStart(clause *ast.Node) bool {
 	if clause.Kind != ast.KindCaseClause {
 		return false
@@ -138,6 +162,8 @@ func Root(n *ast.Node) bool {
 		return groupStart(n)
 	case ast.KindArrayLiteralExpression:
 		return list(n)
+	case ast.KindObjectLiteralExpression:
+		return booleanTable(n)
 	case ast.KindParenthesizedExpression:
 		return false
 	case ast.KindBinaryExpression:
@@ -231,6 +257,41 @@ func OutcomeText(root *ast.Node) string {
 	return ""
 }
 
+// jumps reports from syntax alone whether a statement always leaves: a return, throw, break or continue, or a block
+// ending in one.
+func jumps(n *ast.Node) bool {
+	if n.Kind == ast.KindBlock {
+		statements := n.Statements()
+		if len(statements) == 0 {
+			return false
+		}
+		n = statements[len(statements)-1]
+	}
+	switch n.Kind {
+	case ast.KindReturnStatement, ast.KindThrowStatement, ast.KindBreakStatement, ast.KindContinueStatement:
+		return true
+	}
+	return false
+}
+
+// RestText returns the normalized text of what runs when an early-exit guard's question is false: the statements after
+// an if without else whose branch leaves, up to the end of their list, or "" when there are none.
+func RestText(root *ast.Node) string {
+	if root.Kind == ast.KindCaseClause {
+		return ""
+	}
+	child, p := parent(root)
+	if p.Kind != ast.KindIfStatement {
+		return ""
+	}
+	guard := p.AsIfStatement()
+	if guard.Expression != child || guard.ElseStatement != nil || !jumps(guard.ThenStatement) || !p.Parent.CanHaveStatements() {
+		return ""
+	}
+	statements := p.Parent.Statements()
+	return statementOutcome(statements[indexOf(statements, p)+1:])
+}
+
 func indexOf(nodes []*ast.Node, n *ast.Node) int {
 	for i, m := range nodes {
 		if m == n {
@@ -276,16 +337,21 @@ func (m *Analyzer) functionName(fn *ast.Node) string {
 	return ""
 }
 
-func (m *Analyzer) predicateName(n *ast.Node) string {
+// definingFunction returns the named function whose whole body is n, or nil.
+func (m *Analyzer) definingFunction(n *ast.Node) *ast.Node {
 	child, p := parent(n)
+	var fn *ast.Node
 	switch {
 	case p.Kind == ast.KindArrowFunction && p.Body() == child:
-		return m.functionName(p)
+		fn = p
 	case p.Kind == ast.KindReturnStatement:
 		block := p.Parent
 		if block.Kind == ast.KindBlock && len(work(block)) == 1 && block.Parent != nil && ast.IsFunctionLike(block.Parent) && block.Parent.Body() == block {
-			return m.functionName(block.Parent)
+			fn = block.Parent
 		}
 	}
-	return ""
+	if fn == nil || m.functionName(fn) == "" {
+		return nil
+	}
+	return fn
 }

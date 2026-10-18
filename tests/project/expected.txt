@@ -86,6 +86,18 @@ max-call-assembly/max-width-60-references-3/reported.ts:6:24 aexlint(max-call-as
   ~ ({ port: this.config.port, host: resolveHost(this.env), tls: loadCerts(paths.cert) })
   These arguments are 85 characters wide on one line and draw on 4 outside names (this, resolveHost, loadCerts, paths); limits are 60 and 3. So much is assembled at this call that it cannot be read at a glance.
 
+max-call-assembly/max-width-60-references-3/reported.ts:11:20 aexlint(max-call-assembly)
+  ~ (options)
+  These arguments are 75 characters wide on one line and draw on 5 outside names (config, resolveHost, env, loadCerts, paths); limits are 60 and 3. So much is assembled at this call that it cannot be read at a glance.
+
+max-call-assembly/max-width-60-references-3/reported.ts:15:20 aexlint(max-call-assembly)
+  ~ (request)
+  These arguments are 75 characters wide on one line and draw on 5 outside names (config, resolveHost, env, loadCerts, paths); limits are 60 and 3. So much is assembled at this call that it cannot be read at a glance.
+
+max-call-assembly/max-width-60-references-3/reported.ts:19:14 aexlint(max-call-assembly)
+  ~ (...startArguments)
+  These arguments are 75 characters wide on one line and draw on 5 outside names (config, resolveHost, env, loadCerts, paths); limits are 60 and 3. So much is assembled at this call that it cannot be read at a glance.
+
 max-decision-depth/max-1/reported.js:1:1 aexlint(max-decision-depth)
   ~ a && (b || c)
   Decision depth is 2; maximum is 1. Make the nested decisions explicit with meaningful predicates or branches.
@@ -192,6 +204,10 @@ max-decision-depth/max-2/reported.ts:24:22 aexlint(max-decision-depth)
 
 max-decision-depth/max-2/reported.ts:24:49 aexlint(max-decision-depth)
   ~ e || (f && (g || h))
+  Decision depth is 3; maximum is 2. Make the nested decisions explicit with meaningful predicates or branches.
+
+max-decision-depth/max-2/reported.ts:27:10 aexlint(max-decision-depth)
+  ~ a || (b && fallback)
   Decision depth is 3; maximum is 2. Make the nested decisions explicit with meaningful predicates or branches.
 
 max-decision-depth/max-2/reported.tsx:1:20 aexlint(max-decision-depth)
@@ -460,6 +476,14 @@ max-expression-complexity/max-4/reported.ts:58:22 aexlint(max-expression-complex
 
 max-expression-complexity/max-4/reported.ts:58:47 aexlint(max-expression-complexity)
   ~ g(a(),b(),c(),d())
+  Expression workload is 5; maximum is 4. Separate the computation into meaningful steps.
+
+max-expression-complexity/max-4/reported.ts:61:10 aexlint(max-expression-complexity)
+  ~ policy.center === "screen" ? screenCentered : start
+  Expression workload is 6; maximum is 4. Separate the computation into meaningful steps.
+
+max-expression-complexity/max-4/reported.ts:65:10 aexlint(max-expression-complexity)
+  ~ cached || computed
   Expression workload is 5; maximum is 4. Separate the computation into meaningful steps.
 
 max-expression-complexity/max-4/reported.tsx:1:14 aexlint(max-expression-complexity)
@@ -838,6 +862,16 @@ max-interpretation-spread/max-1/own-declaration-named/file.ts:1:71 aexlint(max-i
   ~ holder.kind
   `Holder.kind` ("chinook" | "mistral" | "zephyr") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
   help: Checked in 3 files. Other files, nearest first: max-interpretation-spread/max-1/own-declaration-named/consumer0.ts, max-interpretation-spread/max-1/own-declaration-named/consumer1.ts. Declared as: Kind (max-interpretation-spread/max-1/own-declaration-named/kinds.ts), Holder.kind (max-interpretation-spread/max-1/own-declaration-named/b.ts).
+
+max-interpretation-spread/max-1/set-membership/a.ts:3:41 aexlint(max-interpretation-spread)
+  ~ f
+  `Fruit` ("medlar" | "pomelo" | "quince") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+  help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/set-membership/b.ts. Declared as: Fruit (max-interpretation-spread/max-1/set-membership/kinds.ts).
+
+max-interpretation-spread/max-1/set-membership/b.ts:2:32 aexlint(max-interpretation-spread)
+  ~ f
+  `Fruit` ("medlar" | "pomelo" | "quince") is checked for particular values in more than 1 file. The compiler points to none of these checks when a value is added. This file has 1 such check.
+  help: Checked in 2 files. Other files, nearest first: max-interpretation-spread/max-1/set-membership/a.ts. Declared as: Fruit (max-interpretation-spread/max-1/set-membership/kinds.ts).
 
 max-interpretation-spread/max-2/includes-and-or/a.ts:2:60 aexlint(max-interpretation-spread)
   ~ item.kind
@@ -1545,6 +1579,16 @@ no-forgeable-validated-result/reported/checked-data-reaching-result.ts:8:17 aexl
   `collect` rejects some inputs, then returns `{ values: string[]; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ values: string[]; }` cannot tell whether it passed `collect`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 11.
 
+no-forgeable-validated-result/reported/checking-helper-result.ts:8:17 aexlint(no-forgeable-validated-result)
+  ~ readSlot
+  `readSlot` rejects some inputs, then returns `Slot`, which other code can produce without that check.
+  help: Code that receives a value of type `Slot` cannot tell whether it passed `readSlot`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `slotName` (no-forgeable-validated-result/reported/checking-helper-result.ts) at line 9.
+
+no-forgeable-validated-result/reported/checking-helper-result.ts:11:17 aexlint(no-forgeable-validated-result)
+  ~ readStorage
+  `readStorage` rejects some inputs, then returns `Storage`, which other code can produce without that check.
+  help: Code that receives a value of type `Storage` cannot tell whether it passed `readStorage`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `slotName` (no-forgeable-validated-result/reported/checking-helper-result.ts) at line 12.
+
 no-forgeable-validated-result/reported/destructuring.ts:2:17 aexlint(no-forgeable-validated-result)
   ~ pair
   `pair` rejects some inputs, then returns `Pair`, which other code can produce without that check.
@@ -2230,6 +2274,11 @@ no-repeated-value-group/dependency-closed/g.ts:2:34 aexlint(no-repeated-value-gr
   `k` is tested against the value group "ferret" | "gopher", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/dependency-closed/f.ts:2. When the group changes, every copy has to be found and changed the same way.
 
+no-repeated-value-group/reported/callable-wrapper/route.ts:2:43 aexlint(no-repeated-value-group)
+  ~ n.channel === "beige" || n.channel === "khaki"
+  `n.channel` is tested against the value group "beige" | "khaki", which is also written elsewhere.
+  help: Already named by wrapped (no-repeated-value-group/reported/callable-wrapper/wrapped.ts:3). When the group changes, every copy has to be found and changed the same way.
+
 no-repeated-value-group/reported/data-callback/kept.ts:4:38 aexlint(no-repeated-value-group)
   ~ n.channel === "narwhal" || n.channel === "walrus"
   `n.channel` is tested against the value group "narwhal" | "walrus", which is also written elsewhere.
@@ -2240,15 +2289,10 @@ no-repeated-value-group/reported/data-callback/route.ts:2:43 aexlint(no-repeated
   `n.channel` is tested against the value group "narwhal" | "walrus", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/data-callback/kept.ts:4. When the group changes, every copy has to be found and changed the same way.
 
-no-repeated-value-group/reported/enums/enums.ts:4:7 aexlint(no-repeated-value-group)
-  ~ HIGH.includes(l as typeof HIGH[number])
-  `l` is tested against the value group Level.High | Level.Max, which is also written elsewhere.
-  help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/enums/enums.ts:5. When the group changes, every copy has to be found and changed the same way.
-
 no-repeated-value-group/reported/enums/enums.ts:5:7 aexlint(no-repeated-value-group)
   ~ l === Level.Max || l === Level.High
   `l` is tested against the value group Level.High | Level.Max, which is also written elsewhere.
-  help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/enums/enums.ts:4. When the group changes, every copy has to be found and changed the same way.
+  help: Already named by HIGH (no-repeated-value-group/reported/enums/enums.ts:2). When the group changes, every copy has to be found and changed the same way.
 
 no-repeated-value-group/reported/forms/forms.ts:5:7 aexlint(no-repeated-value-group)
   ~ t !== "kudu" && t !== "eland"
@@ -2280,6 +2324,36 @@ no-repeated-value-group/reported/jsx-guard/guard.tsx:2:51 aexlint(no-repeated-va
   `props.n.channel` is tested against the value group "cherry" | "denim", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/jsx-guard/deliver.ts:2. When the group changes, every copy has to be found and changed the same way.
 
+no-repeated-value-group/reported/named-definitions/named.ts:2:47 aexlint(no-repeated-value-group)
+  ~ n.channel === "ivory" || n.channel === "coral"
+  `isInstant` defines the value group "coral" | "ivory", which is also defined elsewhere.
+  help: Also defined by INSTANT (no-repeated-value-group/reported/named-definitions/named.ts:5), instant (no-repeated-value-group/reported/named-definitions/named.ts:3), instant (no-repeated-value-group/reported/named-definitions/named.ts:6), and 1 more. Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/named-definitions/named.ts:3:39 aexlint(no-repeated-value-group)
+  ~ n.channel === "coral" || n.channel === "ivory"
+  `instant` defines the value group "coral" | "ivory", which is also defined elsewhere.
+  help: Also defined by INSTANT (no-repeated-value-group/reported/named-definitions/named.ts:5), instant (no-repeated-value-group/reported/named-definitions/named.ts:6), isInstant (no-repeated-value-group/reported/named-definitions/named.ts:2), and 1 more. Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/named-definitions/named.ts:4:56 aexlint(no-repeated-value-group)
+  ~ n.channel === "ivory" || n.channel === "coral"
+  `isQuick` defines the value group "coral" | "ivory", which is also defined elsewhere.
+  help: Also defined by INSTANT (no-repeated-value-group/reported/named-definitions/named.ts:5), instant (no-repeated-value-group/reported/named-definitions/named.ts:3), instant (no-repeated-value-group/reported/named-definitions/named.ts:6), and 1 more. Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/named-definitions/named.ts:5:35 aexlint(no-repeated-value-group)
+  ~ ["ivory", "coral"]
+  `INSTANT` defines the value group "coral" | "ivory", which is also defined elsewhere.
+  help: Also defined by instant (no-repeated-value-group/reported/named-definitions/named.ts:3), instant (no-repeated-value-group/reported/named-definitions/named.ts:6), isInstant (no-repeated-value-group/reported/named-definitions/named.ts:2), and 1 more. Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/named-definitions/named.ts:6:54 aexlint(no-repeated-value-group)
+  ~ ["ivory", "coral"].includes(n.channel)
+  `instant` defines the value group "coral" | "ivory", which is also defined elsewhere.
+  help: Also defined by INSTANT (no-repeated-value-group/reported/named-definitions/named.ts:5), instant (no-repeated-value-group/reported/named-definitions/named.ts:3), isInstant (no-repeated-value-group/reported/named-definitions/named.ts:2), and 1 more. Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/named-definitions/route.ts:2:43 aexlint(no-repeated-value-group)
+  ~ n.channel === "ivory" || n.channel === "coral"
+  `n.channel` is tested against the value group "coral" | "ivory", which is also written elsewhere.
+  help: Already named by INSTANT (no-repeated-value-group/reported/named-definitions/named.ts:5), instant (no-repeated-value-group/reported/named-definitions/named.ts:3), instant (no-repeated-value-group/reported/named-definitions/named.ts:6), and 2 more. When the group changes, every copy has to be found and changed the same way.
+
 no-repeated-value-group/reported/named-elsewhere/nullable.ts:2:37 aexlint(no-repeated-value-group)
   ~ n?.channel === "falcon" || (n?.channel as Channel) === "harrier"
   `n?.channel` is tested against the value group "falcon" | "harrier", which is also written elsewhere.
@@ -2310,6 +2384,46 @@ no-repeated-value-group/reported/other-file/route.ts:2:43 aexlint(no-repeated-va
   `n.channel` is tested against the value group "gannet" | "osprey", which is also written elsewhere.
   help: Written in 2 places. Others, nearest first: no-repeated-value-group/reported/other-file/deliver.ts:2. When the group changes, every copy has to be found and changed the same way.
 
+no-repeated-value-group/reported/predicates/a.ts:2:41 aexlint(no-repeated-value-group)
+  ~ s === "lychee" || s === "rambutan"
+  `isWet` defines the value group "lychee" | "rambutan", which is also defined elsewhere.
+  help: Also defined by isFailed (no-repeated-value-group/reported/predicates/b.ts:2). Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/predicates/b.ts:2:38 aexlint(no-repeated-value-group)
+  ~ s === "rambutan" || s === "lychee"
+  `isFailed` defines the value group "lychee" | "rambutan", which is also defined elsewhere.
+  help: Also defined by isWet (no-repeated-value-group/reported/predicates/a.ts:2). Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/sets/a.ts:3:34 aexlint(no-repeated-value-group)
+  ~ near.has(n.channel)
+  `near` defines the value group "beryl" | "quartz", which is also defined elsewhere.
+  help: Also defined by close (no-repeated-value-group/reported/sets/b.ts:2). Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/sets/b.ts:3:36 aexlint(no-repeated-value-group)
+  ~ close.has(n.channel)
+  `close` defines the value group "beryl" | "quartz", which is also defined elsewhere.
+  help: Also defined by near (no-repeated-value-group/reported/sets/a.ts:2). Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/sets/c.ts:2:36 aexlint(no-repeated-value-group)
+  ~ new Set(["quartz", "beryl"]).has(n.channel)
+  `n.channel` is tested against the value group "beryl" | "quartz", which is also written elsewhere.
+  help: Already named by close (no-repeated-value-group/reported/sets/b.ts:2), near (no-repeated-value-group/reported/sets/a.ts:2). When the group changes, every copy has to be found and changed the same way.
+
+no-repeated-value-group/reported/tables/bright.ts:2:16 aexlint(no-repeated-value-group)
+  ~ { tulip: true, lotus: true, poppy: false, daisy: false }
+  `bright` defines the value group "lotus" | "tulip", which is also defined elsewhere.
+  help: Also defined by showy (no-repeated-value-group/reported/tables/channel.ts:3). Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/tables/channel.ts:3:48 aexlint(no-repeated-value-group)
+  ~ { tulip: true, lotus: true, poppy: false, daisy: false }
+  `showy` defines the value group "lotus" | "tulip", which is also defined elsewhere.
+  help: Also defined by bright (no-repeated-value-group/reported/tables/bright.ts:2). Separate definitions of one group drift apart when it changes; keep one and use it everywhere.
+
+no-repeated-value-group/reported/tables/inline.ts:2:41 aexlint(no-repeated-value-group)
+  ~ n.channel === "lotus" || n.channel === "tulip"
+  `n.channel` is tested against the value group "lotus" | "tulip", which is also written elsewhere.
+  help: Already named by bright (no-repeated-value-group/reported/tables/bright.ts:2), showy (no-repeated-value-group/reported/tables/channel.ts:3). When the group changes, every copy has to be found and changed the same way.
+
 no-repeated-value-policy/dependency-closed/f.ts:2:37 aexlint(no-repeated-value-policy)
   ~ k === "a"
   Testing `k` for "a" leads to the same outcome in other files.
@@ -2324,6 +2438,16 @@ no-repeated-value-policy/reported/badge.tsx:2:55 aexlint(no-repeated-value-polic
   ~ props.r.plan === "free"
   Testing `props.r.plan` for "free" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/row.tsx:2. When this rule changes, every copy has to be found and changed the same way.
+
+no-repeated-value-policy/reported/guard.ts:4:7 aexlint(no-repeated-value-policy)
+  ~ account.plan !== "team"
+  Testing `account.plan` for "team" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/guarded.ts:4. When this rule changes, every copy has to be found and changed the same way.
+
+no-repeated-value-policy/reported/guarded.ts:4:7 aexlint(no-repeated-value-policy)
+  ~ account.plan === "team"
+  Testing `account.plan` for "team" leads to the same outcome in other files.
+  help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/guard.ts:4. When this rule changes, every copy has to be found and changed the same way.
 
 no-repeated-value-policy/reported/open.ts:5:5 aexlint(no-repeated-value-policy)
   ~ case "personal"

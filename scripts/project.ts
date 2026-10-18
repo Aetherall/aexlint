@@ -8,6 +8,12 @@ import { native, root } from "./native.ts";
 const project = join(root, "tests/project");
 const expectedFile = join(project, "expected.txt");
 const oxlint = fileURLToPath(new URL("./bin/oxlint", import.meta.resolve("oxlint/package.json")));
+const lintCommand = [oxlint, "-c", "oxlint.json", "--format", "json", "."];
+const lintOptions: SpawnSyncOptionsWithStringEncoding = {
+  cwd: project,
+  encoding: "utf8",
+  maxBuffer: 256 * 1024 * 1024,
+};
 
 interface Diagnostic {
   code: string;
@@ -47,15 +53,9 @@ function byPosition(a: Diagnostic, b: Diagnostic): number {
 export function lintProject(): string {
   const target = `${process.platform}-${process.arch}`;
   const backend = join(root, "dist/native", target, backendExecutable());
-  const { NODE_TEST_CONTEXT: _, ...env } = process.env;
-  const command = [oxlint, "-c", "oxlint.json", "--format", "json", "."];
-  const options: SpawnSyncOptionsWithStringEncoding = {
-    cwd: project,
-    env: { ...env, AEXLINT_TYPED_BACKEND: backend },
-    encoding: "utf8",
-    maxBuffer: 256 * 1024 * 1024,
-  };
-  const result = spawnSync(process.execPath, command, options);
+  const { NODE_TEST_CONTEXT: _, ...inherited } = process.env;
+  const env = { ...inherited, AEXLINT_TYPED_BACKEND: backend };
+  const result = spawnSync(process.execPath, lintCommand, { ...lintOptions, env });
   if (result.error) throw result.error;
   const finished = result.status === 0 || result.status === 1;
   if (!finished) {

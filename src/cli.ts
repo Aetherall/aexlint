@@ -59,6 +59,18 @@ function writeBaseline(file: string, output: string, recorded: string): number {
   return 0;
 }
 
+function oxlintOptions(
+  env: NodeJS.ProcessEnv,
+  record: string | undefined,
+): SpawnSyncOptionsWithStringEncoding {
+  return {
+    env,
+    encoding: "utf8",
+    maxBuffer: 1024 * 1024 * 1024,
+    stdio: ["inherit", record ? "pipe" : "inherit", "inherit"],
+  };
+}
+
 function check(): number {
   const { values, positionals } = parseArgs({
     allowPositionals: true,
@@ -143,13 +155,7 @@ function check(): number {
     if (baseline) env.AEXLINT_BASELINE = resolve(baseline);
     const recorded = join(directory, "recorded");
     if (record) env.AEXLINT_RECORD = recorded;
-    const options: SpawnSyncOptionsWithStringEncoding = {
-      env,
-      encoding: "utf8",
-      maxBuffer: 1024 * 1024 * 1024,
-      stdio: ["inherit", record ? "pipe" : "inherit", "inherit"],
-    };
-    const result = spawnSync(process.execPath, args, options);
+    const result = spawnSync(process.execPath, args, oxlintOptions(env, record));
     if (result.error) throw result.error;
     if (!record) return result.status ?? 2;
     const finished = result.status === 0 || result.status === 1;

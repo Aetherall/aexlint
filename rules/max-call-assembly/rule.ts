@@ -3,12 +3,17 @@ import {
   childNodes,
   isFunctionNode,
   isInvocation,
+  singleReadConstants,
   unwrap,
   type Invocation,
 } from "../../src/expression.ts";
 
-type Piece = { text: string; start: number; end: number };
-type Assembly = { collapsed: [number, number][]; names: Set<string> };
+type Piece = { text: string; start: number; joined: boolean };
+type Assembly = {
+  collapsed: [number, number][];
+  names: Set<string>;
+  inlined: Map<number, ESTree.Node>;
+};
 
 function isInsideFunction(node: ESTree.Node): boolean {
   for (let ancestor = node.parent; ancestor; ancestor = ancestor.parent) {
@@ -36,7 +41,7 @@ function widthOf(list: Piece[]): number {
   list.forEach((piece, index) => {
     const previous = list[index - 1];
     width += piece.text.length;
-    if (!previous || previous.end === piece.start) return;
+    if (!previous || piece.joined) return;
     if (/^[([]$/.test(previous.text) || /^[)\]]$/.test(piece.text)) return;
     width += 1;
   });
@@ -103,13 +108,27 @@ export default defineRule({
       }
     }
 
+    const constants = singleReadConstants(sourceCode.scopeManager);
+    const builtForCall = (passed: ESTree.Node): ESTree.Node | undefined => {
+      const initializer = constants.get(passed);
+      const init = initializer && unwrap(initializer);
+      const literal = init?.type === "ObjectExpression" || init?.type === "ArrayExpression";
+      return literal ? init : undefined;
+    };
+
     const assemblyOf = (node: Invocation, start: number, end: number): Assembly => {
       const collapsed: [number, number][] = [];
       const names = new Set<string>();
+      const inlined = new Map<number, ESTree.Node>();
+      const ranges: [number, number][] = [[start, end]];
       const isOutside = (reference: Reference) =>
         !reference.resolved ||
-        !reference.resolved.defs.every((def) => def.name.start >= start && def.name.end <= end);
+        !reference.resolved.defs.every((def) =>
+          ranges.some(([from, to]) => def.name.start >= from && def.name.end <= to),
+        );
       const visit = (current: ESTree.Node) => {
+        const built = inlined.get(current.start);
+        if (built && current.type === "Identifier") return visit(built);
         if (current.type === "ClassBody") {
           collapsed.push([current.start, current.end]);
           return;
@@ -124,8 +143,15 @@ export default defineRule({
         const measured = (key: string) => key !== ownBody && !typeKeys.has(key);
         for (const child of childNodes(sourceCode.visitorKeys, current, measured)) visit(child);
       };
+      for (const argument of node.arguments) {
+        const passed = unwrap(argument.type === "SpreadElement" ? argument.argument : argument);
+        const built = builtForCall(passed);
+        if (!built) continue;
+        inlined.set(passed.start, built);
+        ranges.push([built.start, built.end]);
+      }
       for (const argument of node.arguments) visit(argument);
-      return { collapsed, names };
+      return { collapsed, names, inlined };
     };
 
     const pieces = (
@@ -135,20 +161,35 @@ export default defineRule({
       assembly: Assembly,
     ) => {
       const result: Piece[] = [];
-      for (const token of sourceCode.getTokens(node)) {
-        if (token.start < open.start || token.end > close.end) continue;
-        const range = assembly.collapsed.find(
-          ([start, end]) => token.start >= start && token.end <= end,
-        );
-        if (!range) {
-          const text = withoutLiteralText(token);
-          result.push({ text, start: token.start, end: token.end });
-          continue;
+      const append = (tokens: ESTree.Token[]) => {
+        let previousEnd: number | undefined;
+        for (const token of tokens) {
+          const joined = previousEnd === token.start;
+          previousEnd = token.end;
+          const built = assembly.inlined.get(token.start);
+          if (built) {
+            const first = result.length;
+            append(sourceCode.getTokens(built));
+            if (result[first]) result[first].joined = joined;
+            continue;
+          }
+          const range = assembly.collapsed.find(
+            ([start, end]) => token.start >= start && token.end <= end,
+          );
+          if (!range) {
+            result.push({ text: withoutLiteralText(token), start: token.start, joined });
+            continue;
+          }
+          if (result.at(-1)?.start !== range[0]) {
+            result.push({ text: "{}", start: range[0], joined });
+          }
         }
-        if (result.at(-1)?.start !== range[0]) {
-          result.push({ text: "{}", start: range[0], end: range[1] });
-        }
-      }
+      };
+      append(
+        sourceCode
+          .getTokens(node)
+          .filter((token) => token.start >= open.start && token.end <= close.end),
+      );
       return result.filter(
         (piece, index) => piece.text !== "," || !/^[)\]}]$/.test(result[index + 1]?.text ?? ""),
       );

@@ -48,13 +48,13 @@ function consumer(t: TestContext) {
     writeFileSync(path, source);
   };
   write("package.json", JSON.stringify({ private: true, type: "module" }));
+  const options: SpawnSyncOptionsWithStringEncoding = {
+    cwd: root,
+    encoding: "utf8",
+    timeout: 60_000,
+  };
   const run = (args: string[], expectedStatus = 0) => {
     const before = snapshot(root);
-    const options: SpawnSyncOptionsWithStringEncoding = {
-      cwd: root,
-      encoding: "utf8",
-      timeout: 60_000,
-    };
     const result = spawnSync(process.execPath, [cli, ...args], options);
     if (result.error) throw result.error;
     assert.deepEqual(

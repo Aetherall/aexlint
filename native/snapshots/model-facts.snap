@@ -1,21 +1,21 @@
 
 [TestModelFacts/invalid-0 - 1]
 Diagnostic 1: site (3:7 - 3:34)
-Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named ""; outcome "return 1;"
+Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named ""; outcome "return 1;"; otherwise {s:L,s:M,s:S}∈{s:L} leads to "if (size !== \"L\" && ready()) return 2; return 3;"
    2 | export function f(size: Size) {
    3 |   if (size === "S" || size === "M") return 1;
      |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    4 |   if (size !== "L" && ready()) return 2;
 
 Diagnostic 2: site (4:7 - 4:29)
-Message: site (?ready() & {s:L,s:M,s:S}∈{s:M,s:S}); tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named ""; outcome "return 2;"
+Message: site (?ready() & {s:L,s:M,s:S}∈{s:M,s:S}); tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named ""; outcome "return 2;"; otherwise (?!ready() | {s:L,s:M,s:S}∈{s:L}) leads to "return 3;"
    3 |   if (size === "S" || size === "M") return 1;
    4 |   if (size !== "L" && ready()) return 2;
      |       ~~~~~~~~~~~~~~~~~~~~~~~
    5 |   return 3;
 
 Diagnostic 3: site (8:30 - 8:39)
-Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests ["S", "M"] in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named "small"; outcome ""
+Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests ["S", "M"] in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named "small"; outcome ""; defined at line 8
    7 | declare function ready(): boolean;
    8 | export const small: Size[] = ["S", "M"];
      |                              ~~~~~~~~~~
@@ -31,14 +31,14 @@ Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M"
 
 [TestModelFacts/invalid-1 - 1]
 Diagnostic 1: site (2:37 - 2:84)
-Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named "open"; outcome ""
+Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named "open"; outcome ""; defined at line 2
    1 | import type { Size } from "./items.js";
    2 | export const open = (size: Size) => (size === "S" || size === "M") satisfies boolean;
      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    3 | export const shut = (size: Size) => (size === "L") as boolean;
 
 Diagnostic 2: site (3:37 - 3:61)
-Message: site {s:L,s:M,s:S}∈{s:L}; tests size in {"L"} of {"L" | "M" | "S"}; group ""; named "shut"; outcome ""
+Message: site {s:L,s:M,s:S}∈{s:L}; tests size in {"L"} of {"L" | "M" | "S"}; group ""; named "shut"; outcome ""; defined at line 3
    2 | export const open = (size: Size) => (size === "S" || size === "M") satisfies boolean;
    3 | export const shut = (size: Size) => (size === "L") as boolean;
      |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -434,12 +434,26 @@ Message: rejection; on [id.length] reads [id.length]
 ---
 
 [TestModelFacts/invalid-18 - 1]
-Diagnostic 1: test (6:7 - 6:28)
-Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ ../../fixtures/file.ts:4
-   5 |   if (declared.includes(size)) return 1;
-   6 |   if (literal.includes(size)) return 2;
+Diagnostic 1: test (8:7 - 8:29)
+Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ ../../fixtures/file.ts:7
+   7 | export function f(size: Size) {
+   8 |   if (declared.includes(size)) return 1;
+     |       ~~~~~~~~~~~~~~~~~~~~~~~
+   9 |   if (literal.includes(size)) return 2;
+
+Diagnostic 2: test (9:7 - 9:28)
+Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ ../../fixtures/file.ts:7
+   8 |   if (declared.includes(size)) return 1;
+   9 |   if (literal.includes(size)) return 2;
      |       ~~~~~~~~~~~~~~~~~~~~~~
-   7 |   return 0;
+  10 |   if (sizes.has(size)) return 3;
+
+Diagnostic 3: test (10:7 - 10:21)
+Message: test value size; claim {"M" | "S"} of {"L" | "M" | "S"}; field size @ ../../fixtures/file.ts:7
+   9 |   if (literal.includes(size)) return 2;
+  10 |   if (sizes.has(size)) return 3;
+     |       ~~~~~~~~~~~~~~~
+  11 |   if (loaded.includes(size)) return 4;
 ---
 
 [TestModelFacts/invalid-19 - 1]
@@ -1048,4 +1062,27 @@ Message: optional [fieldKey, subFieldKey]; returns [!fieldKey !subFieldKey / fie
    2 | export function keys(input: string): Keys {
      |                 ~~~~
    3 |   if (input === "") return { fieldKey: undefined, subFieldKey: undefined, always: input };
+---
+
+[TestModelFacts/invalid-47 - 1]
+Diagnostic 1: site (3:37 - 3:66)
+Message: site {s:L,s:M,s:S}∈{s:L,s:M}; tests { S: false, M: true, L: true } in {"L" | "M"} of {"L" | "M" | "S"}; group ""; named "wide"; outcome ""; defined at line 3
+   2 | const small = new Set<Size>(["S", "M"]);
+   3 | const wide: Record<Size, boolean> = { S: false, M: true, L: true };
+     |                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   4 | export const isSmall = (size: Size) => small.has(size);
+
+Diagnostic 2: site (4:40 - 4:54)
+Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named "small"; outcome ""; defined at line 2
+   3 | const wide: Record<Size, boolean> = { S: false, M: true, L: true };
+   4 | export const isSmall = (size: Size) => small.has(size);
+     |                                        ~~~~~~~~~~~~~~~
+   5 | export function ship(size: Size) {
+
+Diagnostic 3: site (6:7 - 6:18)
+Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M" | "S"}; group ""; named ""; outcome ""; otherwise {s:L,s:M,s:S}∈{s:L} leads to "log(size);"
+   5 | export function ship(size: Size) {
+   6 |   if (size !== "L") return;
+     |       ~~~~~~~~~~~~
+   7 |   log(size);
 ---

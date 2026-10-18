@@ -27,7 +27,7 @@ func testPosition(read *ast.Node) bool {
 		if argument, ok := booleanCall(p); ok {
 			return argument == child
 		}
-		if _, ok := includes(p); ok {
+		if _, ok := membership(p); ok {
 			return p.Arguments()[0] == child
 		}
 	}

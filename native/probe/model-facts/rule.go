@@ -125,7 +125,14 @@ func (p *probe) site(n *ast.Node) {
 	for _, t := range s.Tests {
 		tests = append(tests, t.Value.String()+" in "+claim(t.Claim))
 	}
-	p.report("site", n, fmt.Sprintf("site %s; tests %s; group %q; named %q; outcome %q", s.Canon, strings.Join(tests, ", "), s.Group, s.Named, s.Outcome))
+	message := fmt.Sprintf("site %s; tests %s; group %q; named %q; outcome %q", s.Canon, strings.Join(tests, ", "), s.Group, s.Named, s.Outcome)
+	if s.Definition != nil {
+		message += fmt.Sprintf("; defined at line %d", scanner.GetECMALineOfPosition(ast.GetSourceFileOfNode(s.Definition), scanner.SkipTrivia(ast.GetSourceFileOfNode(s.Definition).Text(), s.Definition.Pos()))+1)
+	}
+	if s.Rest != "" {
+		message += fmt.Sprintf("; otherwise %s leads to %q", s.Inverse, s.Rest)
+	}
+	p.report("site", n, message)
 }
 
 func (p *probe) outermost(n *ast.Node) bool {

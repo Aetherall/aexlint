@@ -7,7 +7,8 @@ import (
 	"github.com/microsoft/typescript-go/shim/compiler"
 )
 
-// Index lists the roots of a program's project source files by file, by the literal values they mention and by the outcome text they lead to.
+// Index lists the roots of a program's project source files by file, by the literal values they mention and by the outcome text they lead to,
+// whether their question is true or, for an early-exit guard, false.
 // Roots comparing a value with anything but a literal token, such as a constant or an enum member, are listed in other. It is built once per program from syntax alone and never mutated afterwards.
 type Index struct {
 	byFile    map[*ast.SourceFile][]*ast.Node
@@ -82,7 +83,7 @@ func keys(root *ast.Node) ([]string, bool) {
 				opaque = true
 			}
 		case ast.KindCallExpression:
-			if receiver, ok := includes(n); ok {
+			if receiver, ok := membership(n); ok {
 				receiver = ast.SkipParentheses(receiver)
 				opaque = opaque || receiver.Kind != ast.KindArrayLiteralExpression || slices.ContainsFunc(receiver.Elements(), func(e *ast.Node) bool { return !literal(e) })
 			}
@@ -112,8 +113,10 @@ func buildIndex(program *compiler.Program) *Index {
 			for _, key := range found {
 				index.byKey[key] = append(index.byKey[key], root)
 			}
-			if outcome := OutcomeText(root); outcome != "" {
-				index.byOutcome[outcome] = append(index.byOutcome[outcome], root)
+			for _, outcome := range []string{OutcomeText(root), RestText(root)} {
+				if outcome != "" {
+					index.byOutcome[outcome] = append(index.byOutcome[outcome], root)
+				}
 			}
 		}
 	}
@@ -126,7 +129,7 @@ func (index *Index) File(file *ast.SourceFile) []*ast.Node { return index.byFile
 // Keyed returns the roots mentioning the literal value key. Callers must not modify the result.
 func (index *Index) Keyed(key string) []*ast.Node { return index.byKey[key] }
 
-// Outcome returns the roots leading to the outcome text. Callers must not modify the result.
+// Outcome returns the roots leading to the outcome text, when their question is true or false. Callers must not modify the result.
 func (index *Index) Outcome(outcome string) []*ast.Node { return index.byOutcome[outcome] }
 
 // Other returns the roots mentioning no literal token. Callers must not modify the result.

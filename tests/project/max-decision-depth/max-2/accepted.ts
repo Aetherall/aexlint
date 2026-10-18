@@ -10,3 +10,16 @@ outer(a && f(() => b || (c && d)));
 if (a) { if (b) { if (c) { work(); } } }
 const value = source?.value ?? fallback;
 f(g(h(j(k()))));
+function eagerDecisionReused(a, b, c, d) {
+  const fallback = c ? d : a;
+  record(fallback);
+  return a || (b && fallback);
+}
+function namedCondition(a, b, c, d) {
+  const either = c || d;
+  return a || (b && either);
+}
+function eagerDecisionSameOperator(a, b, c, d) {
+  const late = c && d;
+  return a || (b && late);
+}

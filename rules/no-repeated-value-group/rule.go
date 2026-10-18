@@ -3,6 +3,7 @@ package no_repeated_value_group
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/core"
@@ -17,7 +18,8 @@ type measure struct {
 	places   model.Places
 }
 
-// matches returns the other unnamed sites and the named sites spelling out s's group.
+// matches returns the other unnamed sites and the named sites spelling out s's group, apart from those of s's own
+// definition.
 func (m *measure) matches(s *model.Site) ([]*ast.Node, []*model.Site) {
 	seen := map[*ast.Node]bool{s.Root: true}
 	others, named := []*ast.Node{}, []*model.Site{}
@@ -26,12 +28,13 @@ func (m *measure) matches(s *model.Site) ([]*ast.Node, []*model.Site) {
 			return
 		}
 		seen[root] = true
-		if other := m.analyzer.Classify(root); other != nil && other.Group == s.Group {
-			if other.Named != "" {
-				named = append(named, other)
-			} else {
-				others = append(others, root)
-			}
+		other := m.analyzer.Classify(root)
+		switch {
+		case other == nil || other.Group != s.Group:
+		case other.Named == "":
+			others = append(others, root)
+		case s.Definition == nil || other.Definition != s.Definition:
+			named = append(named, other)
 		}
 	}
 	for _, values := range [][]string{s.Tests[0].Claim.Accepted, s.Tests[0].Claim.Rejected()} {
@@ -43,6 +46,15 @@ func (m *measure) matches(s *model.Site) ([]*ast.Node, []*model.Site) {
 		visit(root)
 	}
 	return others, named
+}
+
+func (m *measure) names(named []*model.Site) string {
+	names := []string{}
+	for _, n := range named {
+		names = append(names, fmt.Sprintf("%s (%s)", n.Named, m.places.Location(n.Definition)))
+	}
+	slices.Sort(names)
+	return model.Listed(slices.Compact(names), 3)
 }
 
 func (m *measure) report(s *model.Site, others []*ast.Node, named []*model.Site) {
@@ -61,27 +73,44 @@ func (m *measure) report(s *model.Site, others []*ast.Node, named []*model.Site)
 	for _, n := range others {
 		locations = append(locations, m.places.Location(n))
 	}
-	help := fmt.Sprintf("Written in %d places. Others, nearest first: %s.", len(others)+1, model.Listed(locations, 3))
-	if len(named) > 0 {
-		names := []string{}
-		for _, n := range named {
-			names = append(names, fmt.Sprintf("%s (%s)", n.Named, m.places.Location(n.Root)))
-		}
-		slices.Sort(names)
-		help += " Already named by " + model.Listed(slices.Compact(names), 3) + "."
+	parts := []string{}
+	if len(others) > 0 {
+		parts = append(parts, fmt.Sprintf("Written in %d places. Others, nearest first: %s.", len(others)+1, model.Listed(locations, 3)))
 	}
-	help += " When the group changes, every copy has to be found and changed the same way."
-	m.ctx.ReportRange(core.NewTextRange(s.Pos, s.End), rule.RuleMessage{Id: "repeatedValueGroup", Description: description, Help: help})
+	if len(named) > 0 {
+		parts = append(parts, "Already named by "+m.names(named)+".")
+	}
+	parts = append(parts, "When the group changes, every copy has to be found and changed the same way.")
+	m.ctx.ReportRange(core.NewTextRange(s.Pos, s.End), rule.RuleMessage{Id: "repeatedValueGroup", Description: description, Help: strings.Join(parts, " ")})
+}
+
+func (m *measure) reportDefinition(s *model.Site, named []*model.Site) {
+	group := s.Tests[0].Claim.Vocabulary.Display(s.Tests[0].Claim.Accepted)
+	m.ctx.ReportRange(core.NewTextRange(s.Pos, s.End), rule.RuleMessage{
+		Id:          "repeatedValueGroup",
+		Description: fmt.Sprintf("`%s` defines the value group %s, which is also defined elsewhere.", s.Named, group),
+		Help:        "Also defined by " + m.names(named) + ". Separate definitions of one group drift apart when it changes; keep one and use it everywhere.",
+	})
 }
 
 func (m *measure) run() {
+	definitions := map[*ast.Node]bool{}
 	for _, root := range m.index.File(m.ctx.SourceFile) {
 		s := m.analyzer.Classify(root)
-		if s == nil || s.Group == "" || s.Named != "" {
+		if s == nil || s.Group == "" || definitions[s.Definition] {
 			continue
 		}
-		if others, named := m.matches(s); len(others) > 0 {
-			m.report(s, others, named)
+		others, named := m.matches(s)
+		switch {
+		case s.Named == "":
+			if len(others)+len(named) > 0 {
+				m.report(s, others, named)
+			}
+		case len(named) > 0:
+			definitions[s.Definition] = true
+			m.reportDefinition(s, named)
+		default:
+			definitions[s.Definition] = true
 		}
 	}
 }

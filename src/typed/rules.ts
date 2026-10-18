@@ -235,13 +235,9 @@ function runBatch(
   text: string,
   requests: Request[],
 ): Map<string, NativeDiagnostic[]> {
-  const onDisk = onDiskAs(file, text);
-  const payload = {
-    version: 2,
-    configs: [{ file_paths: [file], rules: requests }],
-    whole_programs: true,
-    ...(onDisk ? {} : { source_overrides: { [file]: text } }),
-  };
+  const overrides = onDiskAs(file, text) ? {} : { source_overrides: { [file]: text } };
+  const configs = [{ file_paths: [file], rules: requests }];
+  const payload = { version: 2, configs, whole_programs: true, ...overrides };
   const { result, stdout } = channel(Buffer.from(JSON.stringify(payload)));
   if (result.error) throw new Error(result.error);
   const exit = new Error(

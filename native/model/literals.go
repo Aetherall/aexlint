@@ -40,10 +40,16 @@ type Site struct {
 	Canon string
 	// Group is the accepted values of a site testing one vocabulary against several values, or "".
 	Group string
-	// Named is the name a site gives its question: a function whose whole body it is, or a declaration it initializes.
-	Named string
+	// Named is the name the site's group is defined under: a function whose whole body it is, a declaration it
+	// initializes, or a constant list or set it tests membership of. Definition is that function or declaration.
+	Named      string
+	Definition *ast.Node
 	// Outcome is the normalized text of what the question leads to, or "" when it leads to nothing or to a trivial value.
 	Outcome string
+	// Rest is the normalized text of what an early-exit guard leads to when its question is false, and Inverse
+	// identifies that negated question as Canon does; both are "" for other sites.
+	Rest    string
+	Inverse string
 }
 
 func Unwrap(n *ast.Node) *ast.Node {
@@ -218,13 +224,14 @@ func (m *Analyzer) arrayElement(t *checker.Type) *checker.Type {
 	return nil
 }
 
-// elements returns the values an array holds, when they are known exactly: an array literal of literal values, or a
-// tuple of literal types such as an array written as const. An array type only says which values it may hold.
+// elements returns the values a collection holds, when they are known exactly: an array literal of literal values, a
+// `new Set` of one, either one initializing a const variable, or a tuple of literal types such as an array written as
+// const. An array type only says which values it may hold, and changes made to a collection later are not seen.
 func (m *Analyzer) elements(receiver *ast.Node) ([]string, bool) {
 	receiver = Unwrap(receiver)
-	if receiver.Kind == ast.KindArrayLiteralExpression {
+	if collection := m.literalCollection(receiver); collection != nil {
 		values := []string{}
-		for _, element := range receiver.Elements() {
+		for _, element := range collection.Elements() {
 			value, ok := m.Unit(element)
 			if !ok {
 				return nil, false
@@ -280,15 +287,64 @@ func equality(kind ast.Kind) (bool, bool) {
 	return false, false
 }
 
-func includes(n *ast.Node) (*ast.Node, bool) {
+// membership returns the receiver of a membership test written as `includes` or `has` with one argument.
+func membership(n *ast.Node) (*ast.Node, bool) {
 	if n.Kind != ast.KindCallExpression || len(n.Arguments()) != 1 {
 		return nil, false
 	}
 	callee := Unwrap(n.AsCallExpression().Expression)
-	if callee.Kind != ast.KindPropertyAccessExpression || callee.Name().Kind != ast.KindIdentifier || callee.Name().Text() != "includes" {
+	if callee.Kind != ast.KindPropertyAccessExpression || callee.Name().Kind != ast.KindIdentifier {
 		return nil, false
 	}
-	return callee.Expression(), true
+	switch callee.Name().Text() {
+	case "includes", "has":
+		return callee.Expression(), true
+	}
+	return nil, false
+}
+
+// constant returns the declaration of the const variable n reads, through imports, or nil.
+func (m *Analyzer) constant(n *ast.Node) *ast.Node {
+	if n = Unwrap(n); n.Kind != ast.KindIdentifier {
+		return nil
+	}
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
+	if symbol != nil && symbol.Flags&ast.SymbolFlagsAlias != 0 {
+		symbol = m.ctx.TypeChecker.GetAliasedSymbol(symbol)
+	}
+	if symbol == nil || symbol.ValueDeclaration == nil {
+		return nil
+	}
+	declaration := symbol.ValueDeclaration
+	if declaration.Kind != ast.KindVariableDeclaration || declaration.Initializer() == nil || declaration.Parent.Flags&ast.NodeFlagsConst == 0 {
+		return nil
+	}
+	return declaration
+}
+
+// literalCollection returns the array literal a collection is built from: the literal itself, a `new Set` of it, or
+// either one initializing a const variable.
+func (m *Analyzer) literalCollection(receiver *ast.Node) *ast.Node {
+	receiver = Unwrap(receiver)
+	if declaration := m.constant(receiver); declaration != nil {
+		receiver = Unwrap(declaration.Initializer())
+	}
+	if receiver.Kind == ast.KindNewExpression && len(receiver.Arguments()) == 1 && identifier(Unwrap(receiver.Expression())) == "Set" {
+		receiver = Unwrap(receiver.Arguments()[0])
+	}
+	if receiver.Kind == ast.KindArrayLiteralExpression {
+		return receiver
+	}
+	return nil
+}
+
+// collectionName returns the const variable a membership test reads its values from, or nil.
+func (m *Analyzer) collectionName(test *ast.Node) *ast.Node {
+	receiver, ok := membership(Unwrap(test))
+	if !ok || m.literalCollection(receiver) == nil {
+		return nil
+	}
+	return m.constant(receiver)
 }
 
 func (m *Analyzer) observe(n *ast.Node) *expr {
@@ -308,7 +364,7 @@ func (m *Analyzer) observe(n *ast.Node) *expr {
 			}
 		}
 	case ast.KindCallExpression:
-		if receiver, ok := includes(n); ok {
+		if receiver, ok := membership(n); ok {
 			if values, ok := m.elements(receiver); ok {
 				return m.valueTest(n, n.Arguments()[0], values, false)
 			}
@@ -533,15 +589,52 @@ func (m *Analyzer) list(n *ast.Node) *Site {
 	if !ok {
 		return nil
 	}
+	return m.definition(n, parent, claim)
+}
+
+// definition is the site of a literal written out as a group of values, named by the declaration it initializes.
+func (m *Analyzer) definition(n, parent *ast.Node, claim Claim) *Site {
 	t := &Test{Node: n, Value: m.ValueOf(n), Claim: claim}
 	s := &Site{Root: n, Pos: scanner.SkipTrivia(ast.GetSourceFileOfNode(n).Text(), n.Pos()), End: n.End(), Tests: []Test{*t}, Canon: canon(&expr{test: t})}
 	switch parent.Kind {
 	case ast.KindVariableDeclaration, ast.KindPropertyDeclaration, ast.KindPropertyAssignment:
 		if parent.Name() != nil && parent.Name().Kind == ast.KindIdentifier && (parent.Kind != ast.KindPropertyAssignment || named(parent.Parent.Parent)) {
-			s.Named = parent.Name().Text()
+			s.Named, s.Definition = parent.Name().Text(), parent
 		}
 	}
 	return s
+}
+
+// table reads an object literal mapping every value of a vocabulary to true or false, as a Record of the vocabulary
+// to boolean does, as the group of values it maps to true.
+func (m *Analyzer) table(n *ast.Node) *Site {
+	contextual := checker.Checker_getContextualType(m.ctx.TypeChecker, n, checker.ContextFlagsNone)
+	if contextual == nil || contextual.Alias() == nil || len(contextual.Alias().TypeArguments()) != 2 {
+		return nil
+	}
+	arguments := contextual.Alias().TypeArguments()
+	v := m.vocabularyOf(arguments[0])
+	if v == nil || arguments[1].Flags()&checker.TypeFlagsBoolean == 0 {
+		return nil
+	}
+	keys, accepted := []string{}, []string{}
+	for _, property := range n.AsObjectLiteralExpression().Properties.Nodes {
+		key := "s:" + property.Name().Text()
+		keys = append(keys, key)
+		if Unwrap(property.Initializer()).Kind == ast.KindTrueKeyword {
+			accepted = append(accepted, key)
+		}
+	}
+	slices.Sort(keys)
+	if !slices.Equal(slices.Compact(keys), v.Values) {
+		return nil
+	}
+	claim, ok := accepting(v, accepted)
+	if !ok {
+		return nil
+	}
+	_, parent := listContext(n)
+	return m.definition(n, parent, claim)
 }
 
 func named(n *ast.Node) bool {
@@ -606,7 +699,22 @@ func (m *Analyzer) question(n *ast.Node) *Site {
 	if len(tests) == 0 {
 		return nil
 	}
-	return &Site{Root: n, Pos: scanner.SkipTrivia(text, n.Pos()), End: n.End(), Tests: tests, Canon: canon(e), Named: m.predicateName(n), Outcome: OutcomeText(n)}
+	s := &Site{Root: n, Pos: scanner.SkipTrivia(text, n.Pos()), End: n.End(), Tests: tests, Canon: canon(e), Outcome: OutcomeText(n)}
+	if s.Rest = RestText(n); s.Rest != "" {
+		s.Inverse = canon(normalize(negate(e)))
+	}
+	written := []Test{}
+	collect(m.build(n, text), &written)
+	if len(written) == 1 {
+		if declaration := m.collectionName(written[0].Node); declaration != nil {
+			s.Named, s.Definition = declaration.Name().Text(), declaration
+			return s
+		}
+	}
+	if s.Definition = m.definingFunction(n); s.Definition != nil {
+		s.Named = m.functionName(s.Definition)
+	}
+	return s
 }
 
 // Classify returns the site a root asks, or nil when it tests no vocabulary.
@@ -620,6 +728,8 @@ func (m *Analyzer) Classify(root *ast.Node) *Site {
 		s = m.list(root)
 	case ast.KindCaseClause:
 		s = m.caseGroup(root)
+	case ast.KindObjectLiteralExpression:
+		s = m.table(root)
 	default:
 		s = m.question(root)
 	}

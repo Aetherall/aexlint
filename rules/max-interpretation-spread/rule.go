@@ -25,14 +25,14 @@ type Site struct {
 	Check      *ast.Node
 }
 
-// sites returns the checks of particular values a root makes. A typed list defines a group of values rather than
-// checking one, and an exhaustive switch without default fails to compile when a value is added. A vocabulary declared
+// sites returns the checks of particular values a root makes. A typed list or boolean table defines a group of values
+// rather than checking one, and an exhaustive switch without default fails to compile when a value is added. A vocabulary declared
 // only in dependencies is interpreted, not owned, here: where its interpretations belong is no-embedded-translation's
 // question.
 func sites(c *model.Analyzer, root *ast.Node) []Site {
 	check := root
 	switch root.Kind {
-	case ast.KindArrayLiteralExpression:
+	case ast.KindArrayLiteralExpression, ast.KindObjectLiteralExpression:
 		return nil
 	case ast.KindCaseClause:
 		if check = root.Parent.Parent; c.Exhaustive(check) {

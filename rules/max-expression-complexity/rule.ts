@@ -1,5 +1,6 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
 import {
+  branchInitializer,
   childNodes,
   closestAncestor,
   continuesGroup,
@@ -7,6 +8,7 @@ import {
   isComputationBoundary,
   isLogicalDecision,
   isSignedExpression,
+  singleReadConstants,
   unwrap,
 } from "../../src/expression.ts";
 
@@ -140,6 +142,8 @@ export default defineRule({
     const scores = new WeakMap<ESTree.Node, number>();
     const stringValues = new WeakSet<ESTree.Node>();
     const regions = new Set<ESTree.Node>();
+    const constants = singleReadConstants(context.sourceCode.scopeManager);
+    const deferred = new Map<ESTree.Node, ESTree.Node>();
     const scoreOf = (node: ESTree.Node) => scores.get(node) ?? 0;
     const childrenOf = (node: ESTree.Node) => childNodes(context.sourceCode.visitorKeys, node);
     const sum = (nodes: ESTree.Node[]) => nodes.reduce((total, node) => total + scoreOf(node), 0);
@@ -150,6 +154,12 @@ export default defineRule({
         }
         if (isComputationBoundary(node)) {
           scores.set(node, 0);
+          return;
+        }
+        const initializer = branchInitializer(constants, node);
+        if (initializer) {
+          deferred.set(node, initializer);
+          scores.set(node, scoreOf(initializer));
           return;
         }
         const stage = invocationStage(context.sourceCode.visitorKeys, node);
@@ -173,7 +183,7 @@ export default defineRule({
         if (isLogicalDecision(node)) {
           const term = (child: ESTree.Node) => {
             const childScore = scoreOf(child);
-            return continuesGroup(child, node) ? childScore - 1 : childScore;
+            return continuesGroup(deferred.get(child) ?? child, node) ? childScore - 1 : childScore;
           };
           const groupScore = 1 + term(node.left) + term(node.right);
           scores.set(node, groupScore);

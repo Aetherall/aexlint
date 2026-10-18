@@ -255,7 +255,7 @@ func (m *Analyzer) WhenMissing(test *ast.Node, receiver *ast.Node) (bool, bool) 
 			if callee.Kind == ast.KindIdentifier && callee.Text() == "Boolean" {
 				return evaluate(arguments[0])
 			}
-			if array, ok := includes(n); ok && Unwrap(array).Kind == ast.KindArrayLiteralExpression && m.Reads(Unwrap(arguments[0]), missing) {
+			if array, ok := membership(n); ok && Unwrap(array).Kind == ast.KindArrayLiteralExpression && m.Reads(Unwrap(arguments[0]), missing) {
 				for _, element := range Unwrap(array).Elements() {
 					if _, absent := missingLiteral(element); absent {
 						return false, false

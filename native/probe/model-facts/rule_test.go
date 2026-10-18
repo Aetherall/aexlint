@@ -293,11 +293,16 @@ export class Shelf {
 			{Code: `import type { Size } from "./items.js";
 const declared: readonly Size[] = ["S", "M"];
 const literal = ["S", "M"] as const;
+const sizes = new Set<Size>(["S", "M"]);
+declare function load(): readonly Size[];
+const loaded = load();
 export function f(size: Size) {
   if (declared.includes(size)) return 1;
   if (literal.includes(size)) return 2;
+  if (sizes.has(size)) return 3;
+  if (loaded.includes(size)) return 4;
   return 0;
-}`, Files: files, Options: only("test"), Errors: facts("test", 1)},
+}`, Files: files, Options: only("test"), Errors: facts("test", 3)},
 			{Code: `import type { Item } from "./items.js";
 export type Panel = { size: "S" | "L"; title: string };
 export function f({ kind }: Item, { title, ...rest }: Panel) {
@@ -598,6 +603,15 @@ export function inferred(input: string) {
   if (input === " ") return { fieldKey: undefined, subFieldKey: undefined };
   return { fieldKey: input, subFieldKey: input };
 }`, Options: only("optional"), Errors: facts("optional", 1)},
+			{Code: `import type { Size } from "./items.js";
+const small = new Set<Size>(["S", "M"]);
+const wide: Record<Size, boolean> = { S: false, M: true, L: true };
+export const isSmall = (size: Size) => small.has(size);
+export function ship(size: Size) {
+  if (size !== "L") return;
+  log(size);
+}
+declare function log(size: Size): void;`, Files: files, Options: only("site"), Errors: facts("site", 3)},
 		},
 	)
 }

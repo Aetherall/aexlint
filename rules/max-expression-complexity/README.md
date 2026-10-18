@@ -33,7 +33,8 @@ createResult(headerValue, ownerValue, calculatePrice(items), permissions(user));
 - Concatenation onto a known string is free.
 - Arrays and JSX carry their costliest entry. A fluent method chain carries its costliest stage.
 - Object fields, functions and classes are checked on their own and cost nothing to the enclosing expression.
+- A `const` read only once, inside a ternary branch or the right side of `&&`, `||` or `??` in a statement of the same list, costs its initializer: it is work for that branch, computed early. A named condition (a comparison, `!`, `&&` or `||`) costs nothing extra.
 
 ## Reporting and limits
 
-Reports `tooComplex` on the outermost over-limit region. No fixes: extraction can change evaluation order and short-circuiting. Callees and getters are not inspected. Other expression rules may report the same expression.
+Reports `tooComplex` on the outermost over-limit region. No fixes: extraction can change evaluation order and short-circuiting. Callees and getters are not inspected, so a predicate split into guard returns is measured one statement at a time. Other expression rules may report the same expression.

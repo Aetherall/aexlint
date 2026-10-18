@@ -28,7 +28,8 @@ const alternatives = (a && b) || (c && d);
 - A ternary adds one above the deepest of its condition and alternatives.
 - `!` adds nothing but separates groups. Other syntax passes the deepest child through.
 - Functions, classes and object fields are checked on their own, not charged to the enclosing expression.
+- A `const` read only once, inside a ternary branch or the right side of `&&`, `||` or `??` in a statement of the same list, carries its initializer's depth: it is part of that branch, decided early. A named condition (a comparison, `!`, `&&` or `||`) carries none.
 
 ## Reporting and limits
 
-Reports `tooDeep` on the outermost over-limit group or ternary; nested reports are suppressed. No fixes: rewriting conditions can change short-circuiting and results. Callees are not inspected. Other expression rules may report the same expression.
+Reports `tooDeep` on the outermost over-limit group or ternary; nested reports are suppressed. No fixes: rewriting conditions can change short-circuiting and results. Callees are not inspected, and a predicate split into guard returns is measured one statement at a time. Other expression rules may report the same expression.

@@ -22,3 +22,7 @@ a && (b || (c && (d || e)));
 a && f(() => b || (c && (d || e)));
 a && (b || (c && d)); e || (f && (g || h));
 const fields = {one: a && (b || (c && d)), two: e || (f && (g || h))};
+function eagerDecision(a, b, c, d) {
+  const fallback = c ? d : a;
+  return a || (b && fallback);
+}

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"slices"
+
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
 )
@@ -95,8 +97,11 @@ func (m *Analyzer) Unforgeable(t *checker.Type) bool {
 }
 
 // Stateful reports whether t holds data: an index signature, or a property that is not a method and whose type is
-// not a function.
+// not a function. A union holds data when one of its members does, whatever properties they share.
 func (m *Analyzer) Stateful(t *checker.Type) bool {
+	if t.Flags()&checker.TypeFlagsUnion != 0 {
+		return slices.ContainsFunc(t.Types(), m.Stateful)
+	}
 	if len(m.ctx.TypeChecker.GetIndexInfosOfType(t)) > 0 {
 		return true
 	}

@@ -1,10 +1,12 @@
 import { defineRule, type ESTree } from "@oxlint/plugins";
 import {
+  branchInitializer,
   childNodes,
   closestAncestor,
   continuesGroup,
   isComputationBoundary,
   isLogicalDecision,
+  singleReadConstants,
 } from "../../src/expression.ts";
 
 export default defineRule({
@@ -42,10 +44,18 @@ export default defineRule({
     const depths = new WeakMap<ESTree.Node, number>();
     const candidates = new Map<ESTree.Node, number>();
     const depthOf = (node: ESTree.Node) => depths.get(node) ?? 0;
+    const constants = singleReadConstants(context.sourceCode.scopeManager);
+    const deferred = new Map<ESTree.Node, ESTree.Node>();
     return {
       "*:exit"(node) {
         if (isComputationBoundary(node)) {
           depths.set(node, 0);
+          return;
+        }
+        const initializer = branchInitializer(constants, node);
+        if (initializer) {
+          deferred.set(node, initializer);
+          depths.set(node, depthOf(initializer));
           return;
         }
         const children = childNodes(context.sourceCode.visitorKeys, node);
@@ -53,7 +63,7 @@ export default defineRule({
         if (isLogicalDecision(node)) {
           const branchDepth = (child: ESTree.Node) => {
             const childDepth = depthOf(child);
-            return continuesGroup(child, node) ? childDepth - 1 : childDepth;
+            return continuesGroup(deferred.get(child) ?? child, node) ? childDepth - 1 : childDepth;
           };
           depth = 1 + Math.max(branchDepth(node.left), branchDepth(node.right));
           if (depth > max) candidates.set(node, depth);

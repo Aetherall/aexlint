@@ -216,7 +216,7 @@ func (m *Analyzer) retested(n *ast.Node) bool {
 			return unit || absent
 		}
 	case ast.KindCallExpression:
-		if receiver, ok := includes(p); ok && p.Arguments()[0] == child {
+		if receiver, ok := membership(p); ok && p.Arguments()[0] == child {
 			_, known := m.elements(receiver)
 			return known
 		}

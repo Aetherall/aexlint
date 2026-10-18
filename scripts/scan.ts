@@ -11,19 +11,15 @@ function rules(mode: string): { name: string }[] {
   return ruleNames().map((name) => ({ name: `aexlint/${name}` }));
 }
 
+const headless: SpawnSyncOptionsWithBufferEncoding = {
+  maxBuffer: 1 << 30,
+  env: { ...process.env, OXLINT_TSGOLINT_DANGEROUSLY_SUPPRESS_PROGRAM_DIAGNOSTICS: "true" },
+};
+
 function scan(mode: string, backend: string, root: string, seed: string): string[] {
-  const payload = {
-    version: 2,
-    whole_programs: true,
-    configs: [{ file_paths: [resolve(root, seed)], rules: rules(mode) }],
-  };
-  const options: SpawnSyncOptionsWithBufferEncoding = {
-    cwd: root,
-    input: JSON.stringify(payload),
-    maxBuffer: 1 << 30,
-    env: { ...process.env, OXLINT_TSGOLINT_DANGEROUSLY_SUPPRESS_PROGRAM_DIAGNOSTICS: "true" },
-  };
-  const result = spawnSync(backend, ["headless"], options);
+  const configs = [{ file_paths: [resolve(root, seed)], rules: rules(mode) }];
+  const input = JSON.stringify({ version: 2, whole_programs: true, configs });
+  const result = spawnSync(backend, ["headless"], { ...headless, cwd: root, input });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${seed}: ${String(result.stderr).slice(0, 2000)}`);
   return decodeFrames(result.stdout).diagnostics.map((d) => {

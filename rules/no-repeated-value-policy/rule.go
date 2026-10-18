@@ -2,6 +2,7 @@ package no_repeated_value_policy
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/core"
@@ -16,17 +17,35 @@ type measure struct {
 	places   model.Places
 }
 
-func key(s *model.Site) string { return s.Canon + "\x00" + s.Outcome }
+// policy is a question and the outcome it leads to, as one site asks it: when true, or for an early-exit guard, when
+// false.
+type policy struct {
+	key     string
+	outcome string
+	claim   model.Claim
+}
 
-// others returns one site per other file asking s's question with s's outcome.
-func (m *measure) others(s *model.Site) []*ast.Node {
+func policies(s *model.Site) []policy {
+	result := []policy{}
+	if s.Outcome != "" {
+		result = append(result, policy{s.Canon + "\x00" + s.Outcome, s.Outcome, s.Tests[0].Claim})
+	}
+	if s.Rest != "" {
+		result = append(result, policy{s.Inverse + "\x00" + s.Rest, s.Rest, s.Tests[0].Claim.Not()})
+	}
+	return result
+}
+
+// others returns one site per other file asking p's question with p's outcome.
+func (m *measure) others(p policy) []*ast.Node {
 	byFile := map[*ast.SourceFile]*ast.Node{}
-	for _, root := range m.index.Outcome(s.Outcome) {
+	for _, root := range m.index.Outcome(p.outcome) {
 		file := ast.GetSourceFileOfNode(root)
 		if file == m.ctx.SourceFile || byFile[file] != nil {
 			continue
 		}
-		if other := m.analyzer.Classify(root); other != nil && key(other) == key(s) {
+		other := m.analyzer.Classify(root)
+		if other != nil && slices.ContainsFunc(policies(other), func(o policy) bool { return o.key == p.key }) {
 			byFile[file] = root
 		}
 	}
@@ -44,8 +63,7 @@ func values(c model.Claim) string {
 	return "anything but " + c.Vocabulary.Display(c.Rejected())
 }
 
-func (m *measure) report(s *model.Site, others []*ast.Node) {
-	t := s.Tests[0]
+func (m *measure) report(s *model.Site, p policy, others []*ast.Node) {
 	m.places.Sort(others)
 	locations := []string{}
 	for _, n := range others {
@@ -53,7 +71,7 @@ func (m *measure) report(s *model.Site, others []*ast.Node) {
 	}
 	m.ctx.ReportRange(core.NewTextRange(s.Pos, s.End), rule.RuleMessage{
 		Id:          "repeatedValuePolicy",
-		Description: fmt.Sprintf("Testing `%s` for %s leads to the same outcome in other files.", model.Text(t.Value.Node, 40), values(t.Claim)),
+		Description: fmt.Sprintf("Testing `%s` for %s leads to the same outcome in other files.", model.Text(s.Tests[0].Value.Node, 40), values(p.claim)),
 		Help: fmt.Sprintf("The same test and outcome appear in %d files. Others, nearest first: %s. When this rule changes, every copy has to be found and changed the same way.",
 			len(others)+1, model.Listed(locations, 3)),
 	})
@@ -62,11 +80,14 @@ func (m *measure) report(s *model.Site, others []*ast.Node) {
 func (m *measure) run() {
 	for _, root := range m.index.File(m.ctx.SourceFile) {
 		s := m.analyzer.Classify(root)
-		if s == nil || s.Outcome == "" {
+		if s == nil {
 			continue
 		}
-		if others := m.others(s); len(others) > 0 {
-			m.report(s, others)
+		for _, p := range policies(s) {
+			if others := m.others(p); len(others) > 0 {
+				m.report(s, p, others)
+				break
+			}
 		}
 	}
 }

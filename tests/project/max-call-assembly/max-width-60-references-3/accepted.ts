@@ -18,3 +18,24 @@ class Listener {
     on("click", { once: true, handler: function () { return close(this.dialog, this.options, this.state); } });
   }
 }
+function reusedOptions() {
+const options = { port: config.port, host: resolveHost(env), tls: loadCerts(paths.cert) };
+log(options);
+return createServer(options);
+}
+function computedOptions() {
+const options = serverOptions(config, env, paths);
+return createServer(options);
+}
+function reassignableOptions() {
+let options = { port: config.port, host: resolveHost(env), tls: loadCerts(paths.cert) };
+return createServer(options);
+}
+function optionsFromOuterFunction() {
+const options = { port: config.port, host: resolveHost(env), tls: loadCerts(paths.cert) };
+return servers.map(() => createServer(options));
+}
+function optionsSharedByLoop() {
+const options = { port: config.port, host: resolveHost(env), tls: loadCerts(paths.cert) };
+for (const server of servers) server.listen(options);
+}

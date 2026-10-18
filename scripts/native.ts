@@ -46,6 +46,22 @@ const goEnv = {
   GOTOOLCHAIN: "local",
   GOWORK: join(source, "go.work"),
 };
+const captured: SpawnSyncOptionsWithStringEncoding = {
+  encoding: "utf8",
+  maxBuffer: 32 * 1024 * 1024,
+};
+
+function targetEnv(platform: string, arch: string): NodeJS.ProcessEnv {
+  return {
+    ...goEnv,
+    GOOS: platform === "win32" ? "windows" : platform,
+    GOARCH: arch === "x64" ? "amd64" : arch,
+  };
+}
+
+function snapshotEnv(update: boolean): NodeJS.ProcessEnv {
+  return { ...goEnv, UPDATE_SNAPS: update ? "true" : "false" };
+}
 
 function run(
   command: string,
@@ -53,13 +69,7 @@ function run(
   cwd = source,
   env: NodeJS.ProcessEnv = goEnv,
 ): string {
-  const options: SpawnSyncOptionsWithStringEncoding = {
-    cwd,
-    env,
-    encoding: "utf8",
-    maxBuffer: 32 * 1024 * 1024,
-  };
-  const result = spawnSync(command, args, options);
+  const result = spawnSync(command, args, { ...captured, cwd, env });
   if (result.error) throw result.error;
   if (result.status !== 0) {
     throw new Error(`${command} ${args.join(" ")}\n${result.stdout}${result.stderr}`);
@@ -158,11 +168,7 @@ function build(target: string, names: string[], directory: string): void {
   const [platform, arch] = target.split("-");
   const output = join(directory, target);
   mkdirSync(output, { recursive: true });
-  const env = {
-    ...goEnv,
-    GOOS: platform === "win32" ? "windows" : platform!,
-    GOARCH: arch === "x64" ? "amd64" : arch!,
-  };
+  const env = targetEnv(platform!, arch!);
   console.log(`Building native ${target}`);
   const executable = join(output, backendExecutable(platform));
   const flags = ["-mod=readonly", "-buildvcs=false", "-trimpath", "-ldflags=-s -w"];
@@ -256,7 +262,7 @@ export async function native(action: string, args: string[] = []): Promise<void>
       stale = files.filter((file) => !filter.length || filter.includes(basename(file, ".snap")));
       for (const file of stale) rmSync(join(snapshotDir, file));
     }
-    const testEnv = { ...goEnv, UPDATE_SNAPS: update ? "true" : "false" };
+    const testEnv = snapshotEnv(update);
     const command = ["test", "-mod=readonly", "-count=1", ...packages];
     process.stdout.write(run("go", command, source, testEnv));
     if (update) {
