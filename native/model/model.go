@@ -73,6 +73,9 @@ type Decision struct {
 	Inside      bool
 	Root        *ast.Node
 	Alternative []*ast.Node
+	// Following is the return statement after a run of ifs or a switch without default whose tested arms all leave: it
+	// runs for the values no arm accepts. It is not one of Arms, and nil when that statement is not a return.
+	Following *Branch
 }
 
 // EntryNarrowing is a guard a function makes on a literal-valued part of a parameter before its work, possibly through a
@@ -284,7 +287,7 @@ func (md *builder) add(d *Decision) *Decision {
 	return d
 }
 
-func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, arms []arm, alternative []*ast.Node) {
+func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, arms []arm, alternative []*ast.Node, following *ast.Node) {
 	if len(arms) == 0 {
 		return
 	}
@@ -318,6 +321,12 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		missing := held&(AbsentUndefined|AbsentNull) != 0
 		d.Arms = append(d.Arms, Branch{Claim: covered.Not().And(left), Complete: !missing, Body: alternative, Outcome: md.m.OutcomeOf(alternative, value, tested), ControlFlow: controlFlow(alternative)})
 	}
+	if following != nil && alternative == nil && pure && md.armsLeave(root, d.Arms) {
+		held, _ := md.m.Holds(subjectNode)
+		missing := held&(AbsentUndefined|AbsentNull) != 0
+		body := []*ast.Node{following}
+		d.Following = &Branch{Claim: covered.Not().And(left), Complete: !missing, Body: body, Outcome: md.m.OutcomeOf(body, value, tested), ControlFlow: controlFlow(body)}
+	}
 	work := 0
 	for _, a := range d.Arms {
 		if !a.Outcome.Fallback() {
@@ -337,6 +346,27 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 		}
 	}
 	md.add(d)
+}
+
+// armsLeave reports whether every arm leaves the statement list holding root without reaching the statement after it:
+// a break in a switch's clause leaves only the switch.
+func (md *builder) armsLeave(root *ast.Node, arms []Branch) bool {
+	return !slices.ContainsFunc(arms, func(b Branch) bool {
+		if len(b.Body) == 0 || !md.m.exits(b.Body[len(b.Body)-1]) {
+			return true
+		}
+		return root.Kind == ast.KindSwitchStatement && slices.ContainsFunc(b.Body, breaks)
+	})
+}
+
+// next returns the statement after last in the statement list holding it, when it is a return statement.
+func next(last *ast.Node) *ast.Node {
+	list := statementList(last.Parent)
+	i := slices.Index(list, last)
+	if i < 0 || i+1 >= len(list) || list[i+1].Kind != ast.KindReturnStatement {
+		return nil
+	}
+	return list[i+1]
 }
 
 // objectNode returns the expression or binding pattern whose type holds the field subject reads: the object of a
@@ -477,10 +507,13 @@ func (md *builder) statements(list []*ast.Node) {
 			}
 		}
 		var alternative []*ast.Node
+		var following *ast.Node
 		if rest != nil {
 			alternative = []*ast.Node{rest}
+		} else {
+			following = next(list[end])
 		}
-		md.record(list[i], first.Value.Node, first.Claim.Vocabulary, arms, alternative)
+		md.record(list[i], first.Value.Node, first.Claim.Vocabulary, arms, alternative, following)
 		i = end
 	}
 }
@@ -526,7 +559,11 @@ func (md *builder) switchStatement(n *ast.Node) {
 			arms = append(arms, arm{unread: true})
 		}
 	}
-	md.record(n, subjectNode, v, arms, alternative)
+	var following *ast.Node
+	if alternative == nil {
+		following = next(n)
+	}
+	md.record(n, subjectNode, v, arms, alternative, following)
 }
 
 func (md *builder) ternary(n *ast.Node) {
@@ -548,7 +585,7 @@ func (md *builder) ternary(n *ast.Node) {
 		arms = append(arms, arm{claim: implied, condition: c.Condition, body: []*ast.Node{c.WhenTrue}})
 		current = c.WhenFalse
 	}
-	md.record(n, first.Value.Node, first.Claim.Vocabulary, arms, []*ast.Node{current})
+	md.record(n, first.Value.Node, first.Claim.Vocabulary, arms, []*ast.Node{current}, nil)
 }
 
 func parts(n *ast.Node, operator ast.Kind) []*ast.Node {

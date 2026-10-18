@@ -182,24 +182,28 @@ func (p *probe) answered(t model.Test) string {
 	return strings.Join(found, ", ")
 }
 
+func (p *probe) arm(d *model.Decision, b model.Branch) string {
+	outcome := string(b.Outcome.Source)
+	if b.Outcome.Commands {
+		outcome += " with commands"
+	}
+	if len(b.Outcome.Values) > 0 {
+		outcome += " " + strings.Join(b.Outcome.Values, " | ")
+	}
+	flags := []string{}
+	if b.Complete {
+		flags = append(flags, "complete")
+	}
+	if b.Tested {
+		flags = append(flags, "tested")
+	}
+	return fmt.Sprintf("%s %s -> %s, control flow %d, built %d", claim(b.Claim), strings.Join(flags, " "), outcome, len(b.ControlFlow), len(p.a.Built(d, b)))
+}
+
 func (p *probe) decision(d *model.Decision) {
 	arms := []string{}
 	for _, b := range d.Arms {
-		outcome := string(b.Outcome.Source)
-		if b.Outcome.Commands {
-			outcome += " with commands"
-		}
-		if len(b.Outcome.Values) > 0 {
-			outcome += " " + strings.Join(b.Outcome.Values, " | ")
-		}
-		flags := []string{}
-		if b.Complete {
-			flags = append(flags, "complete")
-		}
-		if b.Tested {
-			flags = append(flags, "tested")
-		}
-		arms = append(arms, fmt.Sprintf("%s %s -> %s, control flow %d, built %d", claim(b.Claim), strings.Join(flags, " "), outcome, len(b.ControlFlow), len(p.a.Built(d, b))))
+		arms = append(arms, p.arm(d, b))
 	}
 	owner := "none"
 	if d.Owner != nil {
@@ -214,8 +218,12 @@ func (p *probe) decision(d *model.Decision) {
 		}
 		constructions = append(constructions, d.Vocabulary.Display([]string{value})+": "+strings.Join(signatures, "; "))
 	}
-	p.report("decision", d.Node, fmt.Sprintf("%s on %s; field %s; owner %s; arms %s; constructions [%s]",
-		d.Form, model.Text(d.Node, 60), p.field(d.Field), owner, strings.Join(arms, " / "), strings.Join(constructions, " / ")))
+	following := ""
+	if d.Following != nil {
+		following = "; following " + p.arm(d, *d.Following)
+	}
+	p.report("decision", d.Node, fmt.Sprintf("%s on %s; field %s; owner %s; arms %s; constructions [%s]%s",
+		d.Form, model.Text(d.Node, 60), p.field(d.Field), owner, strings.Join(arms, " / "), strings.Join(constructions, " / "), following))
 }
 
 func (p *probe) function(f *model.Function) {

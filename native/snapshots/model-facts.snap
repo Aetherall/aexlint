@@ -297,7 +297,7 @@ Message: guard on size; field size @ ../../fixtures/file.ts:3; owner none; arms 
    5 |   size = next();
 
 Diagnostic 2: decision (6:7 - 6:10)
-Message: guard on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 1, control flow 0, built 0; constructions []
+Message: guard on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 1, control flow 0, built 0; constructions []; following {"L" | "M"} of {"L" | "M" | "S"} complete -> other, control flow 1, built 0
    5 |   size = next();
    6 |   if (size === "S") return 1;
      |       ~~~~
@@ -313,7 +313,7 @@ Message: dispatch on other?.size; field size @ ../../fixtures/file.ts:3; owner n
 
 [TestModelFacts/invalid-13 - 1]
 Diagnostic 1: decision (4:7 - 4:10)
-Message: guard on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> none, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 1, control flow 1, built 0; constructions []
+Message: guard on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> none, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 1, control flow 1, built 0; constructions []; following {"L"} of {"L" | "M" | "S"} complete -> value, control flow 1, built 0
    3 | export function f(size: Size, flag: boolean) {
    4 |   if (size === "S") { fail("small"); }
      |       ~~~~
@@ -357,7 +357,7 @@ Message: dispatch on size; field size @ ../../fixtures/file.ts:8; owner none; ar
 
 [TestModelFacts/invalid-14 - 1]
 Diagnostic 1: decision (5:7 - 5:10)
-Message: guard on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant 1, control flow 0, built 0; constructions []
+Message: guard on kind; field kind @ ../../fixtures/items.ts:1, ../../fixtures/items.ts:2; owner Item, inside no; arms {"text"} of {"stock" | "text"} complete tested -> constant 1, control flow 0, built 0; constructions []; following {"stock"} of {"stock" | "text"} complete -> constant 2 | 3, control flow 1, built 0
    4 |   const { kind } = item;
    5 |   if (kind === "text") return 1;
      |       ~~~~
@@ -794,4 +794,41 @@ Message: selector notText; answer [item.kind in {"stock"} of {"stock" | "text"}]
    3 | export const unfilled = (item: Item) => !filled(item);
    4 | export const notText = (item: Item) => !(item.kind === "text");
      |                        ~~~~~~~~~~~~~~~
+---
+
+[TestModelFacts/invalid-38 - 1]
+Diagnostic 1: decision (4:7 - 4:10)
+Message: dispatch on size; field size @ ../../fixtures/file.ts:3; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 1, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 2, control flow 0, built 0; constructions []; following {"L"} of {"L" | "M" | "S"} complete -> constant 3, control flow 0, built 0
+   3 | export function run(size: Size) {
+   4 |   if (size === "S") return 1;
+     |       ~~~~
+   5 |   if (size === "M") return 2;
+
+Diagnostic 2: decision (9:11 - 9:14)
+Message: guard on size; field size @ ../../fixtures/file.ts:8; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant small, control flow 0, built 0; constructions []; following {"L" | "M"} of {"L" | "M" | "S"} complete -> constant other, control flow 0, built 0
+   8 | export function cases(size: Size) {
+   9 |   switch (size) {
+     |           ~~~~
+  10 |     case "S":
+
+Diagnostic 3: decision (16:11 - 16:14)
+Message: guard on size; field size @ ../../fixtures/file.ts:15; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> none, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant medium, control flow 0, built 0; constructions []
+  15 | export function broken(size: Size) {
+  16 |   switch (size) {
+     |           ~~~~
+  17 |     case "S":
+
+Diagnostic 4: decision (25:7 - 25:10)
+Message: dispatch on size; field size @ ../../fixtures/file.ts:24; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> none with commands, control flow 0, built 0 / {"M"} of {"L" | "M" | "S"} complete tested -> constant 2, control flow 0, built 0; constructions []
+  24 | export function stays(size: Size) {
+  25 |   if (size === "S") log("small");
+     |       ~~~~
+  26 |   if (size === "M") return 2;
+
+Diagnostic 5: decision (30:7 - 30:10)
+Message: guard on size; field size @ ../../fixtures/file.ts:29; owner none; arms {"S"} of {"L" | "M" | "S"} complete tested -> constant 1, control flow 0, built 0; constructions []
+  29 | export function works(size: Size) {
+  30 |   if (size === "S") return 1;
+     |       ~~~~
+  31 |   log("other");
 ---

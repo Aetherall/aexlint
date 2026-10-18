@@ -20,7 +20,7 @@
 - **Outcome**: what an arm produces: whether it runs **commands**, and what its result depends on: none, empty, constant, the value, parts of it, other data, or a mix. A constant result without commands is a **lookup**.
 - **Command**: something an arm runs for what it does rather than for a value: an expression statement whose value is discarded (a call, an update, an assignment to data other than a local of its function), or a returned call typed `void`. This is not purity: `const r = await save(x)` is not a command, and `list.push(x)` on a fresh local array is.
 - **Control flow** of an arm: the `if`, `switch`, ternary, loop and `try` nodes written in it.
-- **Decision**: a place choosing between arms on one value, each guarded by tests of its literal values. A branch's claim is **complete** when its conditions test only that value and do not overlap earlier arms; a trailing `else` or `default` is complete only when no `case` was unreadable and the value cannot be `null` or `undefined`.
+- **Decision**: a place choosing between arms on one value, each guarded by tests of its literal values. A branch's claim is **complete** when its conditions test only that value and do not overlap earlier arms; a trailing `else` or `default` is complete only when no `case` was unreadable and the value cannot be `null` or `undefined`. The **following** statement is the `return` after a run of `if`s or a `switch` without `default` whose arms all leave: it runs for the values no arm accepts, but is not an arm.
 - **Site**: a written question about vocabularies (a condition, `case` labels, or a typed list), indexed per program by the literal values it mentions.
 
 ## Choices

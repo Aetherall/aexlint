@@ -449,6 +449,39 @@ export const view = {
 const filled = (item: Item) => item.kind === "text" && item.text.length > 0;
 export const unfilled = (item: Item) => !filled(item);
 export const notText = (item: Item) => !(item.kind === "text");`, Files: files, Options: only("function"), Errors: facts("function", 2)},
+			{Code: `import type { Size } from "./items.js";
+declare function log(text: string): void;
+export function run(size: Size) {
+  if (size === "S") return 1;
+  if (size === "M") return 2;
+  return 3;
+}
+export function cases(size: Size) {
+  switch (size) {
+    case "S":
+      return "small";
+  }
+  return "other";
+}
+export function broken(size: Size) {
+  switch (size) {
+    case "S":
+      break;
+    case "M":
+      return "medium";
+  }
+  return "other";
+}
+export function stays(size: Size) {
+  if (size === "S") log("small");
+  if (size === "M") return 2;
+  return 3;
+}
+export function works(size: Size) {
+  if (size === "S") return 1;
+  log("other");
+  return 3;
+}`, Files: files, Options: only("decision"), Errors: facts("decision", 5)},
 		},
 	)
 }
