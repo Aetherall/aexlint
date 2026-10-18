@@ -39,6 +39,57 @@ Accepted: `{ summary: string; tokens: number } | { warning: string }` as the res
 
 Only the result type decides: with `type Reading = { celsius: number } | { fault: string }` imported from another file nothing is reported; changing that file to `{ celsius?: number; fault?: string }` reports the function.
 
+## Fixing it
+
+Declare the combinations the returns already build. The function usually compiles unchanged; only the type and its readers change.
+
+```ts
+interface Upload {
+  state: "queued" | "sending" | "done" | "failed";
+  sent?: number;
+  error?: string;
+}
+function next(event: UploadEvent): Upload {
+  switch (event.type) {
+    case "queued":
+      return { state: "queued" };
+    case "progress":
+      return { state: "sending", sent: event.sent };
+    case "finished":
+      return { state: "done", sent: event.sent };
+    case "failed":
+      return { state: "failed", error: event.message };
+  }
+}
+function label(upload: Upload) {
+  if (upload.state === "failed") return `Failed: ${upload.error ?? "unknown error"}`;
+  return `Sent ${upload.sent ?? 0} bytes`;
+}
+```
+
+becomes:
+
+```ts
+type Upload =
+  | { state: "queued" }
+  | { state: "sending" | "done"; sent: number }
+  | { state: "failed"; error: string };
+function label(upload: Upload) {
+  if (upload.state === "failed") return `Failed: ${upload.error}`;
+  if (upload.state === "queued") return "Queued";
+  return `Sent ${upload.sent} bytes`;
+}
+```
+
+`next` is unchanged. The fallbacks `?? "unknown error"` and `?? 0` were answers for states no code builds: with the optional shape they compile, and when a bug does produce such a state they show wrong data instead of failing. The union also made `label` handle a queued upload, which it showed as "Sent 0 bytes": `sent` does not exist there, so the old last line no longer compiles.
+
+Other shapes:
+
+- Fields set together or not at all: group them in one optional value, `{ link?: { label: string; url: string } }`, or return `undefined` instead of `{}`.
+- The shape depends on which branch of a `switch (this.kind)` built it, and later methods switch on `this.kind` again with `!` on the fields: put the tag in the result (`{ position: "refining"; subject; prefix }`) and switch on that, or give each kind its own object.
+
+"The optional shape is simpler" holds for the declaration only. The cost moves to every reader: each one tests the fields one by one, adds a fallback or a `!` for combinations that cannot occur, and must be found by hand when a state or a field is added, since the type says every combination is valid.
+
 ## What counts
 
 - A function with a body whose result, awaited and without `null` and `undefined`, is one object type declared in the project: not a union, an intersection, a callable type, `any`, `unknown` or an unresolved type. A result with literal types per return, as TypeScript infers for several object literals, is a union and is not read.
