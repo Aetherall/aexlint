@@ -1,6 +1,6 @@
 {
   "name": "@aetherall/aexlint",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "Readability rules for Oxlint, syntax and type-aware, in one plugin.",
   "keywords": [
     "lint",
