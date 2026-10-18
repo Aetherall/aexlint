@@ -1008,3 +1008,28 @@ Message: owner none
    8 | export function f(value: { loose: string }) { return value; }
      |                            ~~~~~
 ---
+
+[TestModelFacts/invalid-44 - 1]
+Diagnostic 1: optional (5:17 - 5:25)
+Message: optional [summary, warning, usage]; returns [summary !warning !usage / ?summary !warning !usage / ?summary ?warning usage]
+   4 | declare const loose: any;
+   5 | export function summarize(mode: "a" | "b" | "c"): Summary {
+     |                 ~~~~~~~~~
+   6 |   if (mode === "a") return { summary: "done" };
+
+Diagnostic 2: optional (10:21 - 10:82)
+Message: optional [label, url]; returns [label url / !label !url]
+   9 | }
+  10 | export const link = (ok: boolean): { label?: string; url?: string } | undefined => (ok ? { label: "x", url: "y" } : {});
+     |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  11 | export async function later(): Promise<Summary> { return { summary: "a" }; }
+---
+
+[TestModelFacts/invalid-45 - 1]
+Diagnostic 1: optional (2:17 - 2:20)
+Message: optional [fieldKey, subFieldKey]; returns [!fieldKey !subFieldKey / fieldKey subFieldKey]
+   1 | export type Keys = { fieldKey: string | undefined; subFieldKey: string | undefined; always: string };
+   2 | export function keys(input: string): Keys {
+     |                 ~~~~
+   3 |   if (input === "") return { fieldKey: undefined, subFieldKey: undefined, always: input };
+---

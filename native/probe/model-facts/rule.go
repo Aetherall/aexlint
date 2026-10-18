@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -384,6 +384,26 @@ func (p *probe) owner(n *ast.Node) {
 	p.report("owner", n.Name(), "owner "+owner)
 }
 
+func (p *probe) optional(fn *ast.Node) {
+	optional, returns, ok := p.a.OptionalSettings(fn)
+	if !ok {
+		return
+	}
+	names := []string{}
+	for _, property := range optional {
+		names = append(names, property.Name)
+	}
+	literals := []string{}
+	for _, literal := range returns {
+		marks := []string{}
+		for i, setting := range literal {
+			marks = append(marks, []string{"!", "", "?"}[setting]+optional[i].Name)
+		}
+		literals = append(literals, strings.Join(marks, " "))
+	}
+	p.reportHead("optional", fn, fmt.Sprintf("optional [%s]; returns [%s]", strings.Join(names, ", "), strings.Join(literals, " / ")))
+}
+
 func (p *probe) run() {
 	file := model.Build(p.a)
 	for _, d := range file.Decisions {
@@ -417,6 +437,7 @@ func (p *probe) run() {
 			p.contract(n)
 			p.callers(n)
 			p.result(n)
+			p.optional(n)
 		}
 		n.ForEachChild(walk)
 		return false

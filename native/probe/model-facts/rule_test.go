@@ -561,6 +561,33 @@ export const Anonymous = class { hidden = 1 };
 declare global { interface Ambient { shade: string } }
 export namespace Scope { export interface Inner { depth: number } }
 export function f(value: { loose: string }) { return value; }`, Options: only("owner"), Errors: facts("owner", 8)},
+			{Code: `import type { Item } from "./items.js";
+export interface Summary { summary?: string; warning?: string; usage?: number }
+declare const maybe: string | undefined;
+declare const loose: any;
+export function summarize(mode: "a" | "b" | "c"): Summary {
+  if (mode === "a") return { summary: "done" };
+  if (mode === "b") return { warning: undefined, summary: maybe };
+  return { ...loose, usage: 3 };
+}
+export const link = (ok: boolean): { label?: string; url?: string } | undefined => (ok ? { label: "x", url: "y" } : {});
+export async function later(): Promise<Summary> { return { summary: "a" }; }
+export function absent(ok: boolean): Summary | null { if (!ok) return null; return { warning: "w" }; }
+export function one(): Summary { return { summary: "a" }; }
+export function other(item: Item): Summary { if (item.kind === "text") return { summary: item.text }; return mk(); }
+declare function mk(): Summary;
+export function either(ok: boolean): { a: string } | { b?: string; c?: string } { return ok ? { a: "x" } : { b: "y" }; }
+export function inferred(ok: boolean) { return ok ? { a: "x" } : { b: "y" }; }`, Files: files, Options: only("optional"), Errors: facts("optional", 2)},
+			{Code: `export type Keys = { fieldKey: string | undefined; subFieldKey: string | undefined; always: string };
+export function keys(input: string): Keys {
+  if (input === "") return { fieldKey: undefined, subFieldKey: undefined, always: input };
+  return { fieldKey: input, subFieldKey: input, always: input };
+}
+export function inferred(input: string) {
+  if (input === "") return { fieldKey: undefined, subFieldKey: undefined };
+  if (input === " ") return { fieldKey: undefined, subFieldKey: undefined };
+  return { fieldKey: input, subFieldKey: input };
+}`, Options: only("optional"), Errors: facts("optional", 1)},
 		},
 	)
 }

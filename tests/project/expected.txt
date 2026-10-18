@@ -2390,6 +2390,36 @@ no-repeated-value-policy/reported/visit.ts:3:47 aexlint(no-repeated-value-policy
   Testing `account.plan` for "personal" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/open.ts:5. When this rule changes, every copy has to be found and changed the same way.
 
+no-split-result/dependency-open/f.ts:3:36 aexlint(no-split-result)
+  ~ Reading
+  No return sets `celsius` with `fault`.
+  help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ celsius } | { fault }`, the type states it once.
+
+no-split-result/reported/exclusive.ts:3:73 aexlint(no-split-result)
+  ~ Digest
+  The returns set `summary` and `tokens` together or not at all. No return sets `summary` and `tokens` with `warning`.
+  help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ summary, tokens } | { warning }`, the type states it once.
+
+no-split-result/reported/generic.ts:4:22 aexlint(no-split-result)
+  ~ Attempt<number>
+  No return sets `value` with `failure`.
+  help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ value } | { failure }`, the type states it once.
+
+no-split-result/reported/imported.ts:3:82 aexlint(no-split-result)
+  ~ Promise<Evidence>
+  No return sets `capture` with `error`.
+  help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ capture } | { error }`, the type states it once.
+
+no-split-result/reported/required-undefined.ts:3:40 aexlint(no-split-result)
+  ~ Keys
+  The returns set `fieldKey` and `subFieldKey` together or not at all.
+  help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With one optional value holding the fields set together, the type states it once.
+
+no-split-result/reported/together.ts:3:76 aexlint(no-split-result)
+  ~ Link
+  The returns set `label` and `url` together or not at all.
+  help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With one optional value holding the fields set together, the type states it once.
+
 no-widened-union/dependency-closed/f.ts:3:22 aexlint(no-widened-union)
   ~ string
   `level` is declared `string`, but every call passes "anthracite" | "lignite" | "peat".

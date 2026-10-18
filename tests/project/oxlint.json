@@ -544,6 +544,14 @@
       "rules": {
         "aexlint/no-widened-union": "error"
       }
+    },
+    {
+      "files": [
+        "no-split-result/**"
+      ],
+      "rules": {
+        "aexlint/no-split-result": "error"
+      }
     }
   ]
 }
