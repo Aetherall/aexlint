@@ -2375,6 +2375,71 @@ no-repeated-value-policy/reported/visit.ts:3:47 aexlint(no-repeated-value-policy
   Testing `account.plan` for "personal" leads to the same outcome in other files.
   help: The same test and outcome appear in 2 files. Others, nearest first: no-repeated-value-policy/reported/open.ts:5. When this rule changes, every copy has to be found and changed the same way.
 
+no-widened-union/dependency-closed/f.ts:3:22 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "anthracite" | "lignite" | "peat".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/aliases-and-enums.ts:4:25 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/aliases-and-enums.ts:6:22 aexlint(no-widened-union)
+  ~ string
+  `fuel` is declared `string`, but every call passes "birch log" | "oak log" | "pine log".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/cross-file/lamp.ts:1:29 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/generic.ts:2:30 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/interfaces.ts:4:16 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/interfaces.ts:9:16 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/methods.ts:3:17 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/methods.ts:9:22 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/results.ts:2:51 aexlint(no-widened-union)
+  ~ string
+  The result is declared `string`, but every return gives "blaze" | "cinder" | "ember" | "smolder", and a caller compares it with literals.
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the result as the union it returns.
+
+no-widened-union/reported/results.ts:5:34 aexlint(no-widened-union)
+  ~ string | undefined
+  The result is declared `string | undefined`, but every return gives "blaze" | "cinder" | "smolder", and a caller compares it with literals.
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the result as the union it returns.
+
+no-widened-union/reported/same-file.ts:3:22 aexlint(no-widened-union)
+  ~ string | undefined
+  `level` is declared `string | undefined`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
+no-widened-union/reported/subclass.ts:9:16 aexlint(no-widened-union)
+  ~ string
+  `level` is declared `string`, but every call passes "blaze" | "cinder" | "ember" | "smolder".
+  help: Comparing it with literals loses what the union checks: a misspelled value compiles, and a value added to the union takes the fallback. Declare the parameter as the union the calls pass.
+
 prefer-domain-predicate/naming/reported/collections.ts:1:5 aexlint(prefer-domain-predicate)
   ~ ['first', 'second'].includes(value)
   This expression reconstructs a classification of value without naming it. Name the result or category, or use a named predicate or validator.

@@ -123,6 +123,7 @@ function check(): number {
       "aexlint/no-overbroad-type-predicate": "error",
       "aexlint/no-embedded-translation": "error",
       "aexlint/no-lookup-fallback": "error",
+      "aexlint/no-widened-union": "error",
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));

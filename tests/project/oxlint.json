@@ -536,6 +536,14 @@
       "rules": {
         "aexlint/no-lookup-fallback": "error"
       }
+    },
+    {
+      "files": [
+        "no-widened-union/**"
+      ],
+      "rules": {
+        "aexlint/no-widened-union": "error"
+      }
     }
   ]
 }

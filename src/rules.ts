@@ -35,5 +35,6 @@ export const typedRuleNames: string[] = [
   "no-repeated-selection",
   "no-repeated-value-group",
   "no-repeated-value-policy",
+  "no-widened-union",
   "prefer-truthy-presence-check",
 ];

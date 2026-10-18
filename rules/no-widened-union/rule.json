@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-widened-union",
+  "description": "Report a string parameter or result compared with literals while only values of a literal union reach it.",
+  "requiresTypeChecking": true
+}
