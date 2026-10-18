@@ -30,6 +30,8 @@ A decision on a vocabulary ends in an untested arm (`default`, trailing `else`, 
 
 ### 2. A closed union widened to `string`
 
+Started as [no-widened-union](../../rules/no-widened-union/README.md), for parameters and results. Measured first: the `status` and environment sites cited below are `string` from their source (parsed JSON, configuration), so no union is lost there and the rule does not report them.
+
 A parameter or value typed `string` is compared with literals while its producers pass a union. Typo and completeness checks are lost, and the model's value rules cannot see the site at all ("plain `string` values get no vocabulary guessed").
 
 - Pairs with every vocabulary rule: it reports where the type was thrown away, which makes those sites visible to the others again.
