@@ -482,6 +482,67 @@ export function works(size: Size) {
   log("other");
   return 3;
 }`, Files: files, Options: only("decision"), Errors: facts("decision", 5)},
+			{Code: `declare const raw: string;
+type Level = "low" | "high" | "max";
+declare const current: Level;
+export function indicator(value: string | undefined) {
+  switch (value) {
+    case "low":
+      return 1;
+    case "high":
+      return 2;
+  }
+  return 0;
+}
+export function open(value: string) { return value === "low"; }
+export const stored = (value: string) => ["low", "high"].includes(value);
+export function renamed(value: string) { return value === "max"; }
+export class Panel {
+  #mode(value: string) { return value === "high"; }
+  run() { return this.#mode(current); }
+}
+class Base { mode(value: string) { return value.length; } }
+export class Child extends Base { override mode(value: string) { return value === "max" ? 1 : 0; } }
+export function typed(value: Level) { return value === "max"; }
+open(raw);`, Files: map[string]string{"callers.ts": `import { indicator, open, stored, renamed as again, typed } from "./file.js";
+declare const level: "low" | "high" | "max" | undefined;
+indicator(level);
+indicator("low");
+open("low");
+export const handlers = [stored];
+again("max");
+typed("max");`}, Options: only("callers"), Errors: facts("callers", 7)},
+			{Code: `type Level = "low" | "high" | "max";
+interface Meter { read(value: string): number }
+export class Gauge {
+  read(value: string) { return value === "high" ? 1 : 0; }
+}
+export class Dial {
+  read(value: string) { return value === "low" ? 1 : 0; }
+}
+class Base { tick(value: string) { return value.length; } }
+export class Clock extends Base { override tick(value: string) { return value === "max" ? 1 : 0; } }
+export class Timer implements Meter { read(value: string) { return value === "max" ? 1 : 0; } }
+declare const meter: Meter;
+declare const level: Level;
+declare const raw: string;
+meter.read(raw);
+new Gauge().read(level);
+new Dial().read("low");
+new Dial().read("high");`, Options: only("callers"), Errors: facts("callers", 4)},
+			{Code: `type Level = "low" | "high" | "max";
+declare const level: Level;
+declare const raw: string;
+function pick(value: string) { return value === "low" ? 1 : 2; }
+export function name(flag: boolean): string { return flag ? level : "low"; }
+export function plain(flag: boolean): string { return flag ? raw : "low"; }
+export const arrow = (): string | undefined => level;
+export async function later(): Promise<string> { return level; }
+if (name(true) === "max") pick("low");
+const named = arrow();
+if (named === "high") pick("high");
+pick(name(false));
+plain(true);`, Options: only("result"), Errors: facts("result", 3)},
 		},
 	)
 }

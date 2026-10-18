@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -335,6 +335,41 @@ func (p *probe) contract(fn *ast.Node) {
 	}
 }
 
+func (p *probe) result(fn *ast.Node) {
+	if !p.a.StringResult(fn) {
+		return
+	}
+	returned := "other"
+	if values, ok := p.a.Returned(fn); ok {
+		returned = "[" + strings.Join(values, ", ") + "]"
+	}
+	calls, complete := p.a.Callers(fn)
+	compared := 0
+	for _, call := range calls {
+		if p.a.ResultCompared(call) {
+			compared++
+		}
+	}
+	p.report("result", fn.Type(), fmt.Sprintf("result string; returned %s; callers %d, complete %s, compared %d", returned, len(calls), yes(complete), compared))
+}
+
+func (p *probe) callers(fn *ast.Node) {
+	parameters := slices.DeleteFunc(slices.Clone(fn.Parameters()), ast.IsThisParameter)
+	for index, parameter := range parameters {
+		compared := p.a.LiteralComparisons(fn, parameter)
+		if len(compared) == 0 {
+			continue
+		}
+		calls, complete := p.a.Callers(fn)
+		passed := "other"
+		if values, widest, ok := p.a.Passed(calls, index); ok {
+			passed = fmt.Sprintf("[%s], widest %d", strings.Join(values, ", "), widest)
+		}
+		p.report("callers", parameter, fmt.Sprintf("callers %d, complete %s; parameter %s, string %s, compared %d; passed %s",
+			len(calls), yes(complete), parameter.Name().Text(), yes(p.a.StringParameter(parameter)), len(compared), passed))
+	}
+}
+
 func (p *probe) run() {
 	file := model.Build(p.a)
 	for _, d := range file.Decisions {
@@ -365,6 +400,8 @@ func (p *probe) run() {
 			}
 			p.flow(n)
 			p.contract(n)
+			p.callers(n)
+			p.result(n)
 		}
 		n.ForEachChild(walk)
 		return false
