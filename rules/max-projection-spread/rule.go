@@ -8,7 +8,6 @@ import (
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/typescript-eslint/tsgolint/internal/rule"
-	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
 
 const defaultMax = 2
@@ -76,15 +75,16 @@ func (m *measure) projected(d *derivation) bool {
 	return count >= 2
 }
 
-// chainText returns a derivation's value as written, without its root.
+// chainText returns a derivation's value as written, after its root and the parentheses and assertions around it.
 func (m *measure) chainText(d *derivation) string {
-	value := skipOuter(d.property.Initializer())
-	text := m.ctx.SourceFile.Text()[utils.TrimNodeTextRange(m.ctx.SourceFile, value).Pos():value.End()]
+	value := model.Unwrap(d.property.Initializer())
 	chain, _ := ChainOf(value)
-	text = strings.TrimPrefix(text, chain.Root.Text())
-	text = strings.TrimPrefix(text, "!")
-	text = strings.TrimPrefix(text, "?")
-	return strings.TrimPrefix(text, ".")
+	root := chain.Root
+	for root.Parent != nil && model.Unwrap(root.Parent) == chain.Root {
+		root = root.Parent
+	}
+	text := m.ctx.SourceFile.Text()[root.End():value.End()]
+	return strings.TrimPrefix(strings.TrimPrefix(text, "?"), ".")
 }
 
 type spread struct {

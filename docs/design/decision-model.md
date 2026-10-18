@@ -6,7 +6,7 @@
 
 - **Value**: data reached from a root (a variable, `this`, or an expression evaluated once) through property reads and literal-key element reads. Identity comes from symbols, not text; two calls written alike are different values. A variable that only names data is that data: after `const { kind } = item`, `kind` is `item.kind`.
 - **Field**: the property declarations a value ends at. Two values are the same field when they share a name and a declaration.
-- **Form**: a structural comparison key for an expression relative to a value: the value becomes `$`, literals compare by value, and external references by resolved symbol.
+- **Form**: a structural comparison key for an expression relative to a value: the value becomes `$`, literals compare by value, and external references by resolved symbol. The **syntactic form**, for shared indexes built without a checker, has a root node become `$` and other identifiers compare by name; it can miss a value reached through another variable naming it.
 - **Vocabulary**: the finite literal values of a declared type, at least two string or number literals once `null` and `undefined` are removed.
 - **Claim**: what a test establishes: the value is one of a set, within its vocabulary or among present, `undefined`, `null` and other falsy values. Claims compare as sets: same, opposite, or implies.
 - **Test**: a place where code learns a claim: a literal comparison, `includes` on a list of known values, or a presence test (a truthiness test or a comparison with `null`/`undefined`).

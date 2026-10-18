@@ -2,14 +2,13 @@ package max_projection_spread
 
 import (
 	"github.com/typescript-eslint/tsgolint/internal/aexlint/model"
-	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/compiler"
 )
 
 // DerivationIndex lists every candidate derivation in a program's project source files, by file and by syntactic
-// fingerprint. It is built once per program from syntax alone and never mutated afterwards.
+// form. It is built once per program from syntax alone and never mutated afterwards.
 type DerivationIndex struct {
 	byFile map[*ast.SourceFile][]*ast.Node
 	byKey  map[string][]*ast.Node
@@ -20,19 +19,8 @@ var indexes = model.NewShared(buildDerivationIndex)
 // IndexFor returns the program's shared index.
 func IndexFor(program *compiler.Program) *DerivationIndex { return indexes.For(program) }
 
-func skipOuter(n *ast.Node) *ast.Node {
-	for {
-		switch n.Kind {
-		case ast.KindParenthesizedExpression, ast.KindAsExpression, ast.KindSatisfiesExpression, ast.KindNonNullExpression:
-			n = n.Expression()
-		default:
-			return n
-		}
-	}
-}
-
 func literal(n *ast.Node) bool {
-	switch skipOuter(n).Kind {
+	switch model.Unwrap(n).Kind {
 	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral, ast.KindNumericLiteral, ast.KindTrueKeyword,
 		ast.KindFalseKeyword, ast.KindNullKeyword:
 		return true
@@ -40,35 +28,16 @@ func literal(n *ast.Node) bool {
 	return false
 }
 
-// literalText returns a literal argument's text; keywords have no Text in the AST.
-func literalText(n *ast.Node) string {
-	n = skipOuter(n)
-	switch n.Kind {
-	case ast.KindTrueKeyword:
-		return "true"
-	case ast.KindFalseKeyword:
-		return "false"
-	case ast.KindNullKeyword:
-		return "null"
-	case ast.KindStringLiteral, ast.KindNoSubstitutionTemplateLiteral:
-		return "s:" + n.Text()
-	}
-	return "n:" + n.Text()
-}
-
-// Chain is a derivation's value: its root identifier and, from the root outwards, the property accesses and calls
-// applied to it.
+// Chain is a derivation's value, read from its root identifier.
 type Chain struct {
-	Root  *ast.Node
-	Steps []*ast.Node
+	Root *ast.Node
 }
 
 // ChainOf returns the chain of a derivation's value: an identifier followed by property accesses and method calls
 // with literal or no arguments, including at least one call.
 func ChainOf(value *ast.Node) (Chain, bool) {
-	steps := []*ast.Node{}
 	called := false
-	n := skipOuter(value)
+	n := model.Unwrap(value)
 	for {
 		switch n.Kind {
 		case ast.KindCallExpression:
@@ -77,23 +46,18 @@ func ChainOf(value *ast.Node) (Chain, bool) {
 					return Chain{}, false
 				}
 			}
-			if skipOuter(n.Expression()).Kind != ast.KindPropertyAccessExpression {
+			if model.Unwrap(n.Expression()).Kind != ast.KindPropertyAccessExpression {
 				return Chain{}, false
 			}
 			called = true
-			steps = append(steps, n)
-			n = skipOuter(n.Expression())
+			n = model.Unwrap(n.Expression())
 		case ast.KindPropertyAccessExpression:
-			steps = append(steps, n)
-			n = skipOuter(n.Expression())
+			n = model.Unwrap(n.Expression())
 		case ast.KindIdentifier:
 			if !called {
 				return Chain{}, false
 			}
-			for i, j := 0, len(steps)-1; i < j; i, j = i+1, j-1 {
-				steps[i], steps[j] = steps[j], steps[i]
-			}
-			return Chain{Root: n, Steps: steps}, true
+			return Chain{Root: n}, true
 		default:
 			return Chain{}, false
 		}
@@ -113,24 +77,7 @@ func KeyOf(property *ast.Node) (string, bool) {
 	return "", false
 }
 
-// Fingerprint describes a chain's text: member names and literal arguments, from the root outwards.
-func Fingerprint(chain Chain) string {
-	parts := []string{}
-	for _, step := range chain.Steps {
-		if step.Kind == ast.KindPropertyAccessExpression {
-			parts = append(parts, step.Name().Text())
-			continue
-		}
-		arguments := []string{}
-		for _, argument := range step.Arguments() {
-			arguments = append(arguments, literalText(argument))
-		}
-		parts = append(parts, "("+strings.Join(arguments, ",")+")")
-	}
-	return strings.Join(parts, ".")
-}
-
-// keyOf returns the index key of a candidate derivation: its property key and chain fingerprint.
+// keyOf returns the index key of a candidate derivation: its property key and the syntactic form of its chain.
 func keyOf(property *ast.Node) (string, bool) {
 	key, ok := KeyOf(property)
 	if !ok {
@@ -140,7 +87,7 @@ func keyOf(property *ast.Node) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	return key + "=" + Fingerprint(chain), true
+	return key + "=" + model.SyntacticForm(property.Initializer(), chain.Root), true
 }
 
 func buildDerivationIndex(program *compiler.Program) *DerivationIndex {

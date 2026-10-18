@@ -31,7 +31,7 @@ toResponse() {
 
 - A derivation is an object property with a static key, built from a variable through member reads and at least one method call with literal or no arguments. Its type must be declared in project code.
 - A projection needs at least two derivations from the same variable.
-- Derivations match on output key, owner type (with type arguments) and the chain of members and literal arguments; variable names do not matter. Files are counted per derivation across the whole program.
+- Derivations match on output key, owner type (with type arguments) and the chain of members and literal arguments; variable names, parentheses and type assertions do not matter. Files are counted per derivation across the whole program.
 - Plain copies (`id: site.id`), shorthand, `this` roots, helper calls and non-literal arguments do not count.
 
 ## Reporting and limits
