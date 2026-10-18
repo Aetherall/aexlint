@@ -13,6 +13,12 @@ const target = `${process.platform}-${process.arch}`;
 const backend = fileURLToPath(
   new URL(`../.native/probe/${target}/${backendExecutable()}`, import.meta.url),
 );
+const lintCommand = [oxlint, "-c", ".oxlintrc.json", "--format", "json"];
+const captured: SpawnSyncOptionsWithStringEncoding = { encoding: "utf8", timeout: 60_000 };
+
+function backendEnv(executable: string, env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return { ...process.env, AEXLINT_TYPED_BACKEND: executable, ...env };
+}
 
 interface OxlintDiagnostic {
   message: string;
@@ -48,15 +54,10 @@ function project(t: { after: (fn: () => void) => void }) {
       JSON.stringify({ jsPlugins: [plugin], categories: { correctness: "off" }, rules }),
     );
   configure({ "aexlint/type-probe": "error" });
+  const runNode = (args: string[], env: NodeJS.ProcessEnv) =>
+    spawnSync(process.execPath, args, { ...captured, cwd: root, env });
   const lint = (files: string[], executable = backend, env: NodeJS.ProcessEnv = {}): Run => {
-    const command = [oxlint, "-c", ".oxlintrc.json", "--format", "json", ...files];
-    const options: SpawnSyncOptionsWithStringEncoding = {
-      cwd: root,
-      encoding: "utf8",
-      timeout: 60_000,
-      env: { ...process.env, AEXLINT_TYPED_BACKEND: executable, ...env },
-    };
-    const result = spawnSync(process.execPath, command, options);
+    const result = runNode([...lintCommand, ...files], backendEnv(executable, env));
     if (result.error) throw result.error;
     const output = `${result.stdout}\n${result.stderr}`;
     const parsed = result.stdout.startsWith("{") ? JSON.parse(result.stdout) : { diagnostics: [] };

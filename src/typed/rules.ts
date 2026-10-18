@@ -1,4 +1,4 @@
-import { spawn, spawnSync, type SpawnOptions } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess, type StdioOptions } from "node:child_process";
 import {
   closeSync,
   constants,
@@ -135,6 +135,10 @@ function awaitServer(path: string, lifeline: number, log: number): number {
   }
 }
 
+function startServer(fifos: string[], stdio: StdioOptions): ChildProcess {
+  return spawn(backend, ["serve", ...fifos], { stdio, env: environment });
+}
+
 function serveChannel(): Channel {
   const directory = mkdtempSync(join(tmpdir(), "aexlint-typed-fifo-"));
   const requestPath = join(directory, "requests");
@@ -146,8 +150,7 @@ function serveChannel(): Channel {
   const log = openSync(join(directory, "stderr"), "w+");
   const lifeline = openSync(lifelinePath, constants.O_RDONLY | constants.O_NONBLOCK);
   const held = openSync(lifelinePath, constants.O_WRONLY | constants.O_NONBLOCK);
-  const options: SpawnOptions = { stdio: ["ignore", "ignore", log, held], env: environment };
-  const server = spawn(backend, ["serve", requestPath, responsePath], options);
+  const server = startServer([requestPath, responsePath], ["ignore", "ignore", log, held]);
   closeSync(held);
   server.on("error", () => {});
   server.unref();
