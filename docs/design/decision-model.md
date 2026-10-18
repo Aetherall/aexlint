@@ -33,7 +33,7 @@
 
 ## Limitations
 
-- Returns are followed only to call sites in the same file, not through callbacks.
+- Returns are not followed through callbacks.
 - A `throw` inside a `try` with a `catch` is not a rejection.
 - A truthiness test of a `boolean` treats `false` as missing.
 - A variable naming data is not updated when that data changes through another path.

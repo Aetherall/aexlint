@@ -43,7 +43,7 @@ A parameter or value typed `string` is compared with literals while its producer
 A function tests a value (`x.kind === "a"`) and returns it typed as the wide union; its callers test it again.
 
 - The callee-to-caller direction of a boundary; `no-repeated-selection` covers only selector and handler gates.
-- The model follows returns only to call sites in the same file.
+- `Callers` finds call sites across project files, but no model fact yet relates a call's result to the tests its caller runs on it.
 - Measure first: literal rechecks in the other direction found no new findings.
 
 ### 4. Values held across statements
