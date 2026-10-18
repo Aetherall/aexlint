@@ -122,6 +122,7 @@ function check(): number {
       "aexlint/no-fact-outside-owner": "error",
       "aexlint/no-overbroad-type-predicate": "error",
       "aexlint/no-embedded-translation": "error",
+      "aexlint/no-lookup-fallback": "error",
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));

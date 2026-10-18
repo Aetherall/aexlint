@@ -25,6 +25,7 @@
     "aexlint/no-repeated-value-policy": "error",
     "aexlint/no-caller-enforced-invariant": "error",
     "aexlint/no-embedded-translation": "error",
+    "aexlint/no-lookup-fallback": "error",
     "aexlint/max-interpretation-spread": ["error", { "max": 4 }]
   },
   "ignorePatterns": ["dist", "node_modules", "tests/project"]

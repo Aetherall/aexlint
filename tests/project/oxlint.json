@@ -528,6 +528,14 @@
       "rules": {
         "aexlint/no-embedded-translation": "error"
       }
+    },
+    {
+      "files": [
+        "no-lookup-fallback/**"
+      ],
+      "rules": {
+        "aexlint/no-lookup-fallback": "error"
+      }
     }
   ]
 }

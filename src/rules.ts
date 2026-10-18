@@ -27,6 +27,7 @@ export const typedRuleNames: string[] = [
   "no-external-variant-behavior",
   "no-fact-outside-owner",
   "no-forgeable-validated-result",
+  "no-lookup-fallback",
   "no-overbroad-type-predicate",
   "no-procedural-value-dispatch",
   "no-repeated-conversion",

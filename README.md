@@ -97,6 +97,7 @@ The plugin enables no rules by default. Type-aware rules need the TypeScript set
 | [no-fact-outside-owner](rules/no-fact-outside-owner/README.md)                 | Facts about a type's values established outside its owner              |
 | [no-embedded-translation](rules/no-embedded-translation/README.md)             | Variant fields read into the surrounding state instead of a projection |
 | [no-overbroad-type-predicate](rules/no-overbroad-type-predicate/README.md)     | Type predicates that reject values their declared target permits       |
+| [no-lookup-fallback](rules/no-lookup-fallback/README.md)                       | Lookups naming most literal values and giving the rest one constant    |
 
 `max-held-context` allows `else if` chains and `no-else-if` reports them; early returns satisfy both.
 

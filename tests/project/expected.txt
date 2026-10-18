@@ -1625,6 +1625,61 @@ no-forgeable-validated-result/reported/type-and-content-test.ts:1:17 aexlint(no-
   `ranged` rejects some inputs, then returns `{ value: number; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ value: number; }` cannot tell whether it passed `ranged`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 2.
 
+no-lookup-fallback/dependency-closed/f.ts:3:81 aexlint(no-lookup-fallback)
+  ~ "k4"
+  `"k4"` answers for "butte" | "mesa" of `kind` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/aliases-generics-unions.ts:4:111 aexlint(no-lookup-fallback)
+  ~ "fern"
+  `"fern"` answers for "mangrove" | "savanna" of `habitat` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/aliases-generics-unions.ts:6:128 aexlint(no-lookup-fallback)
+  ~ "tapir"
+  `"tapir"` answers for "mangrove" | "savanna" of `region.biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/aliases-generics-unions.ts:9:95 aexlint(no-lookup-fallback)
+  ~ "canoe"
+  `"canoe"` answers for "mangrove" | "savanna" of `biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/aliases-generics-unions.ts:19:14 aexlint(no-lookup-fallback)
+  ~ "dust"
+  `"dust"` answers for Season.Dormancy | Season.Rains of `season` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/early-returns.ts:6:10 aexlint(no-lookup-fallback)
+  ~ "heavy"
+  `"heavy"` answers for "mangrove" | "savanna" of `biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/early-returns.ts:16:10 aexlint(no-lookup-fallback)
+  ~ "teal"
+  `"teal"` answers for "mangrove" | "savanna" of `biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/else-chain.ts:10:12 aexlint(no-lookup-fallback)
+  ~ true
+  `true` answers for "mangrove" | "savanna" of `biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/switch-default.ts:11:14 aexlint(no-lookup-fallback)
+  ~ 3
+  `3` answers for "mangrove" | "savanna" of `region.biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/switch-default.ts:27:7 aexlint(no-lookup-fallback)
+  ~ title = "Wet";
+  `title = "Wet";` answers for "mangrove" | "savanna" of `region.biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
+no-lookup-fallback/reported/ternary-chain.ts:3:95 aexlint(no-lookup-fallback)
+  ~ "humid"
+  `"humid"` answers for "mangrove" | "savanna" of `biome` without naming them.
+  help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
+
 no-multiline-condition/reported.js:1:5 aexlint(no-multiline-condition)
   ~ a ||⏎  b
   This if condition spans 2 lines, so the decision cannot be read at a glance before the body.
