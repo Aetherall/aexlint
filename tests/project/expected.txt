@@ -1615,6 +1615,11 @@ no-forgeable-validated-result/reported/result-checks.ts:4:17 aexlint(no-forgeabl
   `named` rejects some inputs, then returns `Named`, which other code can produce without that check.
   help: Code that receives a value of type `Named` cannot tell whether it passed `named`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: call to `ensureNamed` (no-forgeable-validated-result/reported/result-checks.ts) at line 4.
 
+no-forgeable-validated-result/reported/throw-after-early-return.ts:2:17 aexlint(no-forgeable-validated-result)
+  ~ d
+  `d` rejects some inputs, then returns `Payload`, which other code can produce without that check.
+  help: Code that receives a value of type `Payload` cannot tell whether it passed `d`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 2.
+
 no-forgeable-validated-result/reported/type-and-content-test.ts:1:17 aexlint(no-forgeable-validated-result)
   ~ ranged
   `ranged` rejects some inputs, then returns `{ value: number; }`, which other code can produce without that check.

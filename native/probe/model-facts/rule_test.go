@@ -379,6 +379,17 @@ function check(value: string | number) {
   return value;
 }
 export function parse(input: string) { return check(input); }`, Options: only("rejection"), Errors: facts("rejection", 2)},
+			{Code: `export function upgrade(input: { version: number; name: string }, flag: boolean) {
+  if (flag) return input;
+  if (input.version === 2) return input;
+  if (input.name !== "") {
+    log(input.name);
+  } else {
+    return input;
+  }
+  throw new Error("unsupported");
+}
+declare function log(text: string): void;`, Options: only("rejection"), Errors: facts("rejection", 1)},
 			{Code: `declare function validate(value: string): void;
 class Rejected extends Error { constructor(readonly input: string) { super(input); } }
 export function parse(input: string, limit: number) {

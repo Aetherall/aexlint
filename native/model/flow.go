@@ -805,6 +805,15 @@ func (a *flowAnalysis) visit(n *ast.Node, guards []*ast.Node, inTry bool) {
 		}
 		a.visit(statement.Statement, guards, inTry)
 		return
+	case ast.KindBlock, ast.KindCaseClause, ast.KindDefaultClause:
+		if n.Kind == ast.KindCaseClause {
+			a.visit(n.Expression(), guards, inTry)
+		}
+		for _, statement := range statementList(n) {
+			a.visit(statement, guards, inTry)
+			guards = a.after(statement, guards)
+		}
+		return
 	case ast.KindIfStatement:
 		statement := n.AsIfStatement()
 		a.visit(statement.Expression, guards, inTry)
@@ -832,6 +841,28 @@ func (a *flowAnalysis) visit(n *ast.Node, guards []*ast.Node, inTry bool) {
 		return
 	}
 	a.visitChildren(n, guards, inTry)
+}
+
+// after returns the guards of the statements following statement in its list: an if statement reading input whose one
+// branch returns early, accepting that input, guards them with its condition.
+func (a *flowAnalysis) after(statement *ast.Node, guards []*ast.Node) []*ast.Node {
+	if statement.Kind != ast.KindIfStatement {
+		return guards
+	}
+	s := statement.AsIfStatement()
+	if !a.reads(s.Expression) || a.m.Narrowing(s.Expression) || returns(s.ThenStatement) == returns(s.ElseStatement) {
+		return guards
+	}
+	return append(append([]*ast.Node{}, guards...), s.Expression)
+}
+
+// returns reports whether a branch ends with a return statement.
+func returns(n *ast.Node) bool {
+	if n != nil && n.Kind == ast.KindBlock {
+		statements := n.Statements()
+		return len(statements) > 0 && returns(statements[len(statements)-1])
+	}
+	return n != nil && n.Kind == ast.KindReturnStatement
 }
 
 func (a *flowAnalysis) visitChildren(n *ast.Node, guards []*ast.Node, inTry bool) {
