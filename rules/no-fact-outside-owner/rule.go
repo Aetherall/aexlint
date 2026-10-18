@@ -131,27 +131,6 @@ func (r *checkRun) visit(n *ast.Node) {
 	}
 }
 
-// owner returns the name of the type declaring a property and whether code at n is inside that owner: the class and
-// its subclasses for a class property, the declaring module for an interface or type alias property.
-func (r *checkRun) owner(declaration *ast.Node) string {
-	switch container := declaration.Parent; {
-	case container.Kind == ast.KindInterfaceDeclaration:
-		return container.Name().Text()
-	case ast.IsClassLike(container) && container.Name() != nil:
-		return container.Name().Text()
-	case container.Kind == ast.KindTypeLiteral && container.Parent.Kind == ast.KindTypeAliasDeclaration:
-		return container.Parent.Name().Text()
-	}
-	return ""
-}
-
-func (r *checkRun) inside(n, declaration *ast.Node) bool {
-	if ast.IsClassLike(declaration.Parent) {
-		return r.a.InsideMemberOwner(n, declaration)
-	}
-	return ast.GetSourceFileOfNode(n) == ast.GetSourceFileOfNode(declaration)
-}
-
 type question struct {
 	test  model.Test
 	files map[*ast.SourceFile]bool
@@ -174,7 +153,7 @@ func (q *question) key() string {
 func (r *checkRun) questions(declaration *ast.Node, reads []*ast.Node) []*question {
 	found := []*question{}
 	for _, read := range reads {
-		if !r.a.Resolves(read, declaration) || r.inside(read, declaration) {
+		if !r.a.Resolves(read, declaration) || r.a.InsideDeclaringOwner(read, declaration) {
 			continue
 		}
 		whole := r.a.WholeTest(read)
@@ -206,7 +185,7 @@ func (r *checkRun) unanswered(limit int) {
 	names := []string{}
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
-		if (n.Kind == ast.KindPropertySignature || n.Kind == ast.KindPropertyDeclaration) && n.Name().Kind == ast.KindIdentifier && r.owner(n) != "" {
+		if (n.Kind == ast.KindPropertySignature || n.Kind == ast.KindPropertyDeclaration) && n.Name().Kind == ast.KindIdentifier && r.a.MemberOwner(n) != nil {
 			name := n.Name().Text()
 			if declarations[name] == nil {
 				names = append(names, name)
@@ -233,7 +212,7 @@ func (r *checkRun) unanswered(limit int) {
 					continue
 				}
 				if earlier, ok := first[q.key()]; ok {
-					earlier.shared = append(earlier.shared, "`"+r.owner(declaration)+"`")
+					earlier.shared = append(earlier.shared, "`"+r.a.MemberOwner(declaration).Name+"`")
 					continue
 				}
 				first[q.key()] = q
@@ -272,7 +251,7 @@ func (r *checkRun) reportUnanswered(declaration *ast.Node, unanswered []*questio
 			files[file] = true
 		}
 	}
-	name, owner := declaration.Name().Text(), r.owner(declaration)
+	name, owner := declaration.Name().Text(), r.a.MemberOwner(declaration).Name
 	them, listed := "it", model.Listed(facts, 3)
 	if len(facts) == 2 {
 		them, listed = "them", facts[0]+" and "+facts[1]

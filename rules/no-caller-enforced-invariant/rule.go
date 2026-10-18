@@ -37,15 +37,8 @@ func calleeName(class *ast.Node, declaration *ast.Node) string {
 
 // discarded reports whether a construction or static factory's result is unused: nothing receives the instance, as
 // when a factory is called only to see whether it throws.
-func discarded(call *ast.Node, declaration *ast.Node) bool {
-	if declaration.Kind != ast.KindConstructor && !ast.HasSyntacticModifier(declaration, ast.ModifierFlagsStatic) {
-		return false
-	}
-	n := call
-	for n.Parent != nil && (n.Parent.Kind == ast.KindAwaitExpression || n.Parent.Kind == ast.KindParenthesizedExpression) {
-		n = n.Parent
-	}
-	return n.Parent != nil && n.Parent.Kind == ast.KindExpressionStatement
+func discarded(call model.Call, declaration *ast.Node) bool {
+	return call.Discarded && (declaration.Kind == ast.KindConstructor || ast.HasSyntacticModifier(declaration, ast.ModifierFlagsStatic))
 }
 
 func (m *measure) check(fn *ast.Node) {
@@ -58,7 +51,7 @@ func (m *measure) check(fn *ast.Node) {
 			continue
 		}
 		class, declaration := m.a.Member(call.Node)
-		if class == nil || m.a.Extends(caller, class) || model.OwnReceiver(call.Node) || discarded(call.Node, declaration) {
+		if class == nil || m.a.Extends(caller, class) || model.OwnReceiver(call.Node) || discarded(call, declaration) {
 			continue
 		}
 		handed := m.handed(call, declaration)

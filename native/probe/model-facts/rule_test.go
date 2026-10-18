@@ -543,6 +543,24 @@ const named = arrow();
 if (named === "high") pick("high");
 pick(name(false));
 plain(true);`, Options: only("result"), Errors: facts("result", 3)},
+			{Code: `export class Label {
+  constructor(readonly value: string) {}
+  static parse(value: string) { return new Label(value); }
+}
+export async function use(value: string) {
+  new Label(value);
+  (await Promise.resolve(Label.parse(value)));
+  const kept = Label.parse(value);
+  return [kept, Label.parse(value)];
+}`, Options: only("flow"), Errors: facts("flow", 2)},
+			{Code: `export interface Order { state: string }
+export type Line = { count: number };
+export class Cart { total = 0 }
+export class Special extends Cart { extra?: number }
+export const Anonymous = class { hidden = 1 };
+declare global { interface Ambient { shade: string } }
+export namespace Scope { export interface Inner { depth: number } }
+export function f(value: { loose: string }) { return value; }`, Options: only("owner"), Errors: facts("owner", 8)},
 		},
 	)
 }

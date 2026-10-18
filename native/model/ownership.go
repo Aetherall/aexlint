@@ -233,6 +233,31 @@ func (m *Analyzer) InsideMemberOwner(n, member *ast.Node) bool {
 	return false
 }
 
+// MemberOwner returns the owner of a property declaration: the named class, interface or type alias declaring it, when
+// the project establishes it as an owner, otherwise nil.
+func (m *Analyzer) MemberOwner(member *ast.Node) *ast.Symbol {
+	container := member.Parent
+	if container.Kind == ast.KindTypeLiteral && container.Parent.Kind == ast.KindTypeAliasDeclaration {
+		container = container.Parent
+	} else if container.Kind != ast.KindInterfaceDeclaration && !ast.IsClassLike(container) {
+		return nil
+	}
+	if container.Name() == nil {
+		return nil
+	}
+	return m.established(container.Symbol())
+}
+
+// InsideDeclaringOwner reports whether n is written in the owner declaring a property: for a class property, a class
+// that has it (see InsideMemberOwner); otherwise inside its owner (see InsideOwner).
+func (m *Analyzer) InsideDeclaringOwner(n, member *ast.Node) bool {
+	if ast.IsClassLike(member.Parent) {
+		return m.InsideMemberOwner(n, member)
+	}
+	owner := m.MemberOwner(member)
+	return owner != nil && m.InsideOwner(n, owner)
+}
+
 // ObjectOwner returns the project declaration naming n's object type without null and undefined: its alias, otherwise
 // its symbol, with that type. It returns nil when the type is not an object type or the project does not declare it.
 func (m *Analyzer) ObjectOwner(n *ast.Node) (*ast.Symbol, *checker.Type) {

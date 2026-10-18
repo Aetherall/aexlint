@@ -658,14 +658,14 @@ Message: rejection; on [flag, input.version, input.name] reads [flag, input.vers
 
 [TestModelFacts/invalid-30 - 1]
 Diagnostic 1: flow (2:32 - 2:66)
-Message: flow; rejections []; calls [super(input) with [input] after 0 rejections]; results []; carried []; rejected {}; read {}
+Message: flow; rejections []; calls [super(input) with [input] after 0 rejections discarded]; results []; carried []; rejected {}; read {}
    1 | declare function validate(value: string): void;
    2 | class Rejected extends Error { constructor(readonly input: string) { super(input); } }
      |                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    3 | export function parse(input: string, limit: number) {
 
 Diagnostic 2: flow (3:17 - 3:21)
-Message: flow; rejections [throw new Rejected(input); checks [input.length, limit] reads [input.length, limit]]; calls [new Rejected(input) with [input] after 0 rejections thrown / validate(input) with [input] after 1 rejections / input.trim() with  after 1 rejections]; results [trimmed, part of input, limit]; carried [0, 1]; rejected {0: [$.length], 1: [$]}; read {0: [$.length], 1: [$]}
+Message: flow; rejections [throw new Rejected(input); checks [input.length, limit] reads [input.length, limit]]; calls [new Rejected(input) with [input] after 0 rejections thrown / validate(input) with [input] after 1 rejections discarded / input.trim() with  after 1 rejections]; results [trimmed, part of input, limit]; carried [0, 1]; rejected {0: [$.length], 1: [$]}; read {0: [$.length], 1: [$]}
    2 | class Rejected extends Error { constructor(readonly input: string) { super(input); } }
    3 | export function parse(input: string, limit: number) {
      |                 ~~~~~
@@ -935,4 +935,76 @@ Message: result string; returned ["high", "low", "max"]; callers 1, complete yes
    7 | export const arrow = (): string | undefined => level;
      |                          ~~~~~~~~~~~~~~~~~~
    8 | export async function later(): Promise<string> { return level; }
+---
+
+[TestModelFacts/invalid-42 - 1]
+Diagnostic 1: flow (3:10 - 3:14)
+Message: flow; rejections []; calls [new Label(value) with [value] after 0 rejections]; results []; carried []; rejected {}; read {}
+   2 |   constructor(readonly value: string) {}
+   3 |   static parse(value: string) { return new Label(value); }
+     |          ~~~~~
+   4 | }
+
+Diagnostic 2: flow (5:23 - 5:25)
+Message: flow; rejections []; calls [new Label(value) with [value] after 0 rejections discarded / Label.parse(value) with [value] after 0 rejections / Promise.resolve(Label.parse(value)) with [] after 0 rejections discarded / Label.parse(value) with [value] after 0 rejections / Label.parse(value) with [value] after 0 rejections]; results [kept]; carried []; rejected {}; read {}
+   4 | }
+   5 | export async function use(value: string) {
+     |                       ~~~
+   6 |   new Label(value);
+---
+
+[TestModelFacts/invalid-43 - 1]
+Diagnostic 1: owner (1:26 - 1:30)
+Message: owner Order
+   1 | export interface Order { state: string }
+     |                          ~~~~~
+   2 | export type Line = { count: number };
+
+Diagnostic 2: owner (2:22 - 2:26)
+Message: owner Line
+   1 | export interface Order { state: string }
+   2 | export type Line = { count: number };
+     |                      ~~~~~
+   3 | export class Cart { total = 0 }
+
+Diagnostic 3: owner (3:21 - 3:25)
+Message: owner Cart
+   2 | export type Line = { count: number };
+   3 | export class Cart { total = 0 }
+     |                     ~~~~~
+   4 | export class Special extends Cart { extra?: number }
+
+Diagnostic 4: owner (4:37 - 4:41)
+Message: owner Special
+   3 | export class Cart { total = 0 }
+   4 | export class Special extends Cart { extra?: number }
+     |                                     ~~~~~
+   5 | export const Anonymous = class { hidden = 1 };
+
+Diagnostic 5: owner (5:34 - 5:39)
+Message: owner none
+   4 | export class Special extends Cart { extra?: number }
+   5 | export const Anonymous = class { hidden = 1 };
+     |                                  ~~~~~~
+   6 | declare global { interface Ambient { shade: string } }
+
+Diagnostic 6: owner (6:38 - 6:42)
+Message: owner none
+   5 | export const Anonymous = class { hidden = 1 };
+   6 | declare global { interface Ambient { shade: string } }
+     |                                      ~~~~~
+   7 | export namespace Scope { export interface Inner { depth: number } }
+
+Diagnostic 7: owner (7:51 - 7:55)
+Message: owner Inner
+   6 | declare global { interface Ambient { shade: string } }
+   7 | export namespace Scope { export interface Inner { depth: number } }
+     |                                                   ~~~~~
+   8 | export function f(value: { loose: string }) { return value; }
+
+Diagnostic 8: owner (8:28 - 8:32)
+Message: owner none
+   7 | export namespace Scope { export interface Inner { depth: number } }
+   8 | export function f(value: { loose: string }) { return value; }
+     |                            ~~~~~
 ---

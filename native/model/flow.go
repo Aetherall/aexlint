@@ -26,9 +26,11 @@ type Rejection struct {
 
 // Call is a call or construction in a function body, the input data and the data read through this that each argument
 // carries, and the rejections reading data, not owned by a type, that precede it in source order. Thrown marks a call
-// building what a throw raises.
+// building what a throw raises. Discarded marks a call whose result nothing receives: the call, awaited or
+// parenthesized, is a whole expression statement.
 type Call struct {
 	Thrown     bool
+	Discarded  bool
 	Node       *ast.Node
 	Arguments  [][]Value
 	Rejections []*Rejection
@@ -51,6 +53,14 @@ type Flow struct {
 type storage struct {
 	path    []string
 	sources []Value
+}
+
+func discarded(call *ast.Node) bool {
+	n := call
+	for n.Parent != nil && (n.Parent.Kind == ast.KindAwaitExpression || n.Parent.Kind == ast.KindParenthesizedExpression) {
+		n = n.Parent
+	}
+	return n.Parent != nil && n.Parent.Kind == ast.KindExpressionStatement
 }
 
 type call struct {
@@ -940,7 +950,7 @@ func (m *Analyzer) Flow(fn *ast.Node) *Flow {
 		a.relative(found.Read, f.Read)
 	}
 	for _, site := range a.calls {
-		c := Call{Node: site.node, Thrown: site.thrown}
+		c := Call{Node: site.node, Thrown: site.thrown, Discarded: discarded(site.node)}
 		for _, argument := range site.arguments {
 			c.Arguments = append(c.Arguments, a.inputs(argument, true))
 		}

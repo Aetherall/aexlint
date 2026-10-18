@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -315,6 +315,9 @@ func (p *probe) flow(fn *ast.Node) {
 		if c.Thrown {
 			thrown = " thrown"
 		}
+		if c.Discarded {
+			thrown += " discarded"
+		}
 		calls = append(calls, fmt.Sprintf("%s with %s after %d rejections%s", model.Text(c.Node, 40), strings.Join(arguments, " "), len(c.Rejections), thrown))
 	}
 	carried := []string{}
@@ -370,6 +373,17 @@ func (p *probe) callers(fn *ast.Node) {
 	}
 }
 
+func (p *probe) owner(n *ast.Node) {
+	if n.Kind != ast.KindPropertySignature && n.Kind != ast.KindPropertyDeclaration {
+		return
+	}
+	owner := "none"
+	if symbol := p.a.MemberOwner(n); symbol != nil {
+		owner = symbol.Name
+	}
+	p.report("owner", n.Name(), "owner "+owner)
+}
+
 func (p *probe) run() {
 	file := model.Build(p.a)
 	for _, d := range file.Decisions {
@@ -389,6 +403,7 @@ func (p *probe) run() {
 		} else if n.Kind == ast.KindCaseClause {
 			p.site(n)
 		}
+		p.owner(n)
 		if n.Kind == ast.KindConditionalExpression || n.Kind == ast.KindBinaryExpression {
 			for _, g := range p.a.Guards(n) {
 				p.guard("guard", g)
