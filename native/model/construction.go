@@ -100,7 +100,7 @@ func (m *Analyzer) Results(nodes []*ast.Node, object Value, tag string) []*ast.N
 	return results
 }
 
-// Setting is whether a returned object literal sets an optional property of its function's result.
+// Setting is whether a returned value sets an optional property of its function's result.
 type Setting int
 
 const (
@@ -110,9 +110,10 @@ const (
 	MaybeSet
 )
 
-// OptionalSettings returns the optional properties of a function's result, marked optional or typed with undefined, and, for each object literal the function
+// OptionalSettings returns the optional properties of a function's result, marked optional or typed with undefined, and, for each object the function
 // returns, whether it sets each one. The result must be one project object type, not a union or intersection, and every
-// returned expression must be an object literal, a conditional of them, or null or undefined, with at least two literals.
+// returned expression must be an object literal, a conditional of them, null or undefined, or a value of one object type,
+// with at least two objects.
 func (m *Analyzer) OptionalSettings(fn *ast.Node) ([]*ast.Symbol, [][]Setting, bool) {
 	t := m.Result(fn)
 	if fn.Body() == nil || t == nil || t.Flags()&checker.TypeFlagsObject == 0 || !m.Owned(t) || m.ctx.TypeChecker.TypeHasCallOrConstructSignatures(t) {
@@ -124,37 +125,43 @@ func (m *Analyzer) OptionalSettings(fn *ast.Node) ([]*ast.Symbol, [][]Setting, b
 			optional = append(optional, property)
 		}
 	}
-	literals, ok := m.returnedLiterals(fn)
-	if len(optional) < 2 || !ok || len(literals) < 2 {
+	values, ok := m.returnedObjects(fn, t)
+	if len(optional) < 2 || !ok || len(values) < 2 {
 		return nil, nil, false
 	}
 	settings := [][]Setting{}
-	for _, literal := range literals {
-		settings = append(settings, m.sets(literal, optional))
+	for _, value := range values {
+		if value.Kind == ast.KindObjectLiteralExpression {
+			settings = append(settings, m.sets(value, optional))
+		} else {
+			settings = append(settings, m.typedSets(m.Unwrap(m.ctx.TypeChecker.GetTypeAtLocation(value)), optional))
+		}
 	}
 	return optional, settings, true
 }
 
-// returnedLiterals returns the object literals a function returns, or false when it returns anything else but null or
-// undefined.
-func (m *Analyzer) returnedLiterals(fn *ast.Node) ([]*ast.Node, bool) {
-	literals, ok := []*ast.Node{}, true
+// returnedObjects returns the objects a function returns: object literals, and other values of one object type assignable
+// to result. It returns false when the function returns anything else but null or undefined.
+func (m *Analyzer) returnedObjects(fn *ast.Node, result *checker.Type) ([]*ast.Node, bool) {
+	values, ok := []*ast.Node{}, true
 	var add func(*ast.Node)
 	add = func(n *ast.Node) {
 		switch n = Unwrap(n); {
 		case n.Kind == ast.KindObjectLiteralExpression:
-			literals = append(literals, n)
+			values = append(values, n)
 		case n.Kind == ast.KindConditionalExpression:
 			add(n.AsConditionalExpression().WhenTrue)
 			add(n.AsConditionalExpression().WhenFalse)
 		case m.nothing(n):
+		case m.object(n, result):
+			values = append(values, n)
 		default:
 			ok = false
 		}
 	}
 	if body := fn.Body(); body.Kind != ast.KindBlock {
 		add(body)
-		return literals, ok
+		return values, ok
 	}
 	var walk func(*ast.Node) bool
 	walk = func(n *ast.Node) bool {
@@ -168,7 +175,14 @@ func (m *Analyzer) returnedLiterals(fn *ast.Node) ([]*ast.Node, bool) {
 		return false
 	}
 	fn.Body().ForEachChild(walk)
-	return literals, ok
+	return values, ok
+}
+
+// object reports whether n, awaited and without null and undefined, is typed with one object type assignable to result,
+// not a union, any or unknown.
+func (m *Analyzer) object(n *ast.Node, result *checker.Type) bool {
+	t := m.Unwrap(m.ctx.TypeChecker.GetTypeAtLocation(n))
+	return t != nil && t.Flags()&checker.TypeFlagsObject != 0 && checker.Checker_isTypeAssignableTo(m.ctx.TypeChecker, t, result)
 }
 
 // sets reads which of the optional properties an object literal sets. A later member overrides an earlier one.
@@ -190,6 +204,22 @@ func (m *Analyzer) sets(literal *ast.Node, optional []*ast.Symbol) []Setting {
 	return found
 }
 
+// typedSets reads which of the optional properties a value of type t sets: those its type declares, as their types allow.
+func (m *Analyzer) typedSets(t *checker.Type, optional []*ast.Symbol) []Setting {
+	found := make([]Setting, len(optional))
+	for i, property := range optional {
+		switch own := m.ctx.TypeChecker.GetPropertyOfType(t, property.Name); {
+		case own == nil:
+			found[i] = Unset
+		case own.Flags&ast.SymbolFlagsOptional != 0:
+			found[i] = MaybeSet
+		default:
+			found[i] = m.settingOfType(m.ctx.TypeChecker.GetTypeOfSymbol(own))
+		}
+	}
+	return found
+}
+
 func (m *Analyzer) settingOf(member *ast.Node) Setting {
 	var value *ast.Node
 	switch member.Kind {
@@ -200,7 +230,10 @@ func (m *Analyzer) settingOf(member *ast.Node) Setting {
 	default:
 		return Set
 	}
-	t := m.ctx.TypeChecker.GetTypeAtLocation(value)
+	return m.settingOfType(m.ctx.TypeChecker.GetTypeAtLocation(value))
+}
+
+func (m *Analyzer) settingOfType(t *checker.Type) Setting {
 	if t == nil {
 		return MaybeSet
 	}

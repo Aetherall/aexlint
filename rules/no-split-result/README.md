@@ -93,7 +93,7 @@ Other shapes:
 ## What counts
 
 - A function with a body whose result, awaited and without `null` and `undefined`, is one object type declared in the project: not a union, an intersection, a callable type, `any`, `unknown` or an unresolved type. A result with literal types per return, as TypeScript infers for several object literals, is a union and is not read.
-- Every return gives an object literal, a conditional between them, or `null`/`undefined`, with at least three object literals. With two, any fields that differ look paired by chance.
+- Every return gives an object literal, a conditional between them, `null`/`undefined`, or another value, such as a call's result, whose type is one object type assignable to the result. At least three objects are returned. With two, any fields that differ look paired by chance.
 - A field is optional when it is marked `?` or its type includes `undefined`. For each optional field, a literal sets it, leaves it out (missing or `undefined`), or may set it: a value whose type includes `undefined`, `any` or `unknown`, or a spread whose type has the field. A field some literal may set is not read.
 - Fields set by some literals and left out by the others are grouped by the literals that set them. A group of two or more fields is set together or not at all; two groups no literal sets together are never set together.
 
@@ -101,4 +101,4 @@ Other shapes:
 
 Reports `splitResult` on the written result type, otherwise on the function, once per function, listing every pairing. No fixes: the union's members may need names.
 
-Results built through helper calls, local variables or a call's result, and correlations between fields of a type used by several functions, are not read. Readers of the result are not inspected: the rule reports what the type allows, not a reader that mishandles it.
+A returned value other than a literal is read by its type: a field its type declares as required is set, an optional one may be set, and a missing one is left out. Values of a union type, `any` or `unknown` stop the rule. Correlations between fields of a type used by several functions are not read. Readers of the result are not inspected: the rule reports what the type allows, not a reader that mishandles it.

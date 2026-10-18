@@ -2395,6 +2395,11 @@ no-split-result/dependency-open/f.ts:3:36 aexlint(no-split-result)
   No return sets `celsius` with `fault`.
   help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ celsius } | { fault }`, the type states it once.
 
+no-split-result/reported/delegated.ts:5:82 aexlint(no-split-result)
+  ~ Promise<Digest>
+  No return sets `summary` with `warning`. No return sets `warning` with `tokens`.
+  help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ summary } | { warning }`, the type states it once.
+
 no-split-result/reported/exclusive.ts:3:73 aexlint(no-split-result)
   ~ Digest
   The returns set `summary` and `tokens` together or not at all. No return sets `summary` and `tokens` with `warning`.

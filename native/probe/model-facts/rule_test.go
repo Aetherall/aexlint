@@ -577,7 +577,17 @@ export function one(): Summary { return { summary: "a" }; }
 export function other(item: Item): Summary { if (item.kind === "text") return { summary: item.text }; return mk(); }
 declare function mk(): Summary;
 export function either(ok: boolean): { a: string } | { b?: string; c?: string } { return ok ? { a: "x" } : { b: "y" }; }
-export function inferred(ok: boolean) { return ok ? { a: "x" } : { b: "y" }; }`, Files: files, Options: only("optional"), Errors: facts("optional", 2)},
+export function inferred(ok: boolean) { return ok ? { a: "x" } : { b: "y" }; }`, Files: files, Options: only("optional"), Errors: facts("optional", 3)},
+			{Code: `export interface Summary { summary?: string; warning?: string; usage?: number }
+declare function remote(): Promise<{ summary: string; usage: number }>;
+declare function partial(): { summary?: string; warning: string | undefined };
+declare const list: string[];
+export async function summarize(mode: "a" | "b"): Promise<Summary> {
+  if (mode === "a") return remote();
+  if (mode === "b") return await remote();
+  return partial();
+}
+export function listed(ok: boolean): Summary { return ok ? { summary: "a" } : (list as never); }`, Options: only("optional"), Errors: facts("optional", 1)},
 			{Code: `export type Keys = { fieldKey: string | undefined; subFieldKey: string | undefined; always: string };
 export function keys(input: string): Keys {
   if (input === "") return { fieldKey: undefined, subFieldKey: undefined, always: input };

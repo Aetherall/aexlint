@@ -1023,9 +1023,25 @@ Message: optional [label, url]; returns [label url / !label !url]
   10 | export const link = (ok: boolean): { label?: string; url?: string } | undefined => (ok ? { label: "x", url: "y" } : {});
      |                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   11 | export async function later(): Promise<Summary> { return { summary: "a" }; }
+
+Diagnostic 3: optional (14:17 - 14:21)
+Message: optional [summary, warning, usage]; returns [summary !warning !usage / ?summary ?warning ?usage]
+  13 | export function one(): Summary { return { summary: "a" }; }
+  14 | export function other(item: Item): Summary { if (item.kind === "text") return { summary: item.text }; return mk(); }
+     |                 ~~~~~
+  15 | declare function mk(): Summary;
 ---
 
 [TestModelFacts/invalid-45 - 1]
+Diagnostic 1: optional (5:23 - 5:31)
+Message: optional [summary, warning, usage]; returns [summary !warning usage / summary !warning usage / ?summary ?warning !usage]
+   4 | declare const list: string[];
+   5 | export async function summarize(mode: "a" | "b"): Promise<Summary> {
+     |                       ~~~~~~~~~
+   6 |   if (mode === "a") return remote();
+---
+
+[TestModelFacts/invalid-46 - 1]
 Diagnostic 1: optional (2:17 - 2:20)
 Message: optional [fieldKey, subFieldKey]; returns [!fieldKey !subFieldKey / fieldKey subFieldKey]
    1 | export type Keys = { fieldKey: string | undefined; subFieldKey: string | undefined; always: string };
