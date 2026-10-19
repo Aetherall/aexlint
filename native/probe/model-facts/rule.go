@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -491,11 +491,7 @@ func (p *probe) effect(n *ast.Node) {
 	if !p.kinds["effect"] {
 		return
 	}
-	for _, w := range model.WritesAt(n) {
-		e, ok := p.a.EffectOf(w)
-		if !ok {
-			continue
-		}
+	for _, e := range p.a.EffectsAt(n) {
 		description := fmt.Sprintf("effect %s on %s", e.Kind, e.Receiver)
 		if e.Key != nil {
 			description += " at " + model.Text(e.Key, 20)
@@ -503,7 +499,50 @@ func (p *probe) effect(n *ast.Node) {
 		if e.Stored != nil {
 			description += " of " + model.Text(e.Stored, 20)
 		}
-		p.report("effect", w.Node, description)
+		carried := []string{}
+		for _, c := range e.Carried {
+			if c != e.Stored {
+				carried = append(carried, model.Text(c, 20))
+			}
+		}
+		if len(carried) > 0 {
+			description += " carrying " + strings.Join(carried, ", ")
+		}
+		p.report("effect", n, description)
+	}
+}
+
+func (p *probe) summary(fn *ast.Node) {
+	if !p.kinds["summary"] {
+		return
+	}
+	anchor := func(a model.Anchor) string {
+		root := "this"
+		if a.Parameter >= 0 {
+			root = model.Text(fn.Parameters()[a.Parameter].Name(), 20)
+		}
+		return strings.Join(append([]string{root}, a.Path...), ".")
+	}
+	effects := []string{}
+	for _, e := range p.a.Summary(fn) {
+		text := fmt.Sprintf("%s %s", e.Kind, anchor(e.Target))
+		if e.Key != nil {
+			text += " at " + anchor(*e.Key)
+		}
+		if e.Stored != nil {
+			text += " of " + anchor(*e.Stored)
+		}
+		carried := []string{}
+		for _, c := range e.Carried {
+			carried = append(carried, anchor(model.Anchor{Parameter: c}))
+		}
+		if len(carried) > 0 {
+			text += " carrying " + strings.Join(carried, ", ")
+		}
+		effects = append(effects, text)
+	}
+	if len(effects) > 0 {
+		p.reportHead("summary", fn, "summary ["+strings.Join(effects, "; ")+"]")
 	}
 }
 
@@ -555,6 +594,7 @@ func (p *probe) run() {
 				p.guard("entry", g)
 			}
 			p.flow(n)
+			p.summary(n)
 			p.contract(n)
 			p.callers(n)
 			p.result(n)

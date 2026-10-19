@@ -8,7 +8,6 @@ import (
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
-	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
 
 // flowTypeOfReference is the checker's own narrowing: the type of reference where flowNode is reached.
@@ -532,106 +531,6 @@ func (m *Analyzer) LookupOf(n *ast.Node) (Lookup, bool) {
 	return Lookup{}, false
 }
 
-// EffectKind is what an effect does to the object it acts on.
-type EffectKind string
-
-const (
-	// Store puts a value under a key: Map.set, WeakMap.set, or an element assignment with a computed key.
-	Store EffectKind = "store"
-	// Append adds a value: Array.push, Array.unshift, Set.add or WeakSet.add.
-	Append EffectKind = "append"
-	// Remove takes entries out: delete, clear, pop, shift or splice.
-	Remove EffectKind = "remove"
-	// Change changes it otherwise: a project or unknown method run as a command, a library method reordering or
-	// filling an array, or an assignment or update of data inside it.
-	Change EffectKind = "change"
-)
-
-// Effect is what a write does to the object it acts on: Receiver is that object, Key where a store or removal acts, and
-// Stored the value it puts there, when the write names them.
-type Effect struct {
-	Node     *ast.Node
-	Kind     EffectKind
-	Receiver Value
-	Key      *ast.Node
-	Stored   *ast.Node
-}
-
-// libraryEffects names the effect of default library methods changing a collection, and the positions of their key
-// and stored value, or -1.
-type libraryEffect struct {
-	kind        EffectKind
-	key, stored int
-}
-
-var libraryEffects = map[string]map[string]libraryEffect{
-	"Map":     {"set": {Store, 0, 1}, "delete": {Remove, 0, -1}, "clear": {Remove, -1, -1}},
-	"WeakMap": {"set": {Store, 0, 1}, "delete": {Remove, 0, -1}},
-	"Set":     {"add": {Append, -1, 0}, "delete": {Remove, -1, 0}, "clear": {Remove, -1, -1}},
-	"WeakSet": {"add": {Append, -1, 0}, "delete": {Remove, -1, 0}},
-	"Array": {"push": {Append, -1, 0}, "unshift": {Append, -1, 0}, "pop": {Remove, -1, -1}, "shift": {Remove, -1, -1},
-		"splice": {Remove, 0, -1}, "sort": {Change, -1, -1}, "reverse": {Change, -1, -1}, "fill": {Change, -1, 0}, "copyWithin": {Change, -1, -1}},
-}
-
-// EffectOf reads what a write does to the object it acts on. A rebinding of a variable or this is a definition, not an
-// effect. A call has one only when its callee is a method: a default library method other than the collection methods
-// the table knows, a project method whose result is used, a function held by a property or namespace, or a callee the
-// checker cannot resolve has none.
-func (m *Analyzer) EffectOf(w Write) (Effect, bool) {
-	argument := func(arguments []*ast.Node, i int) *ast.Node {
-		if i < 0 || i >= len(arguments) {
-			return nil
-		}
-		return arguments[i]
-	}
-	target := Unwrap(w.Target)
-	if w.Kind == Mutation {
-		effect := Effect{Node: w.Node, Kind: Change, Receiver: m.ValueOf(target)}
-		callee := Unwrap(w.Node.Expression())
-		name := callee
-		if callee.Kind == ast.KindPropertyAccessExpression {
-			name = callee.Name()
-		}
-		symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name)
-		if owners, member, ok := m.libraryMember(name); ok {
-			known, found := agreed(owners, member, libraryEffects)
-			if !found {
-				return Effect{}, false
-			}
-			arguments := w.Node.Arguments()
-			effect.Kind, effect.Key, effect.Stored = known.kind, argument(arguments, known.key), argument(arguments, known.stored)
-			return effect, true
-		}
-		if utils.IsSymbolFromDefaultLibrary(m.ctx.Program, symbol) {
-			return Effect{}, false
-		}
-		return effect, w.Discarded() && m.method(name)
-	}
-	if target.Kind == ast.KindElementAccessExpression {
-		key := Unwrap(target.AsElementAccessExpression().ArgumentExpression)
-		if !ast.IsStringLiteralLike(key) && key.Kind != ast.KindNumericLiteral {
-			return Effect{Node: w.Node, Kind: Store, Receiver: m.ValueOf(target.Expression()), Key: key, Stored: w.Source}, true
-		}
-	}
-	v, ok := m.WriteValue(w)
-	if !ok || len(v.Path) == 0 {
-		return Effect{}, false
-	}
-	v.Path = v.Path[:len(v.Path)-1]
-	return Effect{Node: w.Node, Kind: Change, Receiver: v, Stored: w.Source}, true
-}
-
-// EffectsIn lists the effects of statements in order, outside the functions they declare.
-func (m *Analyzer) EffectsIn(statements []*ast.Node) []Effect {
-	effects := []Effect{}
-	for _, w := range writesIn(statements, false) {
-		if effect, ok := m.EffectOf(w); ok {
-			effects = append(effects, effect)
-		}
-	}
-	return effects
-}
-
 // Arm is one way into the point after a decision where its ways rejoin: Branch is the then or else statement, the case
 // clause the way enters, or the branch of a conditional expression, and nil for the way no branch takes. Its entry is
 // the checker's flow node where the arm starts, so the checker narrows values there as it does for code in the arm. An
@@ -922,17 +821,13 @@ func (m *Analyzer) publishedAs(d Def, v Value, scope *ast.Node, end int) Provena
 }
 
 // published reports whether an effect in scope between from and to makes v reachable from data that outlives scope:
-// it stores v, or passes it to a method, on a receiver that is this or rooted in a variable declared outside scope.
+// it may carry v into a receiver that is this or rooted in a variable declared outside scope.
 func (m *Analyzer) published(v Value, scope *ast.Node, from, to int) bool {
 	return slices.ContainsFunc(m.effectsBetween(scope, from, to), func(e Effect) bool {
 		if !m.outlives(e.Receiver, scope) || e.Receiver.Within(v) {
 			return false
 		}
-		carried := []*ast.Node{e.Stored}
-		if e.Node.Kind == ast.KindCallExpression {
-			carried = append(carried, e.Node.Arguments()...)
-		}
-		return slices.ContainsFunc(carried, func(n *ast.Node) bool { return n != nil && m.ValueOf(n).Same(v) })
+		return slices.ContainsFunc(e.Carried, func(n *ast.Node) bool { return m.ValueOf(n).Same(v) })
 	})
 }
 

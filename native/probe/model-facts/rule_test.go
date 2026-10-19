@@ -21,6 +21,65 @@ export function isStock(item: Item): item is StockItem { return item.kind === "s
 
 var files = map[string]string{"items.ts": items}
 
+const summarized = `declare function use(...values: unknown[]): void;
+class Badge {
+  active = false;
+}
+class Club {
+  readonly badges: Badge[] = [];
+  readonly byId = new Map<string, Badge>();
+  add(badge: Badge) {
+    this.badges.push(badge);
+  }
+  index(id: string, badge: Badge) {
+    this.byId.set(id, badge);
+    this.add(badge);
+  }
+  name(): string {
+    return "club";
+  }
+  log(badge: Badge) {
+    use(badge);
+  }
+}
+class Shared extends Club {
+  constructor(first: Badge) {
+    super();
+    super.add(first);
+  }
+}
+function activate(badge: Badge, on: boolean) {
+  badge.active = on;
+}
+function fill(target: Badge[], count: number) {
+  for (let i = 0; i < count; i++) target.push(new Badge());
+}
+function local() {
+  const mine: Badge[] = [];
+  mine.push(new Badge());
+  return mine;
+}
+function rebinds(list: Badge[]) {
+  list = [];
+  list.push(new Badge());
+}
+function loop(n: number, club: Club, badge: Badge): void {
+  if (n > 0) loop(n - 1, club, badge);
+  club.add(badge);
+}
+export function calls(club: Club, badge: Badge, list: Badge[]) {
+  club.add(badge);
+  club.index("a", badge);
+  club.name();
+  club.log(badge);
+  activate(badge, true);
+  fill(list, 2);
+  local();
+  rebinds(list);
+  loop(2, club, badge);
+  new Shared(badge);
+}`
+
 func facts(kind string, count int) []rule_tester.InvalidTestCaseError {
 	errors := make([]rule_tester.InvalidTestCaseError, count)
 	for i := range errors {
@@ -827,7 +886,7 @@ export function effects(rows: Map<string, number>, list: number[], seen: Set<num
   recorder.record(6);
   const total = recorder.total();
   use(box, total);
-}`, Options: only("effect"), Errors: facts("effect", 9)},
+}`, Options: only("effect"), Errors: facts("effect", 8)},
 			{Code: `declare function use(...values: unknown[]): void;
 enum Slot { Head, Tail }
 declare const nothing: undefined;
@@ -934,6 +993,8 @@ export async function followed(rows: Map<number, Row>, current: Row, key: number
   if (key > 10) j = list.filter((row) => row.text);
   use(j);
 }`, Options: only("merge"), Errors: facts("merge", 10)},
+			{Code: summarized, Options: only("summary"), Errors: facts("summary", 7)},
+			{Code: summarized, Options: only("effect"), Errors: facts("effect", 16)},
 			{Code: `declare function use(...values: unknown[]): void;
 import * as store from "./store.js";
 type Handlers = { notify: (value: string) => void; record(value: string): void };
