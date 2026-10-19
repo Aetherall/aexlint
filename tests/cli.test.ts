@@ -93,6 +93,10 @@ function codes(diagnostics: Diagnostic[]): string[] {
   return diagnostics.map(({ code }) => code).toSorted();
 }
 
+function recordedFiles(lines: string[]): (string | undefined)[] {
+  return lines.map((line) => line.split("\t")[0]);
+}
+
 function filenames(diagnostics: Diagnostic[]): string[] {
   return diagnostics.map(({ filename }) => filename).toSorted();
 }
@@ -316,16 +320,43 @@ test("CLI --write-baseline shows why Oxlint failed and writes nothing", (t) => {
   assert.ok(!existsSync(baseline));
 });
 
-test("CLI --write-baseline replaces the file with the diagnostics of that run", (t) => {
+test("CLI --write-baseline replaces the whole file without paths", (t) => {
   const { write, record } = consumer(t);
   write("first.ts", depthViolation);
   write("second.ts", "if (a) work(); else if (b) other();\n");
   const all = record();
   assert.ok(all.some((line) => line.startsWith('"second.ts"\taexlint(no-else-if)')));
+  write("second.ts", "export {};\n");
   assert.deepEqual(
-    record(["first.ts"]).map((line) => line.split("\t").slice(0, 2)),
+    record().map((line) => line.split("\t").slice(0, 2)),
     [['"first.ts"', "aexlint(max-expression-depth)"]],
   );
+});
+
+test("CLI --write-baseline with paths replaces only the entries under them", (t) => {
+  const { write, run, record, baseline } = consumer(t);
+  write("first.ts", depthViolation);
+  write("first.tsx", depthViolation);
+  write("src/a.ts", depthViolation);
+  write("src/b.ts", depthViolation);
+  assert.deepEqual(recordedFiles(record()), [
+    '"first.ts"',
+    '"first.tsx"',
+    '"src/a.ts"',
+    '"src/b.ts"',
+  ]);
+  write("first.ts", "export {};\n");
+  write("src/a.ts", depthViolation + depthViolation);
+  write("src/b.ts", "export {};\n");
+  assert.deepEqual(recordedFiles(record(["first.ts"])), [
+    '"first.tsx"',
+    '"src/a.ts"',
+    '"src/b.ts"',
+  ]);
+  assert.deepEqual(recordedFiles(record(["src"])), ['"first.tsx"', '"src/a.ts"', '"src/a.ts"']);
+  assert.match(run(["check", "--write-baseline", baseline, "src"]), /kept 1 outside/);
+  writeFileSync(baseline, "not a baseline\n");
+  assert.match(run(["check", "--write-baseline", baseline, "src"], 2), /Malformed baseline line/);
 });
 
 test("CLI checks one checkout against a baseline recorded in another", (t) => {

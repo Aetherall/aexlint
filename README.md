@@ -26,11 +26,31 @@ pnpx @aetherall/aexlint check src --typed --format json
 
 The limits are starting points, not validated thresholds. For other limits or a subset of rules, use the plugin.
 
+The CLI runs its own pinned Oxlint and its bundled type-aware backend. It does not use the project's Oxlint, `--type-aware` or `oxlint-tsgolint`, so a project can keep linting with another Oxlint version; the optional `oxlint-tsgolint` peer that package managers list is not needed.
+
 The CLI ignores Oxlint configurations and enables no built-in checks. Oxlint's file exclusions, ignore files and disable comments apply. Add exclusions with repeatable `--ignore-pattern <glob>` or in `.aexlintignore` (one glob per line, `#` comments). `--format`/`-f` accepts Oxlint output formats. Findings fail the command. Use `--` before paths starting with a dash.
 
-### Reporting only new findings
+### Adopting gradually with a committed baseline
 
-Record the findings of the base revision, then check the branch against them:
+Record the current findings once and commit the file:
+
+```sh
+aexlint check --typed --write-baseline .aexlint-baseline
+```
+
+CI then runs `aexlint check --typed --baseline .aexlint-baseline` and reports only findings missing from it. To accept findings, or drop the entries of findings you fixed, record again for the paths you worked on:
+
+```sh
+aexlint check --typed --write-baseline .aexlint-baseline src/billing
+```
+
+With paths, `--write-baseline` replaces only the entries of files under them and keeps the rest, so the change shows exactly what was accepted, a branch behind its target cannot drop entries for other files, and two branches conflict only where they touch the same files. Without paths it replaces the whole file. Entries stay until their path is recorded again, so a fixed finding can come back in that file unreported. Upgrading aexlint or changing ignore patterns changes which findings exist: record the whole file again in the same change.
+
+Checking only the changed files is faster but misses findings a change causes in files it does not touch, such as callers of a changed type or files joining an over-limit spread.
+
+### Reporting only new findings against the base revision
+
+Without a committed file, record the findings of the base revision, then check the branch against them:
 
 ```sh
 aexlint="$PWD/node_modules/.bin/aexlint"
@@ -39,7 +59,7 @@ git worktree add ../base "$(git merge-base origin/master HEAD)"
 "$aexlint" check --baseline /tmp/aexlint-baseline
 ```
 
-Use the same version, flags and paths for both runs, from the root of each checkout. A finding is its file, rule and message: it survives moved lines, but comes back when its message changes, when its file is renamed, or when it is caused by a change elsewhere. Identical findings in a file are counted, including those silenced by disable comments. Parse errors are never skipped. When a rule cannot run, such as a typed rule without its backend, `--write-baseline` fails and writes nothing. Baselines apply only to the CLI.
+Use the same version, flags and paths for both runs, from the root of each checkout. This also reports findings fixed on the base, but costs a second install and run per check. A finding is its file, rule and message: it survives moved lines, but comes back when its message changes, when its file is renamed, or when it is caused by a change elsewhere. Identical findings in a file are counted, including those silenced by disable comments. Parse errors are never skipped. When a rule cannot run, such as a typed rule without its backend, `--write-baseline` fails and writes nothing. Baselines apply only to the CLI.
 
 ## Plugin setup
 

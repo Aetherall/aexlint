@@ -73,8 +73,7 @@
     "typescript": "7.0.2"
   },
   "engines": {
-    "node": ">=24.0.0",
-    "pnpm": ">=10.33.4 <11"
+    "node": ">=24.0.0"
   },
   "packageManager": "pnpm@10.33.4"
 }

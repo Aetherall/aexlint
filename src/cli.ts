@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { formatBaseline, parseBaseline } from "./baseline.ts";
+import { formatBaseline, parseBaseline, projectPath, type BaselineEntry } from "./baseline.ts";
 
 const ignoreFile = ".aexlintignore";
 
@@ -24,7 +24,8 @@ Check the current directory when no paths are supplied.
   -f, --format <format>     Oxlint output format (default: default)
   --ignore-pattern <glob>   Additional ignore pattern; repeatable
   --baseline <file>        Skip diagnostics recorded in a baseline file
-  --write-baseline <file>  Record current diagnostics in a baseline file instead of reporting them
+  --write-baseline <file>  Record current diagnostics in a baseline file instead of reporting them;
+                           with paths, replace only the entries under those paths
   -h, --help                Show help
   -V, --version             Show version
 
@@ -44,7 +45,17 @@ function failed(reason: string): Error {
   return new Error(`no baseline recorded; the run failed:\n${reason}`);
 }
 
-function writeBaseline(file: string, output: string, recorded: string): number {
+function within(scopes: string[], { file }: BaselineEntry): boolean {
+  return scopes.some((scope) => !scope || file === scope || file.startsWith(`${scope}/`));
+}
+
+function keptEntries(file: string, paths: string[]): BaselineEntry[] {
+  if (!paths.length || !existsSync(file)) return [];
+  const scopes = paths.map((path) => projectPath(process.cwd(), resolve(path)));
+  return parseBaseline(readFileSync(file, "utf8")).filter((entry) => !within(scopes, entry));
+}
+
+function writeBaseline(file: string, output: string, recorded: string, paths: string[]): number {
   let diagnostics: Reported[];
   try {
     ({ diagnostics } = JSON.parse(output) as { diagnostics: Reported[] });
@@ -54,8 +65,10 @@ function writeBaseline(file: string, output: string, recorded: string): number {
   const failure = diagnostics.find(({ code, labels }) => !code && !labels.length);
   if (failure) throw failed(failure.message);
   const entries = existsSync(recorded) ? parseBaseline(readFileSync(recorded, "utf8")) : [];
-  writeFileSync(file, formatBaseline(entries));
-  console.log(`aexlint: recorded ${entries.length} diagnostics in ${file}`);
+  const kept = keptEntries(file, paths);
+  writeFileSync(file, formatBaseline([...kept, ...entries]));
+  const outside = kept.length ? `, kept ${kept.length} outside the checked paths` : "";
+  console.log(`aexlint: recorded ${entries.length} diagnostics in ${file}${outside}`);
   return 0;
 }
 
@@ -105,6 +118,7 @@ function check(): number {
     throw new Error("--write-baseline cannot be combined with --format.");
   }
   if (baseline) parseBaseline(readFileSync(baseline, "utf8"));
+  if (record) keptEntries(record, paths);
 
   const rules: Record<string, unknown> = {
     "aexlint/max-expression-depth": ["error", { max: 3 }],
@@ -163,7 +177,7 @@ function check(): number {
       process.stdout.write(result.stdout);
       return result.status ?? 2;
     }
-    return writeBaseline(record, result.stdout, recorded);
+    return writeBaseline(record, result.stdout, recorded, paths);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
