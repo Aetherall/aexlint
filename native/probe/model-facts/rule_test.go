@@ -38,6 +38,15 @@ class Club {
   name(): string {
     return "club";
   }
+  at(i: number) {
+    return this.badges[i];
+  }
+  count() {
+    return this.badges.length + this.byId.size;
+  }
+  all() {
+    return this.badges.map((badge) => badge.active);
+  }
   log(badge: Badge) {
     use(badge);
   }
@@ -993,7 +1002,98 @@ export async function followed(rows: Map<number, Row>, current: Row, key: number
   if (key > 10) j = list.filter((row) => row.text);
   use(j);
 }`, Options: only("merge"), Errors: facts("merge", 10)},
-			{Code: summarized, Options: only("summary"), Errors: facts("summary", 7)},
+			{Code: summarized, Options: only("summary"), Errors: facts("summary", 12)},
+			{Code: `declare function origin(value: unknown): void;
+declare function use(value: unknown): void;
+function pass<T>(value: T): T {
+  return value;
+}
+export function origins(lines: string[], anchors: number[], items: string[]) {
+  const rows = new Map<number, string[]>();
+  const out = [...lines];
+  for (const item of items) {
+    let index = anchors[0]!;
+    if (item.length > 3) {
+      index = out.length;
+      out.push("");
+    }
+    rows.set(index, [item]);
+  }
+  for (const [key, row] of rows) {
+    origin(key);
+    origin(row);
+  }
+  for (const key of rows.keys()) origin(key);
+  origin(rows.get(1));
+  origin(pass(out.length));
+  const shared = new Map<number, string>();
+  use(shared);
+  for (const [key] of shared) origin(key);
+  const list: number[] = [];
+  list.push(lines.length);
+  for (const value of list) origin(value);
+}`, Options: only("origin"), Errors: facts("origin", 7)},
+			{Code: `declare function use(...values: unknown[]): void;
+declare function compute(): string;
+class Lines {
+  readonly lines: string[] = [];
+  place(text: string, index: number) {
+    this.lines[index] = text;
+  }
+}
+export function direct(out: string[]) {
+  const index = out.length;
+  out.push("");
+  out[index] = compute();
+}
+export function readBetween(out: string[]) {
+  const index = out.length;
+  out.push("");
+  use(out);
+  out[index] = compute();
+}
+export function readThrough(out: string[]) {
+  const index = out.length;
+  out.push("");
+  use(out[index]);
+  out[index] = compute();
+}
+export function readOther(out: string[], other: number) {
+  const index = out.length;
+  out.push("");
+  use(out[other]);
+  out[index] = compute();
+}
+export function conditional(out: string[], fill: boolean) {
+  const index = out.length;
+  out.push("");
+  if (fill) out[index] = compute();
+}
+export function computed(out: string[]) {
+  const index = out.length;
+  out.push(compute());
+  out[index] = compute();
+}
+export function shelve(items: string[], anchors: number[], output: Lines) {
+  const rows = new Map<number, string[]>();
+  for (const item of items) {
+    let index = anchors[0]!;
+    let row = rows.get(index) ?? [];
+    if (row.length > 3) {
+      index = output.lines.length;
+      output.lines.push("");
+      row = [];
+    }
+    use(output.lines[anchors[0]!]);
+    row.push(item);
+    rows.set(index, row);
+  }
+  for (const [index, row] of rows) {
+    output.place(row.join(" "), index);
+  }
+  return output;
+}`, Options: only("placeholder"), Errors: facts("placeholder", 3)},
+
 			{Code: summarized, Options: only("effect"), Errors: facts("effect", 16)},
 			{Code: `declare function use(...values: unknown[]): void;
 import * as store from "./store.js";

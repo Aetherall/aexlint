@@ -112,6 +112,16 @@ func checkDecision(ctx rule.RuleContext, a *model.Analyzer, n *ast.Node) {
 	for _, l := range left {
 		names = append(names, l.Value.String())
 	}
+	if reserved := a.Reserved(n); len(reserved) > 0 {
+		h := reserved[0]
+		ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
+			Id: "reservedPlaceholder",
+			Description: fmt.Sprintf("This decision's outcome is split across %s, and a branch appends %s to `%s` only to reserve its position: `%s` replaces it after the decision, before anything reads it.",
+				listed(names), model.Text(h.Append.Stored, 20), h.Append.Receiver, model.Text(h.Fills[0].Node, 40)),
+			Help: "The branch produces a different kind of result from the others, and makes up a placeholder so the code after the decision can treat it like theirs. Do that branch's work inside it, or give its result a path of its own.",
+		})
+		return
+	}
 	ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
 		Id:          "splitOutcome",
 		Description: fmt.Sprintf("This decision's outcome is split across %s: its branches change them, and the code after it reads them as separate values.", listed(names)),

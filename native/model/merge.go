@@ -487,6 +487,9 @@ var sizes = map[string]map[string]bool{"Array": {"length": true}, "ReadonlyArray
 
 // size reports whether a property read gives the size of a global collection or of a string.
 func (m *Analyzer) size(n *ast.Node) bool {
+	if n.Kind != ast.KindPropertyAccessExpression {
+		return false
+	}
 	owners, name, ok := m.libraryMember(n.Name())
 	_, known := agreed(owners, name, sizes)
 	return ok && known

@@ -1564,56 +1564,165 @@ Message: merge [j = list.filter((... (j: a new object); no branch (j: existing d
 
 [TestModelFacts/invalid-56 - 1]
 Diagnostic 1: summary (8:3 - 8:5)
-Message: summary [append this.badges of badge carrying badge]
+Message: summary [append this.badges of badge carrying badge]; reads [badge]
    7 |   readonly byId = new Map<string, Badge>();
    8 |   add(badge: Badge) {
      |   ~~~
    9 |     this.badges.push(badge);
 
 Diagnostic 2: summary (11:3 - 11:7)
-Message: summary [store this.byId at id of badge carrying badge; append this.badges of badge carrying badge]
+Message: summary [store this.byId at id of badge carrying badge; append this.badges of badge carrying badge]; reads [id, badge]
   10 |   }
   11 |   index(id: string, badge: Badge) {
      |   ~~~~~
   12 |     this.byId.set(id, badge);
 
-Diagnostic 3: summary (23:3 - 23:27)
-Message: summary [append this.badges of first carrying first]
-  22 | class Shared extends Club {
-  23 |   constructor(first: Badge) {
+Diagnostic 3: summary (18:3 - 18:4)
+Message: summary []; reads [this.badges[i], i]
+  17 |   }
+  18 |   at(i: number) {
+     |   ~~
+  19 |     return this.badges[i];
+
+Diagnostic 4: summary (21:3 - 21:7)
+Message: summary []; reads [this.badges size, this.byId size]
+  20 |   }
+  21 |   count() {
+     |   ~~~~~
+  22 |     return this.badges.length + this.byId.size;
+
+Diagnostic 5: summary (24:3 - 24:5)
+Message: summary []; reads [this.badges]
+  23 |   }
+  24 |   all() {
+     |   ~~~
+  25 |     return this.badges.map((badge) => badge.active);
+
+Diagnostic 6: summary (25:28 - 25:37)
+Message: summary []; reads [badge.active]
+  24 |   all() {
+  25 |     return this.badges.map((badge) => badge.active);
+     |                            ~~~~~~~~~~
+  26 |   }
+
+Diagnostic 7: summary (27:3 - 27:5)
+Message: summary []; reads [badge]
+  26 |   }
+  27 |   log(badge: Badge) {
+     |   ~~~
+  28 |     use(badge);
+
+Diagnostic 8: summary (32:3 - 32:27)
+Message: summary [append this.badges of first carrying first]; reads [first]
+  31 | class Shared extends Club {
+  32 |   constructor(first: Badge) {
      |   ~~~~~~~~~~~~~~~~~~~~~~~~~
-  24 |     super();
+  33 |     super();
 
-Diagnostic 4: summary (28:10 - 28:17)
-Message: summary [change badge of on carrying on]
-  27 | }
-  28 | function activate(badge: Badge, on: boolean) {
+Diagnostic 9: summary (37:10 - 37:17)
+Message: summary [change badge of on carrying on]; reads [on]
+  36 | }
+  37 | function activate(badge: Badge, on: boolean) {
      |          ~~~~~~~~
-  29 |   badge.active = on;
+  38 |   badge.active = on;
 
-Diagnostic 5: summary (31:10 - 31:13)
-Message: summary [append target]
-  30 | }
-  31 | function fill(target: Badge[], count: number) {
+Diagnostic 10: summary (40:10 - 40:13)
+Message: summary [append target]; reads [count]
+  39 | }
+  40 | function fill(target: Badge[], count: number) {
      |          ~~~~
-  32 |   for (let i = 0; i < count; i++) target.push(new Badge());
+  41 |   for (let i = 0; i < count; i++) target.push(new Badge());
 
-Diagnostic 6: summary (43:10 - 43:13)
-Message: summary [append club.badges of badge carrying badge]
-  42 | }
-  43 | function loop(n: number, club: Club, badge: Badge): void {
+Diagnostic 11: summary (52:10 - 52:13)
+Message: summary [append club.badges of badge carrying badge]; reads [n, badge]
+  51 | }
+  52 | function loop(n: number, club: Club, badge: Badge): void {
      |          ~~~~
-  44 |   if (n > 0) loop(n - 1, club, badge);
+  53 |   if (n > 0) loop(n - 1, club, badge);
 
-Diagnostic 7: summary (47:17 - 47:21)
-Message: summary [append club.badges of badge carrying badge; store club.byId of badge carrying badge; append club.badges of badge carrying badge; change badge; append list; append club.badges of badge carrying badge]
-  46 | }
-  47 | export function calls(club: Club, badge: Badge, list: Badge[]) {
+Diagnostic 12: summary (56:17 - 56:21)
+Message: summary [append club.badges of badge carrying badge; store club.byId of badge carrying badge; append club.badges of badge carrying badge; change badge; append list; append club.badges of badge carrying badge]; reads [badge, list]
+  55 | }
+  56 | export function calls(club: Club, badge: Badge, list: Badge[]) {
      |                 ~~~~~
-  48 |   club.add(badge);
+  57 |   club.add(badge);
 ---
 
 [TestModelFacts/invalid-57 - 1]
+Diagnostic 1: origin (18:5 - 18:15)
+Message: origin [out.length; anchors[0]]
+  17 |   for (const [key, row] of rows) {
+  18 |     origin(key);
+     |     ~~~~~~~~~~~
+  19 |     origin(row);
+
+Diagnostic 2: origin (19:5 - 19:15)
+Message: origin [[item]]
+  18 |     origin(key);
+  19 |     origin(row);
+     |     ~~~~~~~~~~~
+  20 |   }
+
+Diagnostic 3: origin (21:34 - 21:44)
+Message: origin [out.length; anchors[0]]
+  20 |   }
+  21 |   for (const key of rows.keys()) origin(key);
+     |                                  ~~~~~~~~~~~
+  22 |   origin(rows.get(1));
+
+Diagnostic 4: origin (22:3 - 22:21)
+Message: origin [[item]]
+  21 |   for (const key of rows.keys()) origin(key);
+  22 |   origin(rows.get(1));
+     |   ~~~~~~~~~~~~~~~~~~~
+  23 |   origin(pass(out.length));
+
+Diagnostic 5: origin (23:3 - 23:26)
+Message: origin [out.length]
+  22 |   origin(rows.get(1));
+  23 |   origin(pass(out.length));
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~
+  24 |   const shared = new Map<number, string>();
+
+Diagnostic 6: origin (26:31 - 26:41)
+Message: origin [key]
+  25 |   use(shared);
+  26 |   for (const [key] of shared) origin(key);
+     |                               ~~~~~~~~~~~
+  27 |   const list: number[] = [];
+
+Diagnostic 7: origin (29:29 - 29:41)
+Message: origin [lines.length]
+  28 |   list.push(lines.length);
+  29 |   for (const value of list) origin(value);
+     |                             ~~~~~~~~~~~~~
+  30 | }
+---
+
+[TestModelFacts/invalid-58 - 1]
+Diagnostic 1: placeholder (11:3 - 11:14)
+Message: placeholder "" in out at out.length, filled by out[index] = compute()
+  10 |   const index = out.length;
+  11 |   out.push("");
+     |   ~~~~~~~~~~~~
+  12 |   out[index] = compute();
+
+Diagnostic 2: placeholder (28:3 - 28:14)
+Message: placeholder "" in out at out.length, filled by out[index] = compute()
+  27 |   const index = out.length;
+  28 |   out.push("");
+     |   ~~~~~~~~~~~~
+  29 |   use(out[other]);
+
+Diagnostic 3: placeholder (49:7 - 49:27)
+Message: placeholder "" in output.lines at output.lines.length, filled by output.place(row.join(" "),...
+  48 |       index = output.lines.length;
+  49 |       output.lines.push("");
+     |       ~~~~~~~~~~~~~~~~~~~~~
+  50 |       row = [];
+---
+
+[TestModelFacts/invalid-59 - 1]
 Diagnostic 1: effect (9:5 - 9:27)
 Message: effect append on this.badges of badge
    8 |   add(badge: Badge) {
@@ -1635,99 +1744,99 @@ Message: effect append on this.badges of badge
      |     ~~~~~~~~~~~~~~~
   14 |   }
 
-Diagnostic 4: effect (25:5 - 25:20)
+Diagnostic 4: effect (34:5 - 34:20)
 Message: effect append on this.badges of first
-  24 |     super();
-  25 |     super.add(first);
+  33 |     super();
+  34 |     super.add(first);
      |     ~~~~~~~~~~~~~~~~
-  26 |   }
+  35 |   }
 
-Diagnostic 5: effect (29:3 - 29:19)
+Diagnostic 5: effect (38:3 - 38:19)
 Message: effect change on badge of on
-  28 | function activate(badge: Badge, on: boolean) {
-  29 |   badge.active = on;
+  37 | function activate(badge: Badge, on: boolean) {
+  38 |   badge.active = on;
      |   ~~~~~~~~~~~~~~~~~
-  30 | }
+  39 | }
 
-Diagnostic 6: effect (32:35 - 32:58)
+Diagnostic 6: effect (41:35 - 41:58)
 Message: effect append on target of new Badge()
-  31 | function fill(target: Badge[], count: number) {
-  32 |   for (let i = 0; i < count; i++) target.push(new Badge());
+  40 | function fill(target: Badge[], count: number) {
+  41 |   for (let i = 0; i < count; i++) target.push(new Badge());
      |                                   ~~~~~~~~~~~~~~~~~~~~~~~~
-  33 | }
-
-Diagnostic 7: effect (36:3 - 36:24)
-Message: effect append on mine of new Badge()
-  35 |   const mine: Badge[] = [];
-  36 |   mine.push(new Badge());
-     |   ~~~~~~~~~~~~~~~~~~~~~~
-  37 |   return mine;
-
-Diagnostic 8: effect (41:3 - 41:24)
-Message: effect append on list of new Badge()
-  40 |   list = [];
-  41 |   list.push(new Badge());
-     |   ~~~~~~~~~~~~~~~~~~~~~~
   42 | }
 
-Diagnostic 9: effect (44:14 - 44:37)
+Diagnostic 7: effect (45:3 - 45:24)
+Message: effect append on mine of new Badge()
+  44 |   const mine: Badge[] = [];
+  45 |   mine.push(new Badge());
+     |   ~~~~~~~~~~~~~~~~~~~~~~
+  46 |   return mine;
+
+Diagnostic 8: effect (50:3 - 50:24)
+Message: effect append on list of new Badge()
+  49 |   list = [];
+  50 |   list.push(new Badge());
+     |   ~~~~~~~~~~~~~~~~~~~~~~
+  51 | }
+
+Diagnostic 9: effect (53:14 - 53:37)
 Message: effect append on club.badges of badge
-  43 | function loop(n: number, club: Club, badge: Badge): void {
-  44 |   if (n > 0) loop(n - 1, club, badge);
+  52 | function loop(n: number, club: Club, badge: Badge): void {
+  53 |   if (n > 0) loop(n - 1, club, badge);
      |              ~~~~~~~~~~~~~~~~~~~~~~~~
-  45 |   club.add(badge);
+  54 |   club.add(badge);
 
-Diagnostic 10: effect (45:3 - 45:17)
+Diagnostic 10: effect (54:3 - 54:17)
 Message: effect append on club.badges of badge
-  44 |   if (n > 0) loop(n - 1, club, badge);
-  45 |   club.add(badge);
+  53 |   if (n > 0) loop(n - 1, club, badge);
+  54 |   club.add(badge);
      |   ~~~~~~~~~~~~~~~
-  46 | }
+  55 | }
 
-Diagnostic 11: effect (48:3 - 48:17)
+Diagnostic 11: effect (57:3 - 57:17)
 Message: effect append on club.badges of badge
-  47 | export function calls(club: Club, badge: Badge, list: Badge[]) {
-  48 |   club.add(badge);
+  56 | export function calls(club: Club, badge: Badge, list: Badge[]) {
+  57 |   club.add(badge);
      |   ~~~~~~~~~~~~~~~
-  49 |   club.index("a", badge);
+  58 |   club.index("a", badge);
 
-Diagnostic 12: effect (49:3 - 49:24)
+Diagnostic 12: effect (58:3 - 58:24)
 Message: effect store on club.byId at "a" of badge
-  48 |   club.add(badge);
-  49 |   club.index("a", badge);
+  57 |   club.add(badge);
+  58 |   club.index("a", badge);
      |   ~~~~~~~~~~~~~~~~~~~~~~
-  50 |   club.name();
+  59 |   club.name();
 
-Diagnostic 13: effect (49:3 - 49:24)
+Diagnostic 13: effect (58:3 - 58:24)
 Message: effect append on club.badges of badge
-  48 |   club.add(badge);
-  49 |   club.index("a", badge);
+  57 |   club.add(badge);
+  58 |   club.index("a", badge);
      |   ~~~~~~~~~~~~~~~~~~~~~~
-  50 |   club.name();
+  59 |   club.name();
 
-Diagnostic 14: effect (52:3 - 52:23)
+Diagnostic 14: effect (61:3 - 61:23)
 Message: effect change on badge of true
-  51 |   club.log(badge);
-  52 |   activate(badge, true);
+  60 |   club.log(badge);
+  61 |   activate(badge, true);
      |   ~~~~~~~~~~~~~~~~~~~~~
-  53 |   fill(list, 2);
+  62 |   fill(list, 2);
 
-Diagnostic 15: effect (53:3 - 53:15)
+Diagnostic 15: effect (62:3 - 62:15)
 Message: effect append on list
-  52 |   activate(badge, true);
-  53 |   fill(list, 2);
+  61 |   activate(badge, true);
+  62 |   fill(list, 2);
      |   ~~~~~~~~~~~~~
-  54 |   local();
+  63 |   local();
 
-Diagnostic 16: effect (56:3 - 56:22)
+Diagnostic 16: effect (65:3 - 65:22)
 Message: effect append on club.badges of badge
-  55 |   rebinds(list);
-  56 |   loop(2, club, badge);
+  64 |   rebinds(list);
+  65 |   loop(2, club, badge);
      |   ~~~~~~~~~~~~~~~~~~~~
-  57 |   new Shared(badge);
+  66 |   new Shared(badge);
 ---
 
-[TestModelFacts/invalid-58 - 1]
+[TestModelFacts/invalid-60 - 1]
 Diagnostic 1: effect (6:3 - 6:18)
 Message: effect store on both at key of 1
    5 | export function receivers(either: Map<string, number> | Set<string>, both: Map<string, number> | Grid, handlers: Handlers, key: string, Map: { set(key: string, value: number): void }) {

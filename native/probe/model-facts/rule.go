@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary", "origin", "placeholder"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -524,7 +524,8 @@ func (p *probe) summary(fn *ast.Node) {
 		return strings.Join(append([]string{root}, a.Path...), ".")
 	}
 	effects := []string{}
-	for _, e := range p.a.Summary(fn) {
+	summary := p.a.Summary(fn)
+	for _, e := range summary.Effects {
 		text := fmt.Sprintf("%s %s", e.Kind, anchor(e.Target))
 		if e.Key != nil {
 			text += " at " + anchor(*e.Key)
@@ -541,9 +542,50 @@ func (p *probe) summary(fn *ast.Node) {
 		}
 		effects = append(effects, text)
 	}
-	if len(effects) > 0 {
-		p.reportHead("summary", fn, "summary ["+strings.Join(effects, "; ")+"]")
+	reads := []string{}
+	for _, r := range summary.Reads {
+		text := anchor(r.Target)
+		if r.Key != nil {
+			text += "[" + anchor(*r.Key) + "]"
+		}
+		if r.Size {
+			text += " size"
+		}
+		if !slices.Contains(reads, text) {
+			reads = append(reads, text)
+		}
 	}
+	if len(effects) > 0 || len(reads) > 0 {
+		p.reportHead("summary", fn, "summary ["+strings.Join(effects, "; ")+"]; reads ["+strings.Join(reads, ", ")+"]")
+	}
+}
+
+func (p *probe) placeholder(fn *ast.Node) {
+	if !p.kinds["placeholder"] {
+		return
+	}
+	for _, h := range p.a.Placeholders(fn) {
+		fills := []string{}
+		for _, w := range h.Fills {
+			fills = append(fills, model.Text(w.Node, 30))
+		}
+		p.report("placeholder", h.Append.Node, fmt.Sprintf("placeholder %s in %s at %s, filled by %s", model.Text(h.Append.Stored, 20), h.Append.Receiver, model.Text(h.Position, 30), strings.Join(fills, "; ")))
+	}
+}
+
+// origin reports the origins of the argument of each call to a function named origin, a test helper.
+func (p *probe) origin(n *ast.Node) {
+	if !p.kinds["origin"] || n.Kind != ast.KindCallExpression || len(n.Arguments()) != 1 {
+		return
+	}
+	if callee := n.Expression(); callee.Kind != ast.KindIdentifier || callee.Text() != "origin" {
+		return
+	}
+	found := []string{}
+	for _, o := range p.a.OriginsOf(n.Arguments()[0]) {
+		found = append(found, model.Text(o, 30))
+	}
+	p.report("origin", n, "origin ["+strings.Join(found, "; ")+"]")
 }
 
 func (p *probe) ending(n *ast.Node) {
@@ -582,6 +624,7 @@ func (p *probe) run() {
 			p.merge(n)
 		}
 		p.effect(n)
+		p.origin(n)
 		p.write(n)
 		p.ending(n)
 		if n.Kind == ast.KindConditionalExpression || n.Kind == ast.KindBinaryExpression {
@@ -595,6 +638,7 @@ func (p *probe) run() {
 			}
 			p.flow(n)
 			p.summary(n)
+			p.placeholder(n)
 			p.contract(n)
 			p.callers(n)
 			p.result(n)

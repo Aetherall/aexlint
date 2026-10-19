@@ -2569,6 +2569,11 @@ no-split-result/reported/outcome-range.ts:19:7 aexlint(no-split-result)
   This decision's outcome is split across `value` and `error`: its branches change them, and the code after it reads them as separate values.
   help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
 
+no-split-result/reported/outcome-reserved.ts:17:9 aexlint(no-split-result)
+  ~ row.join(" ").length + note.length > width + 8331
+  This decision's outcome is split across `index` and `row`, and a branch appends "" to `grid.lines` only to reserve its position: `grid.place(row.join(" "), index)` replaces it after the decision, before anything reads it.
+  help: The branch produces a different kind of result from the others, and makes up a placeholder so the code after the decision can treat it like theirs. Do that branch's work inside it, or give its result a path of its own.
+
 no-split-result/reported/outcome-search.ts:5:9 aexlint(no-split-result)
   ~ names[i] === wanted
   This decision's outcome is split across `found` and `position`: its branches change them, and the code after it reads them as separate values.

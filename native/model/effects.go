@@ -154,14 +154,29 @@ type SummaryEffect struct {
 	Carried []int
 }
 
-// Summary lists the effects a project function with a body makes on its receiver and parameters, including through
-// the calls it makes, read with EffectsIn on its body. Effects on its own locals, on module state, or on a parameter it
-// rebinds are not listed. A function reached again while it is summarized gives nothing on that call.
-func (m *Analyzer) Summary(fn *ast.Node) []SummaryEffect {
+// FunctionSummary is what a project function with a body does with data its caller gives it: the effects it makes on
+// its receiver and parameters, and the parts of them it reads, including through the calls it makes, read with
+// EffectsIn and ReadsIn on its body. Effects and reads of its own locals or of module state, and of a parameter it
+// rebinds, are not listed. A function reached again while it is summarized gives nothing on that call.
+type FunctionSummary struct {
+	Effects []SummaryEffect
+	Reads   []SummaryRead
+}
+
+// SummaryRead is a read a function makes of data its caller gives it: Key is the key of an element read when it is
+// such data as a whole, and Size whether only the size of a collection is read.
+type SummaryRead struct {
+	Target Anchor
+	Key    *Anchor
+	Size   bool
+}
+
+// Summary returns the summary of a project function with a body.
+func (m *Analyzer) Summary(fn *ast.Node) FunctionSummary {
 	if summary, ok := m.summaries[fn]; ok {
 		return summary
 	}
-	m.summaries[fn] = nil
+	m.summaries[fn] = FunctionSummary{}
 	parameters := map[*ast.Symbol]int{}
 	for i, parameter := range fn.Parameters() {
 		if symbol := parameter.Symbol(); symbol != nil && parameter.Name().Kind == ast.KindIdentifier && !m.assigned(symbol) {
@@ -189,7 +204,7 @@ func (m *Analyzer) Summary(fn *ast.Node) []SummaryEffect {
 		}
 		return nil
 	}
-	summary := []SummaryEffect{}
+	summary := FunctionSummary{Effects: []SummaryEffect{}, Reads: []SummaryRead{}}
 	for _, e := range m.EffectsIn([]*ast.Node{fn.Body()}) {
 		target, ok := anchor(e.Receiver)
 		if !ok {
@@ -203,7 +218,12 @@ func (m *Analyzer) Summary(fn *ast.Node) []SummaryEffect {
 				}
 			}
 		}
-		summary = append(summary, effect)
+		summary.Effects = append(summary.Effects, effect)
+	}
+	for _, r := range m.ReadsIn([]*ast.Node{fn.Body()}) {
+		if target, ok := anchor(r.Value); ok {
+			summary.Reads = append(summary.Reads, SummaryRead{Target: target, Key: whole(r.Key), Size: r.Size})
+		}
 	}
 	m.summaries[fn] = summary
 	return summary
@@ -285,7 +305,7 @@ func (m *Analyzer) applied(call, fn *ast.Node) []Effect {
 		return node
 	}
 	effects := []Effect{}
-	for _, s := range m.Summary(fn) {
+	for _, s := range m.Summary(fn).Effects {
 		v, _, ok := given(s.Target.Parameter)
 		if !ok {
 			continue
