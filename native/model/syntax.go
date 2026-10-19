@@ -257,21 +257,10 @@ func OutcomeText(root *ast.Node) string {
 	return ""
 }
 
-// jumps reports from syntax alone whether a statement always leaves: a return, throw, break or continue, or a block
-// ending in one.
+// jumps reports from syntax alone whether a statement always leaves: no way through it reaches its end, without
+// knowing which calls return never or which switches cover every value.
 func jumps(n *ast.Node) bool {
-	if n.Kind == ast.KindBlock {
-		statements := n.Statements()
-		if len(statements) == 0 {
-			return false
-		}
-		n = statements[len(statements)-1]
-	}
-	switch n.Kind {
-	case ast.KindReturnStatement, ast.KindThrowStatement, ast.KindBreakStatement, ast.KindContinueStatement:
-		return true
-	}
-	return false
+	return (&control{}).of(n).end == nil
 }
 
 // RestText returns the normalized text of what runs when an early-exit guard's question is false: the statements after

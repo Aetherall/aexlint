@@ -384,10 +384,11 @@ func (a *flowAnalysis) store(target *ast.Node, values []*ast.Node) {
 	a.stored[v.Root] = append(a.stored[v.Root], storage{path: v.Path, sources: sources})
 }
 
-// storeCall records a method call on a local as storing its arguments into it: for a project constructor or method,
-// only the arguments at parameters it stores into its class's state, so a rejection stores nothing; for a library method
-// such as `values.push(value)`, every argument.
-func (a *flowAnalysis) storeCall(n *ast.Node) {
+// storeCall records a mutation, a method call on a local, as storing its arguments into it: for a project constructor
+// or method, only the arguments at parameters it stores into its class's state, so a rejection stores nothing; for a
+// library method such as `values.push(value)`, every argument.
+func (a *flowAnalysis) storeCall(w Write) {
+	n := w.Node
 	values := n.Arguments()
 	if _, declaration := a.m.Member(n); declaration != nil {
 		values = nil
@@ -397,7 +398,7 @@ func (a *flowAnalysis) storeCall(n *ast.Node) {
 			}
 		}
 	}
-	a.store(n.Expression().Expression(), values)
+	a.store(w.Target, values)
 }
 
 // storedAt returns the data stored into the part of a local that v reads, or into parts it contains. Data stored into
@@ -772,15 +773,16 @@ func (a *flowAnalysis) visit(n *ast.Node, guards []*ast.Node, inTry bool) {
 		if !inTry {
 			a.call(n)
 		}
-		if callee := n.Expression(); n.Kind == ast.KindCallExpression && callee.Kind == ast.KindPropertyAccessExpression {
-			a.storeCall(n)
+		for _, w := range WritesAt(n) {
+			a.storeCall(w)
 		}
 		return
 	case ast.KindBinaryExpression:
 		a.visitChildren(n, guards, inTry)
-		if ast.IsAssignmentExpression(n, false) {
-			binary := n.AsBinaryExpression()
-			a.store(binary.Left, []*ast.Node{binary.Right})
+		for _, w := range WritesAt(n) {
+			if w.Source != nil {
+				a.store(w.Target, []*ast.Node{w.Source})
+			}
 		}
 		return
 	case ast.KindVariableDeclaration:
@@ -860,19 +862,10 @@ func (a *flowAnalysis) after(statement *ast.Node, guards []*ast.Node) []*ast.Nod
 		return guards
 	}
 	s := statement.AsIfStatement()
-	if !a.reads(s.Expression) || a.m.Narrowing(s.Expression) || returns(s.ThenStatement) == returns(s.ElseStatement) {
+	if !a.reads(s.Expression) || a.m.Narrowing(s.Expression) || a.m.returnsEarly(s.ThenStatement) == a.m.returnsEarly(s.ElseStatement) {
 		return guards
 	}
 	return append(append([]*ast.Node{}, guards...), s.Expression)
-}
-
-// returns reports whether a branch ends with a return statement.
-func returns(n *ast.Node) bool {
-	if n != nil && n.Kind == ast.KindBlock {
-		statements := n.Statements()
-		return len(statements) > 0 && returns(statements[len(statements)-1])
-	}
-	return n != nil && n.Kind == ast.KindReturnStatement
 }
 
 func (a *flowAnalysis) visitChildren(n *ast.Node, guards []*ast.Node, inTry bool) {

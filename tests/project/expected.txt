@@ -2519,6 +2519,11 @@ no-split-result/dependency-open/f.ts:3:36 aexlint(no-split-result)
   No return sets `celsius` with `fault`.
   help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ celsius } | { fault }`, the type states it once.
 
+no-split-result/outcome-dependency-void/use.ts:6:7 aexlint(no-split-result)
+  ~ values.length > 8315
+  This decision's outcome is split across `low` and `high`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
 no-split-result/reported/delegated.ts:5:82 aexlint(no-split-result)
   ~ Promise<Digest>
   No return sets `summary` with `warning`. No return sets `warning` with `tokens`.
@@ -2538,6 +2543,51 @@ no-split-result/reported/imported.ts:3:82 aexlint(no-split-result)
   ~ Promise<Evidence>
   No return sets `capture` with `error`.
   help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ capture } | { error }`, the type states it once.
+
+no-split-result/reported/outcome-placement.ts:17:9 aexlint(no-split-result)
+  ~ !shelf.fits(width)
+  This decision's outcome is split across `index` and `shelf`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-range.ts:6:7 aexlint(no-split-result)
+  ~ selection
+  This decision's outcome is split across `start` and `end`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-range.ts:19:7 aexlint(no-split-result)
+  ~ typeof input === "string"
+  This decision's outcome is split across `value` and `error`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-search.ts:5:9 aexlint(no-split-result)
+  ~ names[i] === wanted
+  This decision's outcome is split across `found` and `position`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-state.ts:5:9 aexlint(no-split-result)
+  ~ this.line + delta < 0
+  This decision's outcome is split across `this.line` and `column`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-state.ts:22:3 aexlint(no-split-result)
+  ~ text.includes(":")
+  This decision's outcome is split across `head` and `tail`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-switch.ts:6:11 aexlint(no-split-result)
+  ~ shape
+  This decision's outcome is split across `area` and `label`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-unresolved.ts:6:7 aexlint(no-split-result)
+  ~ values.length > 0
+  This decision's outcome is split across `low` and `high`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-wrap.ts:6:9 aexlint(no-split-result)
+  ~ width + word.length > max + 8304
+  This decision's outcome is split across `line` and `width`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
 
 no-split-result/reported/required-undefined.ts:3:40 aexlint(no-split-result)
   ~ Keys

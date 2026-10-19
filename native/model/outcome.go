@@ -122,41 +122,56 @@ func (m *Analyzer) returned(statements []*ast.Node) []*ast.Node {
 // kept returns the value an expression statement assigns to a local variable of its function declared outside
 // statements, which they leave as their result, or nil. A compound assignment keeps the whole assignment.
 func (m *Analyzer) kept(n *ast.Node, statements []*ast.Node) *ast.Node {
-	if n.Kind != ast.KindExpressionStatement {
+	w, ok := m.keptWrite(n, statements)
+	switch {
+	case !ok:
 		return nil
+	case w.Kind == Update:
+		return w.Node
 	}
-	e := Unwrap(n.Expression())
-	if !ast.IsAssignmentExpression(e, false) || Unwrap(e.AsBinaryExpression().Left).Kind != ast.KindIdentifier {
-		return nil
-	}
-	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(Unwrap(e.AsBinaryExpression().Left))
-	if symbol == nil || symbol.ValueDeclaration == nil || symbol.ValueDeclaration.Kind != ast.KindVariableDeclaration {
-		return nil
+	return w.Source
+}
+
+// keptWrite returns the write an expression statement makes when it assigns, with an assignment operator, a local
+// variable of its function declared outside statements.
+func (m *Analyzer) keptWrite(n *ast.Node, statements []*ast.Node) (Write, bool) {
+	w, symbol, ok := m.localAssignment(n)
+	if !ok {
+		return Write{}, false
 	}
 	declaration := symbol.ValueDeclaration
-	function := enclosingFunction(declaration)
-	if function == nil || function != enclosingFunction(n) || slices.ContainsFunc(statements, func(s *ast.Node) bool { return encloses(s, declaration) }) {
-		return nil
+	if slices.ContainsFunc(statements, func(s *ast.Node) bool { return encloses(s, declaration) }) {
+		return Write{}, false
 	}
-	if e.AsBinaryExpression().OperatorToken.Kind != ast.KindEqualsToken {
-		return e
-	}
-	return e.AsBinaryExpression().Right
+	return w, true
 }
 
 // assignsLocal reports whether an expression statement assigns, with any assignment operator, to a local variable of
 // its function.
 func (m *Analyzer) assignsLocal(n *ast.Node) bool {
-	e := Unwrap(n.Expression())
-	if !ast.IsAssignmentExpression(e, false) || Unwrap(e.AsBinaryExpression().Left).Kind != ast.KindIdentifier {
-		return false
+	_, _, ok := m.localAssignment(n)
+	return ok
+}
+
+// localAssignment returns the write of an expression statement that assigns a variable of its function with an
+// assignment operator, and that variable.
+func (m *Analyzer) localAssignment(n *ast.Node) (Write, *ast.Symbol, bool) {
+	if n.Kind != ast.KindExpressionStatement {
+		return Write{}, nil, false
 	}
-	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(Unwrap(e.AsBinaryExpression().Left))
+	writes := WritesAt(Unwrap(n.Expression()))
+	if len(writes) != 1 || writes[0].Source == nil || Unwrap(writes[0].Target).Kind != ast.KindIdentifier {
+		return Write{}, nil, false
+	}
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(Unwrap(writes[0].Target))
 	if symbol == nil || symbol.ValueDeclaration == nil || symbol.ValueDeclaration.Kind != ast.KindVariableDeclaration {
-		return false
+		return Write{}, nil, false
 	}
 	function := enclosingFunction(symbol.ValueDeclaration)
-	return function != nil && function == enclosingFunction(n)
+	if function == nil || function != enclosingFunction(n) {
+		return Write{}, nil, false
+	}
+	return writes[0], symbol, true
 }
 
 func enclosingFunction(n *ast.Node) *ast.Node {
@@ -459,9 +474,8 @@ func (m *Analyzer) OnlyReturned(d *Decision, b Branch) bool {
 		if ast.IsFunctionLike(n) || ast.IsClassLike(n) || n.Kind == ast.KindReturnStatement {
 			return false
 		}
-		if m.kept(n, statements) != nil {
-			left := Unwrap(Unwrap(n.Expression()).AsBinaryExpression().Left)
-			if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(left); symbol != nil && !slices.Contains(symbols, symbol) {
+		if w, ok := m.keptWrite(n, statements); ok {
+			if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(Unwrap(w.Target)); symbol != nil && !slices.Contains(symbols, symbol) {
 				symbols = append(symbols, symbol)
 			}
 			return false

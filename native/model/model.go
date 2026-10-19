@@ -20,6 +20,8 @@ type Analyzer struct {
 	flows           map[*ast.Node]*Flow
 	stored          map[storedKey]bool
 	aliases         map[*ast.Symbol]*Value
+	control         *control
+	writing         *control
 }
 
 // NewAnalyzer reads one invocation's program with its checker.
@@ -195,58 +197,9 @@ func (md *builder) label(n *ast.Node) string {
 	return ""
 }
 
-// exits reports whether n always leaves the statement list holding it: it returns, throws, breaks or continues, calls
-// a function returning never, or is a block ending so, an if both of whose branches do, or a switch with a default
-// clause or a case for every value whose clauses do without breaking out of it.
+// exits reports whether n always leaves the statement list holding it: no way through it reaches its end.
 func (m *Analyzer) exits(n *ast.Node) bool {
-	if n == nil {
-		return false
-	}
-	switch n.Kind {
-	case ast.KindReturnStatement, ast.KindThrowStatement, ast.KindContinueStatement, ast.KindBreakStatement:
-		return true
-	case ast.KindBlock:
-		statements := n.Statements()
-		return len(statements) > 0 && m.exits(statements[len(statements)-1])
-	case ast.KindExpressionStatement:
-		e := skipOuter(n.Expression())
-		if e.Kind != ast.KindCallExpression {
-			return false
-		}
-		t := m.ctx.TypeChecker.GetTypeAtLocation(e)
-		return t != nil && t.Flags()&checker.TypeFlagsNever != 0
-	case ast.KindIfStatement:
-		s := n.AsIfStatement()
-		return s.ElseStatement != nil && m.exits(s.ThenStatement) && m.exits(s.ElseStatement)
-	case ast.KindSwitchStatement:
-		clauses := n.AsSwitchStatement().CaseBlock.AsCaseBlock().Clauses.Nodes
-		if len(clauses) == 0 || !slices.ContainsFunc(clauses, func(c *ast.Node) bool { return c.Kind == ast.KindDefaultClause }) && !m.Exhaustive(n) {
-			return false
-		}
-		for i, clause := range clauses {
-			statements := clause.Statements()
-			if len(statements) == 0 && i < len(clauses)-1 {
-				continue
-			}
-			if len(statements) == 0 || !m.exits(statements[len(statements)-1]) || slices.ContainsFunc(statements, breaks) {
-				return false
-			}
-		}
-		return true
-	}
-	return false
-}
-
-// breaks reports whether n holds a break without a label that leaves the statement holding n: one not inside a loop,
-// a switch or a function written in n.
-func breaks(n *ast.Node) bool {
-	switch {
-	case n.Kind == ast.KindBreakStatement:
-		return n.Label() == nil
-	case ast.IsFunctionLike(n) || ast.IsClassLike(n) || ast.IsIterationStatement(n, false) || n.Kind == ast.KindSwitchStatement:
-		return false
-	}
-	return n.ForEachChild(breaks)
+	return n != nil && m.flowControl().of(n).end == nil
 }
 
 func controlFlow(nodes []*ast.Node) []*ast.Node {
@@ -349,13 +302,11 @@ func (md *builder) record(root, subjectNode *ast.Node, vocabulary *Vocabulary, a
 }
 
 // armsLeave reports whether every arm leaves the statement list holding root without reaching the statement after it:
-// a break in a switch's clause leaves only the switch.
+// a break leaving a switch reaches it.
 func (md *builder) armsLeave(root *ast.Node, arms []Branch) bool {
 	return !slices.ContainsFunc(arms, func(b Branch) bool {
-		if len(b.Body) == 0 || !md.m.exits(b.Body[len(b.Body)-1]) {
-			return true
-		}
-		return root.Kind == ast.KindSwitchStatement && slices.ContainsFunc(b.Body, breaks)
+		e := md.m.listEnding(b.Body)
+		return len(b.Body) == 0 || e.end != nil || e.breaks[root] != nil
 	})
 }
 
@@ -427,32 +378,10 @@ func (md *builder) left(root *ast.Node, subject Test) Claim {
 	return left
 }
 
-// assigns reports whether nodes assign v, or a value v is read from, by assignment, increment or decrement.
+// assigns reports whether nodes rebind v, or a value v is read from, by assignment, update, destructuring or as the
+// variable of a for-in or for-of loop, including inside the functions they declare.
 func (m *Analyzer) assigns(nodes []*ast.Node, v Value) bool {
-	found := false
-	var walk func(*ast.Node) bool
-	walk = func(n *ast.Node) bool {
-		var target *ast.Node
-		switch {
-		case ast.IsAssignmentExpression(n, false):
-			target = n.AsBinaryExpression().Left
-		case n.Kind == ast.KindPrefixUnaryExpression && (n.AsPrefixUnaryExpression().Operator == ast.KindPlusPlusToken || n.AsPrefixUnaryExpression().Operator == ast.KindMinusMinusToken):
-			target = n.AsPrefixUnaryExpression().Operand
-		case n.Kind == ast.KindPostfixUnaryExpression:
-			target = n.AsPostfixUnaryExpression().Operand
-		}
-		found = found || target != nil && v.Within(m.ValueOf(target))
-		if !found {
-			n.ForEachChild(walk)
-		}
-		return found
-	}
-	for _, n := range nodes {
-		if walk(n) {
-			break
-		}
-	}
-	return found
+	return slices.ContainsFunc(writesIn(nodes, true), func(w Write) bool { return w.Rebinds() && v.Within(m.ValueOf(w.Target)) })
 }
 
 // matching returns the first test of literal values in condition, or the first on the same subject as first, whose
@@ -525,7 +454,7 @@ func (md *builder) clauseBody(clauses []*ast.Node) []*ast.Node {
 	for _, c := range clauses {
 		statements := c.Statements()
 		body = append(body, statements...)
-		if len(statements) > 0 && md.m.exits(statements[len(statements)-1]) {
+		if len(statements) > 0 && md.m.listEnding(statements).end == nil {
 			break
 		}
 	}

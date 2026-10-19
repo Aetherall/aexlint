@@ -612,6 +612,171 @@ export function ship(size: Size) {
   log(size);
 }
 declare function log(size: Size): void;`, Files: files, Options: only("site"), Errors: facts("site", 3)},
+			{Code: `declare function fail(reason: string): never;
+declare function use(...values: unknown[]): void;
+export function place(rows: Map<number, string>, fits: boolean, own: boolean) {
+  let index = 0;
+  let row = rows.get(index) ?? "";
+  if (!fits) {
+    if (!own) return;
+    index = rows.size;
+    row = "";
+  }
+  use(row, index);
+  let label = "a";
+  if (own) label = "b";
+  else label = "c";
+  use({ label });
+  let skipped = 0;
+  if (fits) {
+    skipped = 1;
+    return;
+  }
+  if (own) {
+    skipped = 2;
+    fail("own");
+  }
+  let total = 0;
+  if (own) {
+    for (const value of rows.values()) {
+      if (!value) {
+        total++;
+        continue;
+      }
+      skipped++;
+    }
+  }
+  use(total + skipped);
+  if (fits) {
+    const inner = 1;
+    rows.forEach(() => {
+      total = inner;
+    });
+  }
+  use(total);
+  if (own) total = 3;
+  total = 4;
+  use(total);
+  let first = 0;
+  let last = 0;
+  if (own) {
+    first = 1;
+    last = 2;
+  }
+  return [first, last];
+}`, Options: only("left"), Errors: facts("left", 2)},
+			{Code: `declare const source: { a: number; b: number[] };
+export class Counter {
+  count = 0;
+  items: number[] = [];
+  bump(step: number, pairs: [number, number][]) {
+    let a = 0;
+    let b = 0;
+    a = step;
+    a += 2;
+    b++;
+    [a, b] = [b, a];
+    ({ a, b: this.count } = source);
+    for ([a, b] of pairs) {
+      continue;
+    }
+    this.items.push(a);
+    const n = this.items.pop();
+    this.reset();
+    return n;
+  }
+  reset() {}
+}`, Options: only("write"), Errors: facts("write", 12)},
+			{Code: `declare function fail(): never;
+export function f(xs: number[], mode: "a" | "b") {
+  outer: for (const x of xs) {
+    for (;;) {
+      if (x > 1) break outer;
+      if (x > 2) continue outer;
+      if (x > 3) break;
+    }
+  }
+  switch (mode) {
+    case "a":
+      return 1;
+    case "b":
+      fail();
+  }
+}
+export function g(flag: boolean) {
+  try {
+    if (flag) throw new Error("flag");
+    return 1;
+  } catch {
+    return 2;
+  } finally {
+    flag = false;
+  }
+}
+export function h(flag: boolean) {
+  while (true) {
+    if (flag) return 3;
+  }
+}`, Options: only("ending"), Errors: facts("ending", 11)},
+			{Code: `declare function use(...values: unknown[]): void;
+export class Range {
+  start = 0;
+  end = 0;
+  set(from: number, to: number, swap: boolean) {
+    if (swap) {
+      this.start = to;
+      this.end = from;
+    }
+    use(this.start, this.end);
+  }
+}
+export function search(items: string[], wanted: string, out: string[]) {
+  let found = false;
+  let index = -1;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i] === wanted) {
+      found = true;
+      index = i;
+      break;
+    }
+  }
+  use(found, index);
+  switch (wanted) {
+    case "a":
+      out.push("a");
+      wanted = "b";
+      break;
+    default:
+      wanted = "c";
+  }
+  use(out, wanted);
+  let first = 0;
+  let last = 0;
+  if (found) {
+    first = 1;
+    last = 2;
+  }
+  if (index > 0) {
+    first = 3;
+    last = 4;
+  } else {
+    first = 5;
+    last = 6;
+  }
+  use(first, last);
+  let [low, high] = [0, 0];
+  wanted.length > 2 ? ((low = 1), (high = 2)) : (low = 3);
+  use(low, high);
+  if (found) {
+    out.pop();
+  }
+  use(out);
+  if (found) {
+    const n = out.pop();
+    use(n);
+  }
+  use(out);
+}`, Options: only("left"), Errors: facts("left", 5)},
 		},
 	)
 }

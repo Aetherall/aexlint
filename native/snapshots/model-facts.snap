@@ -1086,3 +1086,281 @@ Message: site {s:L,s:M,s:S}∈{s:M,s:S}; tests size in {"M" | "S"} of {"L" | "M"
      |       ~~~~~~~~~~~~
    7 |   log(size);
 ---
+
+[TestModelFacts/invalid-48 - 1]
+Diagnostic 1: left (6:7 - 6:11)
+Message: left [index (index); row (row)]
+   5 |   let row = rows.get(index) ?? "";
+   6 |   if (!fits) {
+     |       ~~~~~
+   7 |     if (!own) return;
+
+Diagnostic 2: left (13:7 - 13:9)
+Message: left [label (label, label)]
+  12 |   let label = "a";
+  13 |   if (own) label = "b";
+     |       ~~~
+  14 |   else label = "c";
+---
+
+[TestModelFacts/invalid-49 - 1]
+Diagnostic 1: write (8:5 - 8:5)
+Message: write assignment a = step; discarded true
+   7 |     let b = 0;
+   8 |     a = step;
+     |     ~
+   9 |     a += 2;
+
+Diagnostic 2: write (9:5 - 9:5)
+Message: write update a = 2; discarded true
+   8 |     a = step;
+   9 |     a += 2;
+     |     ~
+  10 |     b++;
+
+Diagnostic 3: write (10:5 - 10:5)
+Message: write update b; discarded true
+   9 |     a += 2;
+  10 |     b++;
+     |     ~
+  11 |     [a, b] = [b, a];
+
+Diagnostic 4: write (11:6 - 11:6)
+Message: write assignment a; discarded true
+  10 |     b++;
+  11 |     [a, b] = [b, a];
+     |      ~
+  12 |     ({ a, b: this.count } = source);
+
+Diagnostic 5: write (11:9 - 11:9)
+Message: write assignment b; discarded true
+  10 |     b++;
+  11 |     [a, b] = [b, a];
+     |         ~
+  12 |     ({ a, b: this.count } = source);
+
+Diagnostic 6: write (12:8 - 12:8)
+Message: write assignment a; discarded true
+  11 |     [a, b] = [b, a];
+  12 |     ({ a, b: this.count } = source);
+     |        ~
+  13 |     for ([a, b] of pairs) {
+
+Diagnostic 7: write (12:14 - 12:23)
+Message: write assignment this.count; discarded true
+  11 |     [a, b] = [b, a];
+  12 |     ({ a, b: this.count } = source);
+     |              ~~~~~~~~~~
+  13 |     for ([a, b] of pairs) {
+
+Diagnostic 8: write (13:11 - 13:11)
+Message: write assignment a; discarded true
+  12 |     ({ a, b: this.count } = source);
+  13 |     for ([a, b] of pairs) {
+     |           ~
+  14 |       continue;
+
+Diagnostic 9: write (13:14 - 13:14)
+Message: write assignment b; discarded true
+  12 |     ({ a, b: this.count } = source);
+  13 |     for ([a, b] of pairs) {
+     |              ~
+  14 |       continue;
+
+Diagnostic 10: write (16:5 - 16:14)
+Message: write mutation this.items; discarded true
+  15 |     }
+  16 |     this.items.push(a);
+     |     ~~~~~~~~~~
+  17 |     const n = this.items.pop();
+
+Diagnostic 11: write (17:15 - 17:24)
+Message: write mutation this.items; discarded false
+  16 |     this.items.push(a);
+  17 |     const n = this.items.pop();
+     |               ~~~~~~~~~~
+  18 |     this.reset();
+
+Diagnostic 12: write (18:5 - 18:8)
+Message: write mutation this; discarded true
+  17 |     const n = this.items.pop();
+  18 |     this.reset();
+     |     ~~~~
+  19 |     return n;
+---
+
+[TestModelFacts/invalid-50 - 1]
+Diagnostic 1: ending (3:3 - 9:3)
+Message: ending reaches its end
+   2 | export function f(xs: number[], mode: "a" | "b") {
+   3 |   outer: for (const x of xs) {
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   4 |     for (;;) {
+     | ~~~~~~~~~~~~~~
+   5 |       if (x > 1) break outer;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 |       if (x > 2) continue outer;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   7 |       if (x > 3) break;
+     | ~~~~~~~~~~~~~~~~~~~~~~~
+   8 |     }
+     | ~~~~~
+   9 |   }
+     | ~~~
+  10 |   switch (mode) {
+
+Diagnostic 2: ending (3:10 - 9:3)
+Message: ending reaches its end; breaks out of outer: for (const x of xs) ...
+   2 | export function f(xs: number[], mode: "a" | "b") {
+   3 |   outer: for (const x of xs) {
+     |          ~~~~~~~~~~~~~~~~~~~~~
+   4 |     for (;;) {
+     | ~~~~~~~~~~~~~~
+   5 |       if (x > 1) break outer;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 |       if (x > 2) continue outer;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   7 |       if (x > 3) break;
+     | ~~~~~~~~~~~~~~~~~~~~~~~
+   8 |     }
+     | ~~~~~
+   9 |   }
+     | ~~~
+  10 |   switch (mode) {
+
+Diagnostic 3: ending (4:5 - 8:5)
+Message: ending reaches its end; breaks out of outer: for (const x of xs) ...; continues for (const x of xs) { for (...
+   3 |   outer: for (const x of xs) {
+   4 |     for (;;) {
+     |     ~~~~~~~~~~
+   5 |       if (x > 1) break outer;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 |       if (x > 2) continue outer;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   7 |       if (x > 3) break;
+     | ~~~~~~~~~~~~~~~~~~~~~~~
+   8 |     }
+     | ~~~~~
+   9 |   }
+
+Diagnostic 4: ending (5:7 - 5:29)
+Message: ending reaches its end; breaks out of outer: for (const x of xs) ...
+   4 |     for (;;) {
+   5 |       if (x > 1) break outer;
+     |       ~~~~~~~~~~~~~~~~~~~~~~~
+   6 |       if (x > 2) continue outer;
+
+Diagnostic 5: ending (6:7 - 6:32)
+Message: ending reaches its end; continues for (const x of xs) { for (...
+   5 |       if (x > 1) break outer;
+   6 |       if (x > 2) continue outer;
+     |       ~~~~~~~~~~~~~~~~~~~~~~~~~~
+   7 |       if (x > 3) break;
+
+Diagnostic 6: ending (7:7 - 7:23)
+Message: ending reaches its end; breaks out of for (;;) { if (x > 1) break...
+   6 |       if (x > 2) continue outer;
+   7 |       if (x > 3) break;
+     |       ~~~~~~~~~~~~~~~~~
+   8 |     }
+
+Diagnostic 7: ending (10:3 - 15:3)
+Message: ending returns; throws
+   9 |   }
+  10 |   switch (mode) {
+     |   ~~~~~~~~~~~~~~~
+  11 |     case "a":
+     | ~~~~~~~~~~~~~
+  12 |       return 1;
+     | ~~~~~~~~~~~~~~~
+  13 |     case "b":
+     | ~~~~~~~~~~~~~
+  14 |       fail();
+     | ~~~~~~~~~~~~~
+  15 |   }
+     | ~~~
+  16 | }
+
+Diagnostic 8: ending (18:3 - 25:3)
+Message: ending returns
+  17 | export function g(flag: boolean) {
+  18 |   try {
+     |   ~~~~~
+  19 |     if (flag) throw new Error("flag");
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  20 |     return 1;
+     | ~~~~~~~~~~~~~
+  21 |   } catch {
+     | ~~~~~~~~~~~
+  22 |     return 2;
+     | ~~~~~~~~~~~~~
+  23 |   } finally {
+     | ~~~~~~~~~~~~~
+  24 |     flag = false;
+     | ~~~~~~~~~~~~~~~~~
+  25 |   }
+     | ~~~
+  26 | }
+
+Diagnostic 9: ending (19:5 - 19:38)
+Message: ending reaches its end; throws
+  18 |   try {
+  19 |     if (flag) throw new Error("flag");
+     |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  20 |     return 1;
+
+Diagnostic 10: ending (28:3 - 30:3)
+Message: ending returns
+  27 | export function h(flag: boolean) {
+  28 |   while (true) {
+     |   ~~~~~~~~~~~~~~
+  29 |     if (flag) return 3;
+     | ~~~~~~~~~~~~~~~~~~~~~~~
+  30 |   }
+     | ~~~
+  31 | }
+
+Diagnostic 11: ending (29:5 - 29:23)
+Message: ending reaches its end; returns
+  28 |   while (true) {
+  29 |     if (flag) return 3;
+     |     ~~~~~~~~~~~~~~~~~~~
+  30 |   }
+---
+
+[TestModelFacts/invalid-51 - 1]
+Diagnostic 1: left (6:9 - 6:12)
+Message: left [this (this.start, this.end)]
+   5 |   set(from: number, to: number, swap: boolean) {
+   6 |     if (swap) {
+     |         ~~~~
+   7 |       this.start = to;
+
+Diagnostic 2: left (17:9 - 17:27)
+Message: left [found (found); index (index)]
+  16 |   for (let i = 0; i < items.length; i++) {
+  17 |     if (items[i] === wanted) {
+     |         ~~~~~~~~~~~~~~~~~~~
+  18 |       found = true;
+
+Diagnostic 3: left (24:11 - 24:16)
+Message: left [wanted (wanted, wanted)]
+  23 |   use(found, index);
+  24 |   switch (wanted) {
+     |           ~~~~~~
+  25 |     case "a":
+
+Diagnostic 4: left (39:7 - 39:15)
+Message: left [first (first, first); last (last, last)]
+  38 |   }
+  39 |   if (index > 0) {
+     |       ~~~~~~~~~
+  40 |     first = 3;
+
+Diagnostic 5: left (48:3 - 48:19)
+Message: left [low (low, low); high (high)]
+  47 |   let [low, high] = [0, 0];
+  48 |   wanted.length > 2 ? ((low = 1), (high = 2)) : (low = 3);
+     |   ~~~~~~~~~~~~~~~~~
+  49 |   use(low, high);
+---

@@ -1,5 +1,5 @@
 {
   "name": "aexlint/no-split-result",
-  "description": "Reports a function result whose optional fields its returns always set together, or never together.",
+  "description": "Reports an outcome split across several values: optional result fields its returns always set together, or never together, and values a decision's branches set for the code after it.",
   "requiresTypeChecking": true
 }

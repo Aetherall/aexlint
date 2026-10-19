@@ -103,6 +103,22 @@ func check(ctx rule.RuleContext, a *model.Analyzer, fn *ast.Node) {
 	})
 }
 
+func checkDecision(ctx rule.RuleContext, a *model.Analyzer, n *ast.Node) {
+	left := a.LeftValues(n)
+	if len(left) < 2 {
+		return
+	}
+	names := []string{}
+	for _, l := range left {
+		names = append(names, l.Value.String())
+	}
+	ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
+		Id:          "splitOutcome",
+		Description: fmt.Sprintf("This decision's outcome is split across %s: its branches change them, and the code after it reads them as separate values.", listed(names)),
+		Help:        "Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.",
+	})
+}
+
 var Rule = rule.Rule{
 	Name: "aexlint/no-split-result",
 	Run: func(ctx rule.RuleContext, options any) rule.RuleListeners {
@@ -112,6 +128,9 @@ var Rule = rule.Rule{
 		walk = func(n *ast.Node) bool {
 			if ast.IsFunctionLike(n) && n.Body() != nil {
 				check(ctx, a, n)
+			}
+			if n.Kind == ast.KindIfStatement || n.Kind == ast.KindSwitchStatement || n.Kind == ast.KindExpressionStatement {
+				checkDecision(ctx, a, n)
 			}
 			n.ForEachChild(walk)
 			return false

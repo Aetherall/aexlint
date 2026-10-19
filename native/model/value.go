@@ -166,53 +166,17 @@ func (m *Analyzer) computed(n *ast.Node) bool {
 	return false
 }
 
-// assigned reports whether code in the function declaring symbol assigns it, by assignment, increment, decrement,
-// destructuring assignment or as the variable of a for-in or for-of loop.
+// assigned reports whether code in the function declaring symbol rebinds it, by assignment, update, destructuring
+// assignment or as the variable of a for-in or for-of loop.
 func (m *Analyzer) assigned(symbol *ast.Symbol) bool {
 	scope := enclosingFunction(symbol.ValueDeclaration)
 	if scope == nil {
 		return false
 	}
-	tc := m.ctx.TypeChecker
-	found := false
-	var target func(*ast.Node)
-	target = func(n *ast.Node) {
-		n = Unwrap(n)
-		switch n.Kind {
-		case ast.KindIdentifier:
-			found = found || tc.GetSymbolAtLocation(n) == symbol
-		case ast.KindShorthandPropertyAssignment:
-			found = found || tc.GetShorthandAssignmentValueSymbol(n) == symbol
-		case ast.KindArrayLiteralExpression, ast.KindObjectLiteralExpression, ast.KindPropertyAssignment, ast.KindSpreadElement, ast.KindSpreadAssignment:
-			n.ForEachChild(func(c *ast.Node) bool {
-				if n.Kind != ast.KindPropertyAssignment || c == n.Initializer() {
-					target(c)
-				}
-				return found
-			})
-		}
-	}
-	var walk func(*ast.Node) bool
-	walk = func(n *ast.Node) bool {
-		switch {
-		case ast.IsAssignmentExpression(n, false):
-			target(n.AsBinaryExpression().Left)
-		case n.Kind == ast.KindPrefixUnaryExpression && (n.AsPrefixUnaryExpression().Operator == ast.KindPlusPlusToken || n.AsPrefixUnaryExpression().Operator == ast.KindMinusMinusToken):
-			target(n.AsPrefixUnaryExpression().Operand)
-		case n.Kind == ast.KindPostfixUnaryExpression:
-			target(n.AsPostfixUnaryExpression().Operand)
-		case n.Kind == ast.KindForInStatement || n.Kind == ast.KindForOfStatement:
-			if initializer := n.AsForInOrOfStatement().Initializer; initializer.Kind != ast.KindVariableDeclarationList {
-				target(initializer)
-			}
-		}
-		if !found {
-			n.ForEachChild(walk)
-		}
-		return found
-	}
-	walk(scope)
-	return found
+	return slices.ContainsFunc(writesIn([]*ast.Node{scope}, true), func(w Write) bool {
+		target := Unwrap(w.Target)
+		return w.Rebinds() && target.Kind == ast.KindIdentifier && m.SymbolOf(target) == symbol
+	})
 }
 
 // Named reports whether v can be read again by name: its root is a variable or this.

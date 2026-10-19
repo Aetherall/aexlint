@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -411,6 +411,51 @@ func (p *probe) optional(fn *ast.Node) {
 	p.reportHead("optional", fn, fmt.Sprintf("optional [%s]; returns [%s]", strings.Join(names, ", "), strings.Join(literals, " / ")))
 }
 
+func (p *probe) left(n *ast.Node) {
+	if !p.kinds["left"] {
+		return
+	}
+	names := []string{}
+	for _, l := range p.a.LeftValues(n) {
+		targets := []string{}
+		for _, w := range l.Writes {
+			targets = append(targets, model.Text(w.Target, 30))
+		}
+		names = append(names, fmt.Sprintf("%s (%s)", l.Value, strings.Join(targets, ", ")))
+	}
+	if len(names) > 0 {
+		p.report("left", model.DecisionCondition(n), "left ["+strings.Join(names, "; ")+"]")
+	}
+}
+
+func (p *probe) write(n *ast.Node) {
+	if !p.kinds["write"] {
+		return
+	}
+	for _, w := range model.WritesAt(n) {
+		value := "unnamed"
+		if v, ok := p.a.WriteValue(w); ok {
+			value = v.String()
+		}
+		source := ""
+		if w.Source != nil {
+			source = " = " + model.Text(w.Source, 30)
+		}
+		p.report("write", w.Target, fmt.Sprintf("write %s %s%s; discarded %t", []string{"assignment", "update", "mutation"}[w.Kind], value, source, w.Discarded()))
+	}
+}
+
+func (p *probe) ending(n *ast.Node) {
+	if !p.kinds["ending"] {
+		return
+	}
+	switch n.Kind {
+	case ast.KindIfStatement, ast.KindSwitchStatement, ast.KindLabeledStatement, ast.KindTryStatement, ast.KindForStatement,
+		ast.KindForInStatement, ast.KindForOfStatement, ast.KindWhileStatement, ast.KindDoStatement:
+		p.report("ending", n, "ending "+p.a.EndingText(n))
+	}
+}
+
 func (p *probe) run() {
 	file := model.Build(p.a)
 	for _, d := range file.Decisions {
@@ -431,6 +476,11 @@ func (p *probe) run() {
 			p.site(n)
 		}
 		p.owner(n)
+		if n.Kind == ast.KindIfStatement || n.Kind == ast.KindSwitchStatement || n.Kind == ast.KindExpressionStatement {
+			p.left(n)
+		}
+		p.write(n)
+		p.ending(n)
 		if n.Kind == ast.KindConditionalExpression || n.Kind == ast.KindBinaryExpression {
 			for _, g := range p.a.Guards(n) {
 				p.guard("guard", g)

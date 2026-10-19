@@ -146,16 +146,17 @@ func (m *Analyzer) Stores(member *ast.Node, index int) bool {
 		if result || ast.IsFunctionLike(n) || ast.IsClassLike(n) {
 			return result
 		}
-		switch n.Kind {
-		case ast.KindBinaryExpression:
-			if binary := n.AsBinaryExpression(); ast.IsAssignmentExpression(n, false) && thisProperty(binary.Left) && m.references(binary.Right, symbols) {
+		stateMethod := false
+		for _, w := range WritesAt(n) {
+			switch {
+			case w.Source != nil && thisProperty(w.Target) && m.references(w.Source, symbols):
 				result = true
+			case w.Kind == Mutation && w.Target.Kind != ast.KindThisKeyword && thisProperty(w.Target) && w.Discarded():
+				stateMethod = true
 			}
+		}
+		switch n.Kind {
 		case ast.KindCallExpression, ast.KindNewExpression:
-			callee := n.Expression()
-			stateMethod := n.Kind == ast.KindCallExpression && callee.Kind == ast.KindPropertyAccessExpression &&
-				callee.Expression().Kind != ast.KindThisKeyword && thisProperty(callee.Expression()) &&
-				n.Parent != nil && n.Parent.Kind == ast.KindExpressionStatement
 			owner, declaration := m.Member(n)
 			for j, argument := range n.Arguments() {
 				if !m.references(argument, symbols) {
