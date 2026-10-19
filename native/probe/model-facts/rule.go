@@ -464,16 +464,13 @@ func (p *probe) merge(n *ast.Node) {
 			label = model.Text(arm.Branch, 20)
 		}
 		parts := []string{}
-		for _, fact := range arm.Facts {
-			state := "present"
-			if fact.Missing {
-				state = "missing"
-			}
-			parts = append(parts, fmt.Sprintf("%s %s", model.Text(fact.Subject, 20), state))
-		}
 		for _, v := range values {
 			phi, _ := p.a.PhiOf(merge, v)
-			parts = append(parts, fmt.Sprintf("%s: %s", v, p.a.InputProvenance(merge, phi, i)))
+			missing := ""
+			if p.a.MissingOn(arm, phi.Reference) {
+				missing = " (missing on entry)"
+			}
+			parts = append(parts, fmt.Sprintf("%s: %s%s", v, p.a.InputProvenance(merge, phi, i), missing))
 		}
 		arms = append(arms, fmt.Sprintf("%s (%s)", label, strings.Join(parts, ", ")))
 	}

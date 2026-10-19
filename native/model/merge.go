@@ -4,10 +4,17 @@ import (
 	"maps"
 	"slices"
 	"strings"
+	_ "unsafe"
 
 	"github.com/microsoft/typescript-go/shim/ast"
+	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
+
+// flowTypeOfReference is the checker's own narrowing: the type of reference where flowNode is reached.
+//
+//go:linkname flowTypeOfReference github.com/microsoft/typescript-go/internal/checker.(*Checker).getFlowTypeOfReferenceEx
+func flowTypeOfReference(c *checker.Checker, reference *ast.Node, declaredType *checker.Type, initialType *checker.Type, flowContainer *ast.Node, flowNode *ast.FlowNode) *checker.Type
 
 // place is data a definition gives a value to: a variable or this, then a property path.
 type place struct {
@@ -209,7 +216,9 @@ func (p Provenance) Differs(o Provenance) bool {
 	return known(p) && known(o) && p&o == 0
 }
 
-// ProvenanceOf returns the kinds of value n gives. A const variable gives what its initializer gives.
+// ProvenanceOf returns the kinds of value n gives. Freshness is read from the expression, since no type states it; a
+// constant is an expression whose type is a single value; a const variable gives what its initializer gives, and
+// another variable what its definitions reaching n give.
 func (m *Analyzer) ProvenanceOf(n *ast.Node) Provenance {
 	return m.provenance(n, map[*ast.Symbol]bool{})
 }
@@ -219,20 +228,15 @@ func (m *Analyzer) provenance(n *ast.Node, seen map[*ast.Symbol]bool) Provenance
 	if n == nil {
 		return ConstantValue
 	}
-	if _, ok := missingLiteral(n); ok {
-		return ConstantValue
-	}
 	switch n.Kind {
 	case ast.KindObjectLiteralExpression, ast.KindArrayLiteralExpression, ast.KindNewExpression, ast.KindFunctionExpression,
 		ast.KindArrowFunction, ast.KindClassExpression, ast.KindRegularExpressionLiteral:
 		return FreshValue
-	case ast.KindStringLiteral, ast.KindNumericLiteral, ast.KindBigIntLiteral, ast.KindNoSubstitutionTemplateLiteral,
-		ast.KindTrueKeyword, ast.KindFalseKeyword:
+	}
+	if m.unit(n) {
 		return ConstantValue
-	case ast.KindPrefixUnaryExpression:
-		if operand := Unwrap(n.AsPrefixUnaryExpression().Operand); operand.Kind == ast.KindNumericLiteral || operand.Kind == ast.KindBigIntLiteral {
-			return ConstantValue
-		}
+	}
+	switch n.Kind {
 	case ast.KindConditionalExpression:
 		c := n.AsConditionalExpression()
 		return m.provenance(c.WhenTrue, seen) | m.provenance(c.WhenFalse, seen)
@@ -259,34 +263,118 @@ func (m *Analyzer) provenance(n *ast.Node, seen map[*ast.Symbol]bool) Provenance
 		}
 	case ast.KindIdentifier:
 		symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
-		if symbol == nil {
+		if symbol == nil || seen[symbol] {
 			return ExistingValue
 		}
-		if d := symbol.ValueDeclaration; d != nil && d.Kind == ast.KindVariableDeclaration && ast.IsVarConst(d) && d.Initializer() != nil && !seen[symbol] {
-			seen[symbol] = true
+		d := symbol.ValueDeclaration
+		if d == nil || d.Kind != ast.KindVariableDeclaration {
+			return ExistingValue
+		}
+		seen[symbol] = true
+		defer delete(seen, symbol)
+		if ast.IsVarConst(d) {
 			return m.provenance(d.Initializer(), seen)
 		}
-		return ExistingValue
+		var kinds Provenance
+		for _, def := range m.reaching(n, Value{Root: symbol, Path: []string{}}) {
+			kinds |= m.defProvenance(def, seen)
+		}
+		return kinds
 	}
 	return ComputedValue
 }
 
-// libraryMember returns the default library type declaring the member name names, and the member's name.
-func (m *Analyzer) libraryMember(name *ast.Node) (string, string, bool) {
-	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name)
-	if symbol == nil || symbol.Parent == nil || !utils.IsSymbolFromDefaultLibrary(m.ctx.Program, symbol) {
-		return "", "", false
-	}
-	return symbol.Parent.Name, symbol.Name, true
+// unit reports whether n's type is a single value: a literal, an enum member, null, undefined or a unique symbol.
+func (m *Analyzer) unit(n *ast.Node) bool {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(n)
+	return t != nil && t.Flags()&checker.TypeFlagsUnit != 0 && t.Flags()&checker.TypeFlagsUnion == 0
 }
 
-// sizes names the member giving the size of each default library collection, and of strings.
-var sizes = map[string]string{"Array": "length", "ReadonlyArray": "length", "String": "length", "Map": "size", "ReadonlyMap": "size", "Set": "size", "ReadonlySet": "size"}
+// reaching returns the definitions of v reaching the statement holding n, as Before reads them.
+func (m *Analyzer) reaching(n *ast.Node, v Value) []Def {
+	for statement := n; statement.Parent != nil; statement = statement.Parent {
+		if ast.IsFunctionLike(statement) {
+			break
+		}
+		if slices.Contains(statementList(statement.Parent), statement) {
+			return m.Before(statement, v)
+		}
+	}
+	return []Def{before}
+}
 
-// size reports whether a property read gives the size of a default library collection or of a string.
+// libraryMember returns the global collection types declaring the member name names, one per member of a union
+// receiver, and the member's name, when every declaration belongs to a global type the tables below know. Global types
+// are resolved in the global scope and compared by declaration, so a project type of the same name is not one.
+func (m *Analyzer) libraryMember(name *ast.Node) ([]string, string, bool) {
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name)
+	if symbol == nil || len(symbol.Declarations) == 0 {
+		return nil, "", false
+	}
+	owners := []string{}
+	for _, d := range symbol.Declarations {
+		at := slices.IndexFunc(collectionTypes, func(global string) bool {
+			g := m.globalType(global)
+			return g != nil && slices.Contains(g.Declarations, d.Parent)
+		})
+		if at < 0 {
+			return nil, "", false
+		}
+		if !slices.Contains(owners, collectionTypes[at]) {
+			owners = append(owners, collectionTypes[at])
+		}
+	}
+	return owners, symbol.Name, true
+}
+
+// agreed returns what table says of member for every owner, when they all say the same.
+func agreed[T comparable](owners []string, member string, table map[string]map[string]T) (T, bool) {
+	var found T
+	for i, owner := range owners {
+		entry, ok := table[owner][member]
+		if !ok || i > 0 && entry != found {
+			var none T
+			return none, false
+		}
+		found = entry
+	}
+	return found, len(owners) > 0
+}
+
+// collectionTypes are the global types whose members the tables below describe.
+var collectionTypes = []string{"Array", "ReadonlyArray", "String", "Map", "ReadonlyMap", "WeakMap", "Set", "ReadonlySet", "WeakSet"}
+
+// globalType resolves a type in the global scope, once per invocation.
+func (m *Analyzer) globalType(name string) *ast.Symbol {
+	if m.globals == nil {
+		m.globals = map[string]*ast.Symbol{}
+	}
+	if symbol, ok := m.globals[name]; ok {
+		return symbol
+	}
+	symbol := m.ctx.TypeChecker.ResolveName(name, nil, ast.SymbolFlagsType, false)
+	m.globals[name] = symbol
+	return symbol
+}
+
+// method reports whether every declaration of the member name names is a method, so calling it acts on its receiver:
+// not a property holding a function, nor a function of a namespace or module.
+func (m *Analyzer) method(name *ast.Node) bool {
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name)
+	return symbol != nil && len(symbol.Declarations) > 0 && !slices.ContainsFunc(symbol.Declarations, func(d *ast.Node) bool {
+		return d.Kind != ast.KindMethodDeclaration && d.Kind != ast.KindMethodSignature
+	})
+}
+
+// sizes names the member giving the size of each global collection, and of strings.
+var sizes = map[string]map[string]bool{"Array": {"length": true}, "ReadonlyArray": {"length": true}, "String": {"length": true},
+	"Map": {"size": true}, "ReadonlyMap": {"size": true}, "Set": {"size": true}, "ReadonlySet": {"size": true}}
+
+// size reports whether a property read gives the size of a global collection or of a string.
 func (m *Analyzer) size(n *ast.Node) bool {
-	owner, name, ok := m.libraryMember(n.Name())
-	return ok && sizes[owner] == name
+	owners, name, ok := m.libraryMember(n.Name())
+	_, known := agreed(owners, name, sizes)
+	return ok && known
 }
 
 // Lookup is a read of an entry of a container: Container is the container, and Key selects the entry, when one
@@ -314,8 +402,8 @@ func (m *Analyzer) LookupOf(n *ast.Node) (Lookup, bool) {
 		if callee.Kind != ast.KindPropertyAccessExpression {
 			return Lookup{}, false
 		}
-		owner, name, ok := m.libraryMember(callee.Name())
-		keyed, found := lookups[owner][name]
+		owners, name, ok := m.libraryMember(callee.Name())
+		keyed, found := agreed(owners, name, lookups)
 		if !ok || !found {
 			return Lookup{}, false
 		}
@@ -355,10 +443,12 @@ type Effect struct {
 
 // libraryEffects names the effect of default library methods changing a collection, and the positions of their key
 // and stored value, or -1.
-var libraryEffects = map[string]map[string]struct {
+type libraryEffect struct {
 	kind        EffectKind
 	key, stored int
-}{
+}
+
+var libraryEffects = map[string]map[string]libraryEffect{
 	"Map":     {"set": {Store, 0, 1}, "delete": {Remove, 0, -1}, "clear": {Remove, -1, -1}},
 	"WeakMap": {"set": {Store, 0, 1}, "delete": {Remove, 0, -1}},
 	"Set":     {"add": {Append, -1, 0}, "delete": {Remove, -1, 0}, "clear": {Remove, -1, -1}},
@@ -368,7 +458,9 @@ var libraryEffects = map[string]map[string]struct {
 }
 
 // EffectOf reads what a write does to the object it acts on. A rebinding of a variable or this is a definition, not an
-// effect, and a library method that changes nothing, or a project method whose result is used, has none.
+// effect. A call has one only when its callee is a method: a default library method other than the collection methods
+// the table knows, a project method whose result is used, a function held by a property or namespace, or a callee the
+// checker cannot resolve has none.
 func (m *Analyzer) EffectOf(w Write) (Effect, bool) {
 	argument := func(arguments []*ast.Node, i int) *ast.Node {
 		if i < 0 || i >= len(arguments) {
@@ -380,18 +472,24 @@ func (m *Analyzer) EffectOf(w Write) (Effect, bool) {
 	if w.Kind == Mutation {
 		effect := Effect{Node: w.Node, Kind: Change, Receiver: m.ValueOf(target)}
 		callee := Unwrap(w.Node.Expression())
+		name := callee
 		if callee.Kind == ast.KindPropertyAccessExpression {
-			if owner, name, ok := m.libraryMember(callee.Name()); ok {
-				known, found := libraryEffects[owner][name]
-				if !found {
-					return Effect{}, false
-				}
-				arguments := w.Node.Arguments()
-				effect.Kind, effect.Key, effect.Stored = known.kind, argument(arguments, known.key), argument(arguments, known.stored)
-				return effect, true
-			}
+			name = callee.Name()
 		}
-		return effect, w.Discarded()
+		symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name)
+		if owners, member, ok := m.libraryMember(name); ok {
+			known, found := agreed(owners, member, libraryEffects)
+			if !found {
+				return Effect{}, false
+			}
+			arguments := w.Node.Arguments()
+			effect.Kind, effect.Key, effect.Stored = known.kind, argument(arguments, known.key), argument(arguments, known.stored)
+			return effect, true
+		}
+		if utils.IsSymbolFromDefaultLibrary(m.ctx.Program, symbol) {
+			return Effect{}, false
+		}
+		return effect, w.Discarded() && m.method(name)
 	}
 	if target.Kind == ast.KindElementAccessExpression {
 		key := Unwrap(target.AsElementAccessExpression().ArgumentExpression)
@@ -419,12 +517,37 @@ func (m *Analyzer) EffectsIn(statements []*ast.Node) []Effect {
 }
 
 // Arm is one way into the point after a decision where its ways rejoin: Branch is the then or else statement, the case
-// clause the way enters, or the branch of a conditional expression, and nil for the way no branch takes. Facts are the
-// presence tests its condition establishes.
+// clause the way enters, or the branch of a conditional expression, and nil for the way no branch takes. Its entry is
+// the checker's flow node where the arm starts, so the checker narrows values there as it does for code in the arm. An
+// arm of an if statement or conditional expression also holds the condition it is entered by, found truth, and the
+// flow node before the decision.
 type Arm struct {
 	Branch *ast.Node
-	Facts  []Presence
+	entry  *ast.FlowNode
+	test   *ast.Node
+	truth  bool
+	start  *ast.FlowNode
 	defs   defs
+}
+
+// flowAt returns the checker's flow node where a statement starts, or nil when it cannot be reached.
+func flowAt(statement *ast.Node) *ast.FlowNode {
+	if statement == nil || statement.FlowNodeData() == nil {
+		return nil
+	}
+	return statement.FlowNodeData().FlowNode
+}
+
+// branching returns the flow node where condition, reached from start, has been found truth.
+func branching(start *ast.FlowNode, condition *ast.Node, truth bool) *ast.FlowNode {
+	if start == nil {
+		return nil
+	}
+	flags := ast.FlowFlagsFalseCondition
+	if truth {
+		flags = ast.FlowFlagsTrueCondition
+	}
+	return &ast.FlowNode{Flags: flags, Node: condition, Antecedent: start}
 }
 
 // Merge is where the ways through a decision that reach its end rejoin: an if or switch statement, or a conditional
@@ -448,7 +571,8 @@ func (m *Analyzer) MergeOf(n *ast.Node) (*Merge, bool) {
 			truth  bool
 		}{{s.ThenStatement, true}, {s.ElseStatement, false}} {
 			if end := c.of(arm.branch).after(condition).end; end != nil {
-				merge.Arms = append(merge.Arms, Arm{Branch: arm.branch, Facts: holding(s.Expression, arm.truth), defs: end.defs})
+				merge.Arms = append(merge.Arms, Arm{Branch: arm.branch, entry: branching(flowAt(n), s.Expression, arm.truth),
+					test: s.Expression, truth: arm.truth, start: flowAt(n), defs: end.defs})
 			}
 		}
 	case n.Kind == ast.KindSwitchStatement:
@@ -462,7 +586,11 @@ func (m *Analyzer) MergeOf(n *ast.Node) (*Merge, bool) {
 			}
 			e := c.list(statements).after(entry)
 			if end := join(e.end, e.breaks[n]); end != nil {
-				merge.Arms = append(merge.Arms, Arm{Branch: clause, defs: end.defs})
+				var start *ast.FlowNode
+				if len(statements) > 0 {
+					start = flowAt(statements[0])
+				}
+				merge.Arms = append(merge.Arms, Arm{Branch: clause, entry: start, defs: end.defs})
 			}
 		}
 		covered := slices.ContainsFunc(clauses, func(c *ast.Node) bool { return c.Kind == ast.KindDefaultClause }) || m.Exhaustive(n)
@@ -477,7 +605,8 @@ func (m *Analyzer) MergeOf(n *ast.Node) (*Merge, bool) {
 			truth  bool
 		}{{conditional.WhenTrue, true}, {conditional.WhenFalse, false}} {
 			found := composeDefs(condition.defs, c.defined(c.effects(arm.branch), false))
-			merge.Arms = append(merge.Arms, Arm{Branch: arm.branch, Facts: holding(conditional.Condition, arm.truth), defs: found})
+			merge.Arms = append(merge.Arms, Arm{Branch: arm.branch, entry: branching(flowAt(n), conditional.Condition, arm.truth),
+				test: conditional.Condition, truth: arm.truth, start: flowAt(n), defs: found})
 		}
 	default:
 		return nil, false
@@ -485,50 +614,50 @@ func (m *Analyzer) MergeOf(n *ast.Node) (*Merge, bool) {
 	return merge, true
 }
 
-// holding returns the presence tests that hold where condition is truth: through !, both sides of && when it is true,
-// and of || when it is false.
-func holding(condition *ast.Node, truth bool) []Presence {
-	n := Unwrap(condition)
-	if n.Kind == ast.KindPrefixUnaryExpression && n.AsPrefixUnaryExpression().Operator == ast.KindExclamationToken {
-		return holding(n.AsPrefixUnaryExpression().Operand, !truth)
+// MissingOn reports whether the checker finds the place reference names undefined or null where arm starts. For an
+// arm entered by a condition, the checker narrows the type the place holds before the decision, with undefined and
+// null added, by that condition alone: an arm entered only when a value its type says is always present is missing,
+// such as a record's entry, finds it missing rather than unreachable. A generic type is read as its constraint, which
+// narrowing can tell present or missing. A case clause reads the type the checker narrows
+// there.
+func (m *Analyzer) MissingOn(arm Arm, reference *ast.Node) bool {
+	if arm.entry == nil || reference == nil {
+		return false
 	}
-	if n.Kind == ast.KindBinaryExpression {
-		b := n.AsBinaryExpression()
-		switch b.OperatorToken.Kind {
-		case ast.KindAmpersandAmpersandToken:
-			if truth {
-				return append(holding(b.Left, true), holding(b.Right, true)...)
-			}
-			return nil
-		case ast.KindBarBarToken:
-			if !truth {
-				return append(holding(b.Left, false), holding(b.Right, false)...)
-			}
-			return nil
+	tc := m.ctx.TypeChecker
+	reference = Unwrap(reference)
+	name := reference
+	if name.Kind == ast.KindPropertyAccessExpression {
+		name = name.Name()
+	}
+	symbol := tc.GetSymbolAtLocation(name)
+	if symbol == nil {
+		return false
+	}
+	declared := tc.GetTypeOfSymbol(symbol)
+	narrowed := func(held *checker.Type, flow *ast.FlowNode) *checker.Type {
+		return flowTypeOfReference(tc, reference, held, held, nil, flow)
+	}
+	t := narrowed(declared, arm.entry)
+	if arm.test != nil {
+		held := narrowed(declared, arm.start)
+		if constraint := checker.Checker_getBaseConstraintOfType(tc, held); held.Flags()&checker.TypeFlagsInstantiable != 0 && constraint != nil {
+			held = constraint
 		}
+		held = tc.GetUnionType([]*checker.Type{held, tc.GetUndefinedType(), tc.GetNullType()})
+		t = narrowed(held, branching(&ast.FlowNode{Flags: ast.FlowFlagsStart}, arm.test, arm.truth))
 	}
-	p, ok := PresenceTest(n)
-	if !ok {
-		return nil
-	}
-	if !truth {
-		p.Missing = !p.Missing
-	}
-	return []Presence{p}
-}
-
-// MissingOn reports whether a presence test holding on arm finds v missing.
-func (m *Analyzer) MissingOn(arm Arm, v Value) bool {
-	return slices.ContainsFunc(arm.Facts, func(p Presence) bool { return p.Missing && m.ValueOf(p.Subject).Same(v) })
+	return t != nil && t.Flags()&checker.TypeFlagsNever == 0 && !m.present(t)
 }
 
 // Phi is a value where a decision's ways rejoin: the definitions reaching it along each arm of the merge, and whether
 // it is carried: data of this, or a variable declared outside the innermost loop around the decision in its function,
-// whose value outlives this pass.
+// whose value outlives this pass. Reference is an expression naming it that some arm writes, for the checker to narrow.
 type Phi struct {
-	Value   Value
-	Inputs  [][]Def
-	Carried bool
+	Value     Value
+	Inputs    [][]Def
+	Carried   bool
+	Reference *ast.Node
 }
 
 // PhiOf reads v where merge's ways rejoin.
@@ -539,7 +668,13 @@ func (m *Analyzer) PhiOf(merge *Merge, v Value) (Phi, bool) {
 	}
 	phi := Phi{Value: v, Carried: carried(merge.Decision, v)}
 	for _, arm := range merge.Arms {
-		phi.Inputs = append(phi.Inputs, arm.defs.at(p))
+		input := arm.defs.at(p)
+		phi.Inputs = append(phi.Inputs, input)
+		for _, d := range input {
+			if phi.Reference == nil && d.Write.Target != nil {
+				phi.Reference = d.Write.Target
+			}
+		}
 	}
 	return phi, true
 }
@@ -607,15 +742,19 @@ func declarationOf(v Value) *ast.Node {
 // DefProvenance returns the kinds of value a definition gives. The value held before is existing data, a destructured
 // part or loop variable is read from other data, and an update computes its value.
 func (m *Analyzer) DefProvenance(d Def) Provenance {
+	return m.defProvenance(d, map[*ast.Symbol]bool{})
+}
+
+func (m *Analyzer) defProvenance(d Def, seen map[*ast.Symbol]bool) Provenance {
 	switch {
 	case d.Before:
 		return ExistingValue
 	case d.Declaration != nil:
-		return m.ProvenanceOf(d.Declaration.Initializer())
+		return m.provenance(d.Declaration.Initializer(), seen)
 	case d.Write.Kind == Update:
 		return ComputedValue
 	case d.Write.Source != nil:
-		return m.ProvenanceOf(d.Write.Source)
+		return m.provenance(d.Write.Source, seen)
 	}
 	return ExistingValue
 }
@@ -671,7 +810,7 @@ func (m *Analyzer) Divergences(n *ast.Node) []Divergence {
 			}
 			kinds := []Provenance{}
 			for index, arm := range merge.Arms {
-				if !m.MissingOn(arm, phi.Value) {
+				if !m.MissingOn(arm, phi.Reference) {
 					kinds = append(kinds, m.InputProvenance(merge, phi, index))
 				}
 			}

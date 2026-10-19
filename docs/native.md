@@ -65,7 +65,7 @@ Rules are tested through `tests/project/` (see [development](development.md#addi
 To upgrade:
 
 1. Update both source revisions and hashes together, using tsgolint's matching typescript-go revision.
-2. Review patches, Go requirements, compiler APIs, protocol, and licenses.
+2. Review patches, Go requirements, compiler APIs, protocol, and licenses, including the checker internals `native/model/` links by name (`go:linkname`).
 3. Rebuild from a fresh `.native/` cache; run native tests, package integration, and release builds.
 4. Review `tests/project/expected.txt` and probe snapshot changes against the rule contracts, not just test output.
 

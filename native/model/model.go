@@ -22,6 +22,7 @@ type Analyzer struct {
 	aliases         map[*ast.Symbol]*Value
 	control         *control
 	writing         *control
+	globals         map[string]*ast.Symbol
 }
 
 // NewAnalyzer reads one invocation's program with its checker.

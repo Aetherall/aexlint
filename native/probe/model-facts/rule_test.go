@@ -828,6 +828,65 @@ export function effects(rows: Map<string, number>, list: number[], seen: Set<num
   const total = recorder.total();
   use(box, total);
 }`, Options: only("effect"), Errors: facts("effect", 9)},
+			{Code: `declare function use(...values: unknown[]): void;
+enum Slot { Head, Tail }
+declare const nothing: undefined;
+class Panel {
+  items: string[] = [];
+}
+export function checked(rows: Map<number, string[]>, list: string[], key: number, entry: string[] | undefined, shape: Panel | Error, other: Panel, store: Record<number, string[]>) {
+  let index = key;
+  if (key > 1) {
+    index = Slot.Tail;
+  }
+  rows.set(index, list);
+  let fresh = [] as string[];
+  let target = list;
+  if (key > 2) {
+    target = fresh;
+  }
+  target.push("a");
+  if (entry === nothing) {
+    entry = [];
+  }
+  entry.push("b");
+  let panel = other;
+  if (shape instanceof Error) {
+    panel = new Panel();
+  } else {
+    panel = shape;
+  }
+  panel.items.push("c");
+  let bucket = store[key];
+  if (!bucket) {
+    bucket = [];
+    store[key] = bucket;
+  }
+  bucket.push("d");
+  use(index, target, entry, panel);
+}
+export function keyed<K extends string>(store: Partial<Record<K, string[]>>, key: K) {
+  let slot = store[key];
+  if (!slot) {
+    slot = [];
+    store[key] = slot;
+  }
+  slot.push("e");
+}`, Options: only("merge"), Errors: facts("merge", 6)},
+			{Code: `declare function use(...values: unknown[]): void;
+import * as store from "./store.js";
+type Handlers = { notify: (value: string) => void; record(value: string): void };
+class Grid extends Map<string, number> {}
+export function receivers(either: Map<string, number> | Set<string>, both: Map<string, number> | Grid, handlers: Handlers, key: string, Map: { set(key: string, value: number): void }) {
+  both.set(key, 1);
+  handlers.notify(key);
+  handlers.record(key);
+  store.save(key);
+  Map.set(key, 2);
+  either.clear();
+  console.log(key);
+  use(either);
+}`, Files: map[string]string{"store.ts": "export function save(key: string) {}\n"}, Options: only("effect"), Errors: facts("effect", 4)},
 		},
 	)
 }

@@ -1381,7 +1381,7 @@ Message: merge [{ current = []; s... (current: a new object, size: a constant); 
   15 |       current = [];
 
 Diagnostic 3: merge (21:9 - 21:14)
-Message: merge [{ entry = []; tre... (entry missing, entry: a new object); no branch (entry present, entry: existing data)]
+Message: merge [{ entry = []; tre... (entry: a new object (missing on entry)); no branch (entry: existing data)]
   20 |     let entry = tree.get(item);
   21 |     if (!entry) {
      |         ~~~~~~
@@ -1451,4 +1451,78 @@ Message: effect change on recorder
   20 |   recorder.record(6);
      |   ~~~~~~~~~~~~~~~~~~
   21 |   const total = recorder.total();
+---
+
+[TestModelFacts/invalid-54 - 1]
+Diagnostic 1: merge (9:7 - 9:13)
+Message: merge [{ index = Slot.Ta... (index: a constant); no branch (index: existing data)]; diverges rows.set(index, list) through index
+   8 |   let index = key;
+   9 |   if (key > 1) {
+     |       ~~~~~~~
+  10 |     index = Slot.Tail;
+
+Diagnostic 2: merge (15:7 - 15:13)
+Message: merge [{ target = fresh; } (target: a new object); no branch (target: existing data)]; diverges target.push("a") through target
+  14 |   let target = list;
+  15 |   if (key > 2) {
+     |       ~~~~~~~
+  16 |     target = fresh;
+
+Diagnostic 3: merge (19:7 - 19:23)
+Message: merge [{ entry = []; } (entry: a new object (missing on entry)); no branch (entry: existing data)]
+  18 |   target.push("a");
+  19 |   if (entry === nothing) {
+     |       ~~~~~~~~~~~~~~~~~
+  20 |     entry = [];
+
+Diagnostic 4: merge (24:7 - 24:28)
+Message: merge [{ panel = new Pan... (panel: a new object); { panel = shape; } (panel: existing data)]; diverges panel.items.push("c") through panel
+  23 |   let panel = other;
+  24 |   if (shape instanceof Error) {
+     |       ~~~~~~~~~~~~~~~~~~~~~~
+  25 |     panel = new Panel();
+
+Diagnostic 5: merge (31:7 - 31:13)
+Message: merge [{ bucket = []; st... (bucket: a new object (missing on entry)); no branch (bucket: existing data)]
+  30 |   let bucket = store[key];
+  31 |   if (!bucket) {
+     |       ~~~~~~~
+  32 |     bucket = [];
+
+Diagnostic 6: merge (40:7 - 40:11)
+Message: merge [{ slot = []; stor... (slot: a new object (missing on entry)); no branch (slot: existing data)]
+  39 |   let slot = store[key];
+  40 |   if (!slot) {
+     |       ~~~~~
+  41 |     slot = [];
+---
+
+[TestModelFacts/invalid-55 - 1]
+Diagnostic 1: effect (6:3 - 6:18)
+Message: effect store on both at key of 1
+   5 | export function receivers(either: Map<string, number> | Set<string>, both: Map<string, number> | Grid, handlers: Handlers, key: string, Map: { set(key: string, value: number): void }) {
+   6 |   both.set(key, 1);
+     |   ~~~~~~~~~~~~~~~~
+   7 |   handlers.notify(key);
+
+Diagnostic 2: effect (8:3 - 8:22)
+Message: effect change on handlers
+   7 |   handlers.notify(key);
+   8 |   handlers.record(key);
+     |   ~~~~~~~~~~~~~~~~~~~~
+   9 |   store.save(key);
+
+Diagnostic 3: effect (10:3 - 10:17)
+Message: effect change on Map
+   9 |   store.save(key);
+  10 |   Map.set(key, 2);
+     |   ~~~~~~~~~~~~~~~
+  11 |   either.clear();
+
+Diagnostic 4: effect (11:3 - 11:16)
+Message: effect remove on either
+  10 |   Map.set(key, 2);
+  11 |   either.clear();
+     |   ~~~~~~~~~~~~~~
+  12 |   console.log(key);
 ---
