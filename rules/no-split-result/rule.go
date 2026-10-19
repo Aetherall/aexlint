@@ -112,13 +112,18 @@ func checkDecision(ctx rule.RuleContext, a *model.Analyzer, n *ast.Node) {
 	for _, l := range left {
 		names = append(names, l.Value.String())
 	}
-	if reserved := a.Reserved(n); len(reserved) > 0 {
-		h := reserved[0]
+	if fabrication := a.FabricationOf(n); fabrication.Fabricated() {
+		made := []string{}
+		for _, h := range fabrication.Placeholders {
+			made = append(made, fmt.Sprintf("appends %s to `%s` only to reserve a position `%s` fills", model.Text(h.Append.Stored, 20), h.Append.Receiver, model.Text(h.Fills[0].Node, 40)))
+		}
+		for _, k := range fabrication.Keys {
+			made = append(made, fmt.Sprintf("stores entries of `%s` under keys from `%s`, which no lookup of `%s` uses", k.Container, model.Text(k.Origin, 30), k.Container))
+		}
 		ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
-			Id: "reservedPlaceholder",
-			Description: fmt.Sprintf("This decision's outcome is split across %s, and a branch appends %s to `%s` only to reserve its position: `%s` replaces it after the decision, before anything reads it.",
-				listed(names), model.Text(h.Append.Stored, 20), h.Append.Receiver, model.Text(h.Fills[0].Node, 40)),
-			Help: "The branch produces a different kind of result from the others, and makes up a placeholder so the code after the decision can treat it like theirs. Do that branch's work inside it, or give its result a path of its own.",
+			Id:          "fabricatedOutcome",
+			Description: fmt.Sprintf("This decision's outcome is split across %s, and a branch makes up what the code after it expects: it %s.", listed(names), strings.Join(made, ", and ")),
+			Help:        "The branch produces a different kind of result from the others, and fabricates what the shared code needs so it can treat that result like theirs. Do that branch's work inside it, or give its result a path of its own.",
 		})
 		return
 	}

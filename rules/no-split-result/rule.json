@@ -1,5 +1,5 @@
 {
   "name": "aexlint/no-split-result",
-  "description": "Reports an outcome split across several values: optional result fields its returns always set together, or never together, and values a decision's branches set for the code after it, including a placeholder a branch appends for that code to replace.",
+  "description": "Reports an outcome split across several values: optional result fields its returns always set together, or never together, and values a decision's branches set for the code after it, including what a branch makes up for that code: a placeholder it replaces, or a map key no lookup uses.",
   "requiresTypeChecking": true
 }

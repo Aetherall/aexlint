@@ -27,20 +27,6 @@ func (m *Analyzer) Placeholders(fn *ast.Node) []Placeholder {
 	return found
 }
 
-// Reserved lists the placeholders appended in a branch of a decision and filled only by the code after it: the
-// branch makes up an element so that code can treat its result like the other branches'.
-func (m *Analyzer) Reserved(decision *ast.Node) []Placeholder {
-	merge, ok := m.MergeOf(decision)
-	fn := enclosingFunction(decision)
-	if !ok || fn == nil {
-		return nil
-	}
-	return slices.DeleteFunc(slices.Clone(m.Placeholders(fn)), func(h Placeholder) bool {
-		inBranch := slices.ContainsFunc(merge.Arms, func(arm Arm) bool { return arm.Branch != nil && encloses(arm.Branch, h.Append.Node) })
-		return !inBranch || slices.ContainsFunc(h.Fills, func(w Effect) bool { return w.Node.Pos() < decision.End() })
-	})
-}
-
 func (m *Analyzer) placeholdersOf(fn *ast.Node) []Placeholder {
 	if fn.Body() == nil {
 		return nil

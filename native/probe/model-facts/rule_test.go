@@ -1093,6 +1093,36 @@ export function shelve(items: string[], anchors: number[], output: Lines) {
   }
   return output;
 }`, Options: only("placeholder"), Errors: facts("placeholder", 3)},
+			{Code: `declare function use(...values: unknown[]): void;
+export function mixed(items: string[], anchor: number, extra: number[]) {
+  const rows = new Map<number, string[]>();
+  for (const item of items) {
+    let index = anchor;
+    const row = rows.get(index) ?? [];
+    if (row.length > 3) index = extra.length + rows.size;
+    row.push(item);
+    rows.set(index, row);
+  }
+  use(rows.has(anchor));
+  for (const [index, row] of rows) use(index, row);
+}
+export function list(items: string[]) {
+  const rows = new Map<number, string>();
+  for (const item of items) rows.set(rows.size, item);
+  for (const [index, row] of rows) use(index, row);
+}
+export function addressed(items: string[]) {
+  const counts = new Map<string, number>();
+  for (const item of items) counts.set(item, (counts.get(item) ?? 0) + 1);
+  return [...counts.keys()];
+}
+export function removed(items: string[], drop: string) {
+  const seen = new Map<string, boolean>();
+  for (const item of items) seen.set(item, true);
+  seen.set(drop.trim(), false);
+  seen.delete(drop);
+  for (const [key] of seen) use(key);
+}`, Options: only("unaddressed"), Errors: facts("unaddressed", 1)},
 
 			{Code: summarized, Options: only("effect"), Errors: facts("effect", 16)},
 			{Code: `declare function use(...values: unknown[]): void;

@@ -111,7 +111,7 @@ A returned value other than a literal is read by its type: a field its type decl
 
 A decision whose branches set several values that the code after it reads. The decision has one outcome, but it is left as separate values: the code after it reads them apart and relies on a pairing only the branches state.
 
-When a branch also appends a [placeholder](../../docs/design/decision-model.md) that only the code after the decision replaces, the report is `reservedPlaceholder`: the branch produces a different kind of result from the others, and makes up an element so the shared code can treat it like theirs.
+When a branch also makes up what the code after the decision expects, a [fabrication](../../docs/design/decision-model.md), the report is `fabricatedOutcome`: the branch produces a different kind of result from the others, and fabricates what the shared code needs so it can treat that result like theirs. It appends a placeholder that only the code after the decision replaces, or gives that code a key to store entries of a local map under that no lookup of the map uses, while lookups do reach its other entries.
 
 ### Example
 
@@ -130,7 +130,7 @@ shelf.items.push(entry.value);
 shelves.set(index, shelf);
 ```
 
-Reported as `reservedPlaceholder` on the width check: a note too wide for the last line gets a line of its own, so the branch appends `""` to `grid.lines` under the index it was about to have, and the last loop replaces it through that index. The shared `rows.set(index, row)` stores two kinds of row, and the placeholder exists only so the new line can pass for an existing one.
+Reported as `fabricatedOutcome` on the width check: a note too wide for the last line gets a line of its own, so the branch appends `""` to `grid.lines` under the index it was about to have, and the last loop replaces it through that index. The shared `rows.set(index, row)` stores two kinds of row: rows looked up by the last line's index, and rows under new indices no lookup uses. The placeholder and the new index exist only so the new line can pass for an existing one.
 
 ```ts
 for (const note of notes) {
@@ -201,6 +201,6 @@ Also accepted: a branch that sets one value (`let label = "a"; if (formal) label
 
 ### Reporting and limits
 
-Reports `splitOutcome`, or `reservedPlaceholder`, on the condition, or the expression a `switch` tests, once per decision, listing the values in the order the branches write them. No fixes.
+Reports `splitOutcome`, or `fabricatedOutcome`, on the condition, or the expression a `switch` tests, once per decision, listing the values in the order the branches write them. No fixes.
 
 Writes in callbacks are not read, since when they run is not known. A method called on data is never a write the branch decides, even one that changes it, such as `push`. A call leaves only when its type is `never`, so a branch ending in an unresolved call, or in one typed `void` that always throws, is read as reaching the end. Reads in callbacks after the decision count. The rule does not judge how tightly the values are coupled: a clamp setting a position and a remainder reports like a flag and the result it guards.

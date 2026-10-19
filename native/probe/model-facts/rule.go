@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary", "origin", "placeholder"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary", "origin", "placeholder", "unaddressed"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -573,6 +573,15 @@ func (p *probe) placeholder(fn *ast.Node) {
 	}
 }
 
+func (p *probe) unaddressed(fn *ast.Node) {
+	if !p.kinds["unaddressed"] {
+		return
+	}
+	for _, k := range p.a.UnaddressedKeys(fn) {
+		p.report("unaddressed", k.Entry.Node, fmt.Sprintf("unaddressed %s key from %s", k.Container, model.Text(k.Origin, 30)))
+	}
+}
+
 // origin reports the origins of the argument of each call to a function named origin, a test helper.
 func (p *probe) origin(n *ast.Node) {
 	if !p.kinds["origin"] || n.Kind != ast.KindCallExpression || len(n.Arguments()) != 1 {
@@ -639,6 +648,7 @@ func (p *probe) run() {
 			p.flow(n)
 			p.summary(n)
 			p.placeholder(n)
+			p.unaddressed(n)
 			p.contract(n)
 			p.callers(n)
 			p.result(n)

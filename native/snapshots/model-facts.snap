@@ -1723,6 +1723,15 @@ Message: placeholder "" in output.lines at output.lines.length, filled by output
 ---
 
 [TestModelFacts/invalid-59 - 1]
+Diagnostic 1: unaddressed (9:5 - 9:24)
+Message: unaddressed rows key from extra.length + rows.size
+   8 |     row.push(item);
+   9 |     rows.set(index, row);
+     |     ~~~~~~~~~~~~~~~~~~~~
+  10 |   }
+---
+
+[TestModelFacts/invalid-60 - 1]
 Diagnostic 1: effect (9:5 - 9:27)
 Message: effect append on this.badges of badge
    8 |   add(badge: Badge) {
@@ -1836,7 +1845,7 @@ Message: effect append on club.badges of badge
   66 |   new Shared(badge);
 ---
 
-[TestModelFacts/invalid-60 - 1]
+[TestModelFacts/invalid-61 - 1]
 Diagnostic 1: effect (6:3 - 6:18)
 Message: effect store on both at key of 1
    5 | export function receivers(either: Map<string, number> | Set<string>, both: Map<string, number> | Grid, handlers: Handlers, key: string, Map: { set(key: string, value: number): void }) {

@@ -27,3 +27,18 @@ export function annotate(lines: readonly string[], notes: readonly string[], wid
   }
   return grid;
 }
+
+export function group(items: readonly string[], anchor: number) {
+  const rows = new Map<number, string[]>();
+  for (const item of items) {
+    let index = anchor;
+    let row = rows.get(index) ?? [];
+    if (row.length > 8332) {
+      index = -rows.size - 1;
+      row = [];
+    }
+    row.push(item);
+    rows.set(index, row);
+  }
+  return [...rows.values()];
+}
