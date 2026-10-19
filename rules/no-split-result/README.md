@@ -111,7 +111,7 @@ A returned value other than a literal is read by its type: a field its type decl
 
 A decision whose branches set several values that the code after it reads. The decision has one outcome, but it is left as separate values: the code after it reads them apart and relies on a pairing only the branches state.
 
-When a branch also makes up what the code after the decision expects, a [fabrication](../../docs/design/decision-model.md), the report is `fabricatedOutcome`: the branch produces a different kind of result from the others, and fabricates what the shared code needs so it can treat that result like theirs. It appends a placeholder that only the code after the decision replaces, or gives that code a key to store entries of a local map under that no lookup of the map uses, while lookups do reach its other entries.
+When what a branch writes for the code after the decision is never used as written, a [fabrication](../../docs/design/decision-model.md), the report is `fabricatedOutcome`, even when the branch leaves only one value. The branch stores into data that only the code after the decision replaces, before anything reads it, or gives that code a key to store entries of a local map, set or object under that no lookup uses, while lookups do reach its other entries. Either the branch's work is lost, or it only makes up what the shared code expects, such as a placeholder reserving a position, so that code can treat the branch's result like the others'.
 
 ### Example
 
@@ -128,6 +128,16 @@ if (!shelf.fits(width)) {
 }
 shelf.items.push(entry.value);
 shelves.set(index, shelf);
+```
+
+Reported as `fabricatedOutcome` on `Session.active !== undefined && …`: the branch clears the field and warns that no session stays active, but the next line sets it again, so the branch's write is lost.
+
+```ts
+if (Session.active !== undefined && Session.active !== this) {
+  console.warn("Another session is active: neither stays active");
+  Session.active = undefined;
+}
+Session.active = this;
 ```
 
 Reported as `fabricatedOutcome` on the width check: a note too wide for the last line gets a line of its own, so the branch appends `""` to `grid.lines` under the index it was about to have, and the last loop replaces it through that index. The shared `rows.set(index, row)` stores two kinds of row: rows looked up by the last line's index, and rows under new indices no lookup uses. The placeholder and the new index exist only so the new line can pass for an existing one.

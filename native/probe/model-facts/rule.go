@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary", "origin", "placeholder", "unaddressed"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary", "origin", "overwritten", "unaddressed"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -560,16 +560,32 @@ func (p *probe) summary(fn *ast.Node) {
 	}
 }
 
-func (p *probe) placeholder(fn *ast.Node) {
-	if !p.kinds["placeholder"] {
+func (p *probe) overwritten(fn *ast.Node) {
+	if !p.kinds["overwritten"] {
 		return
 	}
-	for _, h := range p.a.Placeholders(fn) {
+	for _, o := range p.a.OverwrittenIn(fn) {
 		fills := []string{}
-		for _, w := range h.Fills {
+		for _, w := range o.Fills {
 			fills = append(fills, model.Text(w.Node, 30))
 		}
-		p.report("placeholder", h.Append.Node, fmt.Sprintf("placeholder %s in %s at %s, filled by %s", model.Text(h.Append.Stored, 20), h.Append.Receiver, model.Text(h.Position, 30), strings.Join(fills, "; ")))
+		place := o.Store.Receiver.String()
+		if o.Field != nil {
+			place = o.Field.String()
+		}
+		keys := []string{}
+		for _, k := range o.Keys {
+			keys = append(keys, model.SourceText(k))
+		}
+		kind := "store"
+		if o.Reserves() {
+			kind = "placeholder"
+		}
+		description := fmt.Sprintf("overwritten %s %s in %s", kind, model.Text(o.Store.Stored, 20), place)
+		if len(keys) > 0 {
+			description += " at " + strings.Join(keys, ", ")
+		}
+		p.report("overwritten", o.Store.Node, description+", filled by "+strings.Join(fills, "; "))
 	}
 }
 
@@ -578,7 +594,7 @@ func (p *probe) unaddressed(fn *ast.Node) {
 		return
 	}
 	for _, k := range p.a.UnaddressedKeys(fn) {
-		p.report("unaddressed", k.Entry.Node, fmt.Sprintf("unaddressed %s key from %s", k.Container, model.Text(k.Origin, 30)))
+		p.report("unaddressed", k.Entry.Node, fmt.Sprintf("unaddressed %s key from %s", k.Container, model.SourceText(k.Origin)))
 	}
 }
 
@@ -592,7 +608,7 @@ func (p *probe) origin(n *ast.Node) {
 	}
 	found := []string{}
 	for _, o := range p.a.OriginsOf(n.Arguments()[0]) {
-		found = append(found, model.Text(o, 30))
+		found = append(found, model.SourceText(o))
 	}
 	p.report("origin", n, "origin ["+strings.Join(found, "; ")+"]")
 }
@@ -647,7 +663,7 @@ func (p *probe) run() {
 			}
 			p.flow(n)
 			p.summary(n)
-			p.placeholder(n)
+			p.overwritten(n)
 			p.unaddressed(n)
 			p.contract(n)
 			p.callers(n)

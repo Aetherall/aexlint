@@ -24,13 +24,13 @@ type Analyzer struct {
 	writing         *control
 	globals         map[string]*ast.Symbol
 	summaries       map[*ast.Node]FunctionSummary
-	placeholders    map[*ast.Node][]Placeholder
+	overwritten     map[*ast.Node][]Overwritten
 	unaddressed     map[*ast.Node][]UnaddressedKey
 }
 
 // NewAnalyzer reads one invocation's program with its checker.
 func NewAnalyzer(ctx rule.RuleContext) *Analyzer {
-	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}, aliases: map[*ast.Symbol]*Value{}, summaries: map[*ast.Node]FunctionSummary{}, placeholders: map[*ast.Node][]Placeholder{}, unaddressed: map[*ast.Node][]UnaddressedKey{}}
+	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}, aliases: map[*ast.Symbol]*Value{}, summaries: map[*ast.Node]FunctionSummary{}, overwritten: map[*ast.Node][]Overwritten{}, unaddressed: map[*ast.Node][]UnaddressedKey{}}
 }
 
 // DecisionForm is how many arms of a decision do work: at most one for a guard, several for a dispatch.

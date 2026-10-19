@@ -105,26 +105,38 @@ func check(ctx rule.RuleContext, a *model.Analyzer, fn *ast.Node) {
 
 func checkDecision(ctx rule.RuleContext, a *model.Analyzer, n *ast.Node) {
 	left := a.LeftValues(n)
-	if len(left) < 2 {
-		return
-	}
 	names := []string{}
 	for _, l := range left {
 		names = append(names, l.Value.String())
 	}
 	if fabrication := a.FabricationOf(n); fabrication.Fabricated() {
 		made := []string{}
-		for _, h := range fabrication.Placeholders {
-			made = append(made, fmt.Sprintf("appends %s to `%s` only to reserve a position `%s` fills", model.Text(h.Append.Stored, 20), h.Append.Receiver, model.Text(h.Fills[0].Node, 40)))
+		for _, o := range fabrication.Stores {
+			fill := model.Text(o.Fills[0].Node, 40)
+			switch {
+			case o.Reserves():
+				made = append(made, fmt.Sprintf("appends %s to `%s`, which only reserves a position `%s` fills", model.Text(o.Store.Stored, 20), o.Store.Receiver, fill))
+			case o.Field != nil:
+				made = append(made, fmt.Sprintf("sets `%s` to %s, which `%s` replaces before anything reads it", *o.Field, model.Text(o.Store.Stored, 20), fill))
+			default:
+				made = append(made, fmt.Sprintf("stores %s into `%s`, which `%s` replaces before anything reads it", model.Text(o.Store.Stored, 20), o.Store.Receiver, fill))
+			}
 		}
 		for _, k := range fabrication.Keys {
-			made = append(made, fmt.Sprintf("stores entries of `%s` under keys from `%s`, which no lookup of `%s` uses", k.Container, model.Text(k.Origin, 30), k.Container))
+			made = append(made, fmt.Sprintf("stores entries of `%s` under keys from `%s`, which no lookup of `%s` uses", k.Container, model.SourceText(k.Origin), k.Container))
+		}
+		split := ""
+		if len(names) >= 2 {
+			split = fmt.Sprintf(" Its outcome is also split across %s.", listed(names))
 		}
 		ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
 			Id:          "fabricatedOutcome",
-			Description: fmt.Sprintf("This decision's outcome is split across %s, and a branch makes up what the code after it expects: it %s.", listed(names), strings.Join(made, ", and ")),
-			Help:        "The branch produces a different kind of result from the others, and fabricates what the shared code needs so it can treat that result like theirs. Do that branch's work inside it, or give its result a path of its own.",
+			Description: fmt.Sprintf("What a branch of this decision writes for the code after it is never used as written: it %s.%s", strings.Join(made, ", and "), split),
+			Help:        "Either the branch's work is lost, or it only makes up what the shared code expects so that code can treat the branch's result like the others'. Do that branch's work inside it, or give its result a path of its own.",
 		})
+		return
+	}
+	if len(left) < 2 {
 		return
 	}
 	ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{

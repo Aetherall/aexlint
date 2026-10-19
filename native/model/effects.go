@@ -157,10 +157,13 @@ type SummaryEffect struct {
 // FunctionSummary is what a project function with a body does with data its caller gives it: the effects it makes on
 // its receiver and parameters, and the parts of them it reads, including through the calls it makes, read with
 // EffectsIn and ReadsIn on its body. Effects and reads of its own locals or of module state, and of a parameter it
-// rebinds, are not listed. A function reached again while it is summarized gives nothing on that call.
+// rebinds, are not listed. Opaque is set when it may also run code the model does not see, which may read or change
+// any data visible to it (see Unseen), or changes data other than its locals, receiver and parameters. A function
+// reached again while it is summarized gives nothing on that call.
 type FunctionSummary struct {
 	Effects []SummaryEffect
 	Reads   []SummaryRead
+	Opaque  bool
 }
 
 // SummaryRead is a read a function makes of data its caller gives it: Key is the key of an element read when it is
@@ -225,6 +228,11 @@ func (m *Analyzer) Summary(fn *ast.Node) FunctionSummary {
 			summary.Reads = append(summary.Reads, SummaryRead{Target: target, Key: whole(r.Key), Size: r.Size})
 		}
 	}
+	summary.Opaque = len(m.Unseen([]*ast.Node{fn.Body()}, true)) > 0 || slices.ContainsFunc(m.EffectsIn([]*ast.Node{fn.Body()}), func(e Effect) bool {
+		_, anchored := anchor(e.Receiver)
+		local := e.Receiver.Root != nil && e.Receiver.Root.ValueDeclaration != nil && enclosingFunction(e.Receiver.Root.ValueDeclaration) == fn
+		return !anchored && !local
+	})
 	m.summaries[fn] = summary
 	return summary
 }

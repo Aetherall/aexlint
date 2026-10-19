@@ -6,60 +6,135 @@ import (
 	"github.com/microsoft/typescript-go/shim/ast"
 )
 
-// Placeholder is an element appended to a collection only to reserve its position: Append appends a constant,
-// Position reads the collection's size just before, naming the element, and Fills store into the collection at a key
-// that position flows to, through variables and the keys of a local container. Every way from the append reaches a
-// fill of its position, and nothing between them can read the element: no read of the collection as a whole or of
-// data holding it, and no element read whose key the position flows to.
-type Placeholder struct {
-	Append   Effect
-	Position *ast.Node
-	Fills    []Effect
+// Overwritten is a store into data that nothing reads: Store puts a value into a field of data (Field), into an
+// element of a collection under a key, or appends it right after a variable is given the collection's size, which
+// names its position (an append reserving a position: a placeholder). Keys are the origins of that key or position.
+// Fills replace the value on every way from the store, an element through a key every origin of Keys flows to, through
+// variables and the keys of a local container, before anything can read it: no read of the data as a whole or of data
+// holding it, of the field, or of an element whose key shares an origin with Keys, and, unless the data is private to
+// its function (see private), no code the model does not see runs in between (see Unseen).
+type Overwritten struct {
+	Store Effect
+	Field *Value
+	Keys  []ValueSource
+	Fills []Effect
 }
 
-// Placeholders lists the placeholders of a function's body, outside the functions it declares.
-func (m *Analyzer) Placeholders(fn *ast.Node) []Placeholder {
-	if found, ok := m.placeholders[fn]; ok {
+// Reserves reports whether the store appends, reserving a position.
+func (o Overwritten) Reserves() bool { return o.Store.Kind == Append }
+
+// OverwrittenIn lists the overwritten stores of a function's body, outside the functions it declares.
+func (m *Analyzer) OverwrittenIn(fn *ast.Node) []Overwritten {
+	if found, ok := m.overwritten[fn]; ok {
 		return found
 	}
-	found := m.placeholdersOf(fn)
-	m.placeholders[fn] = found
+	found := m.overwrittenOf(fn)
+	m.overwritten[fn] = found
 	return found
 }
 
-func (m *Analyzer) placeholdersOf(fn *ast.Node) []Placeholder {
+func (m *Analyzer) overwrittenOf(fn *ast.Node) []Overwritten {
 	if fn.Body() == nil {
 		return nil
 	}
 	effects := m.EffectsIn([]*ast.Node{fn.Body()})
 	var reads []Read
-	found := []Placeholder{}
-	for _, a := range effects {
-		if a.Kind != Append || a.Stored == nil || m.ProvenanceOf(a.Stored) != ConstantValue || !a.Receiver.Named() {
+	found := []Overwritten{}
+	for _, s := range effects {
+		candidate, ok := m.storeOf(s)
+		if !ok {
 			continue
 		}
-		position := m.position(a)
-		if position == nil {
-			continue
-		}
-		fills := []Effect{}
 		for _, w := range effects {
-			if w.Kind == Store && w.Key != nil && w.Receiver.Same(a.Receiver) && slices.Contains(m.OriginsOf(w.Key), position) && m.fills(a, w, position) {
-				fills = append(fills, w)
+			if w.Node != s.Node && m.replaces(candidate, w) {
+				candidate.Fills = append(candidate.Fills, w)
 			}
 		}
-		if len(fills) == 0 {
+		if len(candidate.Fills) == 0 {
 			continue
 		}
 		if reads == nil {
 			reads = m.ReadsIn([]*ast.Node{fn.Body()})
 		}
-		if slices.ContainsFunc(fills, func(w Effect) bool { return m.seen(a, w, position, reads) }) {
+		if slices.ContainsFunc(candidate.Fills, func(w Effect) bool { return m.seen(candidate, w, reads) || m.exposed(fn, candidate, w) }) {
 			continue
 		}
-		found = append(found, Placeholder{Append: a, Position: position, Fills: fills})
+		found = append(found, candidate)
 	}
 	return found
+}
+
+// storeOf reads an effect as a store whose place later stores can name: an assignment of a field, a store under a
+// key, or an append whose position a size read names.
+func (m *Analyzer) storeOf(s Effect) (Overwritten, bool) {
+	if !s.Receiver.Named() || s.Stored == nil {
+		return Overwritten{}, false
+	}
+	switch s.Kind {
+	case Append:
+		if position := m.position(s); position != nil {
+			return Overwritten{Store: s, Keys: []ValueSource{{Node: position}}}, true
+		}
+	case Store:
+		if s.Key != nil {
+			if keys := m.OriginsOf(s.Key); len(keys) > 0 {
+				return Overwritten{Store: s, Keys: keys}, true
+			}
+		}
+	case Change:
+		if field, ok := m.fieldOf(s); ok {
+			return Overwritten{Store: s, Field: &field}, true
+		}
+	}
+	return Overwritten{}, false
+}
+
+// fieldOf returns the field a plain assignment effect sets.
+func (m *Analyzer) fieldOf(e Effect) (Value, bool) {
+	if !ast.IsAssignmentExpression(e.Node, false) || e.Node.AsBinaryExpression().OperatorToken.Kind != ast.KindEqualsToken {
+		return Value{}, false
+	}
+	target := Unwrap(e.Node.AsBinaryExpression().Left)
+	if target.Kind != ast.KindPropertyAccessExpression && target.Kind != ast.KindElementAccessExpression {
+		return Value{}, false
+	}
+	v := m.ValueOf(target)
+	if !v.Named() || v.Partial || len(v.Path) == 0 {
+		return Value{}, false
+	}
+	v.Node = nil
+	return v, true
+}
+
+// replaces reports whether w stores into the place of candidate on every way from it.
+func (m *Analyzer) replaces(candidate Overwritten, w Effect) bool {
+	s := candidate.Store
+	if candidate.Field != nil {
+		field, ok := m.fieldOf(w)
+		return ok && field.Same(*candidate.Field) && m.follows(s.Node, w.Node)
+	}
+	if w.Kind != Store || w.Key == nil || !w.Receiver.Same(s.Receiver) {
+		return false
+	}
+	origins := m.OriginsOf(w.Key)
+	if slices.ContainsFunc(candidate.Keys, func(k ValueSource) bool { return !slices.Contains(origins, k) }) {
+		return false
+	}
+	if loop, over := m.keyLoop(w.Key); loop != nil {
+		contents, ok := m.Contents(over, loop)
+		ending := m.flowControl().of(loop.Statement())
+		if !ok || !m.always(loop.Statement(), w.Node) || ending.breaks[loop] != nil || ending.returns || ending.throws {
+			return false
+		}
+		return slices.ContainsFunc(contents.Entries, func(e Entry) bool {
+			if e.Key == nil || !m.follows(s.Node, e.Node) || e.Node.End() > loop.Pos() {
+				return false
+			}
+			keys := m.OriginsOf(e.Key)
+			return !slices.ContainsFunc(candidate.Keys, func(k ValueSource) bool { return !slices.Contains(keys, k) })
+		})
+	}
+	return m.follows(s.Node, w.Node)
 }
 
 // position returns the size read of an append's collection that names the appended element: the value a variable is
@@ -114,24 +189,6 @@ func statementOf(n *ast.Node) *ast.Node {
 		}
 	}
 	return nil
-}
-
-// fills reports whether every way from the append a reaches the fill w of its position: directly, when w's key holds
-// it through variables, or through a local container w's key is a key of, iterated by a for-of loop: every way from a
-// reaches an entry stored under a key the position flows to, before the loop, and every iteration of that loop, which
-// neither breaks out of it nor leaves the function, reaches w.
-func (m *Analyzer) fills(a, w Effect, position *ast.Node) bool {
-	if loop, over := m.keyLoop(w.Key); loop != nil {
-		contents, ok := m.Contents(over, loop)
-		ending := m.flowControl().of(loop.Statement())
-		if !ok || !m.always(loop.Statement(), w.Node) || ending.breaks[loop] != nil || ending.returns || ending.throws {
-			return false
-		}
-		return slices.ContainsFunc(contents.Entries, func(e Entry) bool {
-			return e.Key != nil && slices.Contains(m.OriginsOf(e.Key), position) && m.follows(a.Node, e.Node) && e.Node.End() <= loop.Pos()
-		})
-	}
-	return m.follows(a.Node, w.Node)
 }
 
 // keyLoop returns the for-of loop binding key to the keys of the container it iterates, and that container.
@@ -280,31 +337,61 @@ func commonList(a, b *ast.Node) *ast.Node {
 	return nil
 }
 
-// seen reports whether a read between the append a and the fill w may see the appended element: from the statement
-// holding a in the statement list holding both, to the statement holding w, a read of the collection as a whole or of
-// data holding it, or an element read whose key the position flows to.
-func (m *Analyzer) seen(a, w Effect, position *ast.Node, reads []Read) bool {
-	common := commonList(a.Node, w.Node)
+// exposed reports whether code the model does not see may read the stored value before the fill w: the data is not
+// private to fn up to w, and such code runs between them, in the region seen reads.
+func (m *Analyzer) exposed(fn *ast.Node, candidate Overwritten, w Effect) bool {
+	data := candidate.Store.Receiver
+	if candidate.Field != nil {
+		data = *candidate.Field
+	}
+	if m.private(data, fn, w.Node.End()) {
+		return false
+	}
+	nodes, start, end := m.region(candidate.Store, w)
+	return slices.ContainsFunc(m.Unseen(nodes, false), func(n *ast.Node) bool { return n.Pos() >= start && n.End() <= end })
+}
+
+// region returns the statements from the one holding the store s, in the statement list holding both, to the one
+// holding the fill w, and the positions between which code runs after s and before w writes: the whole statement
+// holding s when it is a loop, whose later iterations run after it.
+func (m *Analyzer) region(s, w Effect) ([]*ast.Node, int, int) {
+	common := commonList(s.Node, w.Node)
 	if common == nil {
-		return true
+		return nil, 0, 0
 	}
 	list := statementList(common)
-	from := slices.IndexFunc(list, func(s *ast.Node) bool { return encloses(s, a.Node) })
-	to := slices.IndexFunc(list, func(s *ast.Node) bool { return encloses(s, w.Node) })
+	from := slices.IndexFunc(list, func(t *ast.Node) bool { return encloses(t, s.Node) })
+	to := slices.IndexFunc(list, func(t *ast.Node) bool { return encloses(t, w.Node) })
 	start, end := list[from].Pos(), list[to].End()
 	if !ast.IsIterationStatement(list[from], false) && from != to {
-		start = a.Node.End()
+		start = s.Node.End()
 	}
-	collection := a.Receiver
+	return list[from : to+1], start, end
+}
+
+// seen reports whether a read between the store and the fill w may see the stored value: from the statement holding
+// the store in the statement list holding both, to the statement holding w, a read of the field, of the collection as a
+// whole, of data holding either, or of an element whose key shares an origin with the store's.
+func (m *Analyzer) seen(candidate Overwritten, w Effect, reads []Read) bool {
+	s := candidate.Store
+	nodes, start, end := m.region(s, w)
+	if nodes == nil {
+		return true
+	}
 	return slices.ContainsFunc(reads, func(r Read) bool {
 		if r.Node.Pos() < start || r.Node.End() > end {
 			return false
 		}
+		if candidate.Field != nil {
+			return r.Value.Within(*candidate.Field) || candidate.Field.Within(r.Value)
+		}
+		collection := s.Receiver
 		switch {
 		case r.Size && r.Value.Same(collection):
 			return false
 		case r.Value.Same(collection) && r.Key != nil:
-			return slices.Contains(m.OriginsOf(r.Key), position)
+			origins := m.OriginsOf(r.Key)
+			return slices.ContainsFunc(candidate.Keys, func(k ValueSource) bool { return slices.Contains(origins, k) })
 		case r.Value.Within(collection) && !r.Value.Same(collection):
 			return false
 		}

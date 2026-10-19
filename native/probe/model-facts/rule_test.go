@@ -1041,40 +1041,47 @@ class Lines {
     this.lines[index] = text;
   }
 }
-export function direct(out: string[]) {
+export function direct(lines: string[]) {
+  const out = [...lines];
   const index = out.length;
   out.push("");
   out[index] = compute();
 }
-export function readBetween(out: string[]) {
+export function readBetween(lines: string[]) {
+  const out = [...lines];
   const index = out.length;
   out.push("");
   use(out);
   out[index] = compute();
 }
-export function readThrough(out: string[]) {
+export function readThrough(lines: string[]) {
+  const out = [...lines];
   const index = out.length;
   out.push("");
   use(out[index]);
   out[index] = compute();
 }
-export function readOther(out: string[], other: number) {
+export function readOther(lines: string[], other: number) {
+  const out = [...lines];
   const index = out.length;
   out.push("");
   use(out[other]);
   out[index] = compute();
 }
-export function conditional(out: string[], fill: boolean) {
+export function conditional(lines: string[], fill: boolean) {
+  const out = [...lines];
   const index = out.length;
   out.push("");
   if (fill) out[index] = compute();
 }
-export function computed(out: string[]) {
+export function computed(lines: string[]) {
+  const out = [...lines];
   const index = out.length;
   out.push(compute());
   out[index] = compute();
 }
-export function shelve(items: string[], anchors: number[], output: Lines) {
+export function shelve(items: string[], anchors: number[]) {
+  const output = new Lines();
   const rows = new Map<number, string[]>();
   for (const item of items) {
     let index = anchors[0]!;
@@ -1092,7 +1099,44 @@ export function shelve(items: string[], anchors: number[], output: Lines) {
     output.place(row.join(" "), index);
   }
   return output;
-}`, Options: only("placeholder"), Errors: facts("placeholder", 3)},
+}
+export class Panel {
+  title = "";
+  width = 0;
+  rename(next: string) {
+    this.title = "";
+    this.width = next.length;
+    this.title = next;
+  }
+  reread(next: string) {
+    this.title = "";
+    use(this);
+    this.title = next;
+  }
+}
+export function cells(grid: Map<string, number>, key: string, other: string) {
+  grid.set(key, 0);
+  grid.set(other, 1);
+  grid.set(key, 2);
+}
+export function exposed(panel: Panel, next: string) {
+  panel.title = "";
+  use(next);
+  panel.title = next;
+}
+export async function awaited(panel: Panel, next: Promise<string>) {
+  panel.title = "";
+  panel.title = await next;
+}
+export function escapes(lines: string[], keep: (out: string[]) => void) {
+  const out = [...lines];
+  const index = out.length;
+  out.push("");
+  keep(out);
+  use(index);
+  out[index] = compute();
+  return out;
+}`, Options: only("overwritten"), Errors: facts("overwritten", 6)},
 			{Code: `declare function use(...values: unknown[]): void;
 export function mixed(items: string[], anchor: number, extra: number[]) {
   const rows = new Map<number, string[]>();
@@ -1122,7 +1166,20 @@ export function removed(items: string[], drop: string) {
   seen.set(drop.trim(), false);
   seen.delete(drop);
   for (const [key] of seen) use(key);
-}`, Options: only("unaddressed"), Errors: facts("unaddressed", 1)},
+}
+export function tags(items: string[], extra: string) {
+  const known = new Set<string>();
+  for (const item of items) known.add(item);
+  known.add(extra.toUpperCase());
+  return items.filter((item) => known.has(item)).length + known.size;
+}
+export function byName(items: string[], fallback: number) {
+  const index: Record<string, number> = {};
+  items.forEach((item, i) => use(item, i));
+  for (const item of items) index[item] = item.length;
+  index[String(fallback)] = fallback;
+  return index[items[0]!];
+}`, Options: only("unaddressed"), Errors: facts("unaddressed", 3)},
 
 			{Code: summarized, Options: only("effect"), Errors: facts("effect", 16)},
 			{Code: `declare function use(...values: unknown[]): void;

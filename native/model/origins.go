@@ -2,27 +2,58 @@ package model
 
 import (
 	"slices"
+	"strings"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 )
 
+// ValueSource is an origin: an expression or declaration (Node), or the elements of data the model cannot see the contents
+// of (Elements), which every read of one of its elements shares.
+type ValueSource struct {
+	Node     *ast.Node
+	Elements place
+}
+
+// SourceText describes a source for messages.
+func SourceText(s ValueSource) string {
+	if s.Node != nil {
+		return Text(s.Node, 30)
+	}
+	v := Value{Root: s.Elements.root, This: s.Elements.this, Path: []string{}}
+	if s.Elements.path != "" {
+		v.Path = strings.Split(s.Elements.path, "\x00")
+	}
+	return "elements of " + v.String()
+}
+
+// elementsOf returns the source the elements of data n reads share, when n names that data.
+func elementsOf(v Value) ([]ValueSource, bool) {
+	p, ok := placeOf(v)
+	if !ok {
+		return nil, false
+	}
+	return []ValueSource{{Elements: p}}, true
+}
+
 // OriginsOf returns where the value n gives comes from, as the expressions or declarations the model cannot follow
 // further: a new object, a constant, a size read, a read of data, a computed value, or a parameter or variable whose
-// definitions are not seen. Origins are followed through const initializers and the definitions of other variables
+// definitions are not seen. An element of data whose contents are not seen, read by element access or a lookup,
+// bound by a for-of loop over it, or passed to the callback of an array or set method on it, comes from its elements,
+// one source for every such read. Origins are followed through const initializers and the definitions of other variables
 // reaching the read, conditional and logical operators, calls to project functions and their returns (a parameter
 // giving the origins of the call's argument), and the entries of local containers (see Contents): a lookup gives the
 // origins of the values stored, and a loop over the container binds its keys and values to theirs.
-func (m *Analyzer) OriginsOf(n *ast.Node) []*ast.Node {
+func (m *Analyzer) OriginsOf(n *ast.Node) []ValueSource {
 	return m.origins(n, &originTracing{seen: map[*ast.Symbol]bool{}, calling: map[*ast.Node]bool{}})
 }
 
 type originTracing struct {
 	seen    map[*ast.Symbol]bool
 	calling map[*ast.Node]bool
-	bound   map[*ast.Symbol][]*ast.Node
+	bound   map[*ast.Symbol][]ValueSource
 }
 
-func unionNodes(a, b []*ast.Node) []*ast.Node {
+func unionSources(a, b []ValueSource) []ValueSource {
 	for _, n := range b {
 		if !slices.Contains(a, n) {
 			a = append(a, n)
@@ -31,7 +62,7 @@ func unionNodes(a, b []*ast.Node) []*ast.Node {
 	return a
 }
 
-func (m *Analyzer) origins(n *ast.Node, t *originTracing) []*ast.Node {
+func (m *Analyzer) origins(n *ast.Node, t *originTracing) []ValueSource {
 	n = Unwrap(n)
 	if n == nil {
 		return nil
@@ -39,12 +70,12 @@ func (m *Analyzer) origins(n *ast.Node, t *originTracing) []*ast.Node {
 	switch n.Kind {
 	case ast.KindConditionalExpression:
 		c := n.AsConditionalExpression()
-		return unionNodes(m.origins(c.WhenTrue, t), m.origins(c.WhenFalse, t))
+		return unionSources(m.origins(c.WhenTrue, t), m.origins(c.WhenFalse, t))
 	case ast.KindBinaryExpression:
 		b := n.AsBinaryExpression()
 		switch operator := b.OperatorToken.Kind; {
 		case ast.IsLogicalOperator(operator) || operator == ast.KindQuestionQuestionToken:
-			return unionNodes(m.origins(b.Left, t), m.origins(b.Right, t))
+			return unionSources(m.origins(b.Left, t), m.origins(b.Right, t))
 		case operator == ast.KindCommaToken || operator == ast.KindEqualsToken:
 			return m.origins(b.Right, t)
 		}
@@ -58,17 +89,29 @@ func (m *Analyzer) origins(n *ast.Node, t *originTracing) []*ast.Node {
 		if found, ok := m.callOrigins(n, t); ok {
 			return found
 		}
+	case ast.KindElementAccessExpression:
+		lookup, _ := m.LookupOf(n)
+		if contents, ok := m.Contents(lookup.Container, n); ok {
+			found := []ValueSource{}
+			for _, entry := range contents.Entries {
+				found = unionSources(found, m.origins(entry.Value, t))
+			}
+			return found
+		}
+		if found, ok := elementsOf(lookup.Container); ok {
+			return found
+		}
 	case ast.KindIdentifier:
 		return m.variableOrigins(n, t)
 	}
-	return []*ast.Node{n}
+	return []ValueSource{{Node: n}}
 }
 
 // variableOrigins returns the origins of a variable or parameter read.
-func (m *Analyzer) variableOrigins(n *ast.Node, t *originTracing) []*ast.Node {
+func (m *Analyzer) variableOrigins(n *ast.Node, t *originTracing) []ValueSource {
 	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
 	if symbol == nil || symbol.ValueDeclaration == nil || t.seen[symbol] {
-		return []*ast.Node{n}
+		return []ValueSource{{Node: n}}
 	}
 	d := symbol.ValueDeclaration
 	t.seen[symbol] = true
@@ -76,29 +119,32 @@ func (m *Analyzer) variableOrigins(n *ast.Node, t *originTracing) []*ast.Node {
 	if found, ok := m.iterated(d, t); ok {
 		return found
 	}
+	if found, ok := m.elementParameter(d); ok {
+		return found
+	}
 	if d.Kind != ast.KindVariableDeclaration && d.Kind != ast.KindParameter {
-		return []*ast.Node{d}
+		return []ValueSource{{Node: d}}
 	}
 	if d.Kind == ast.KindVariableDeclaration && ast.IsVarConst(d) && d.Initializer() != nil {
 		return m.origins(d.Initializer(), t)
 	}
-	found := []*ast.Node{}
+	found := []ValueSource{}
 	for _, def := range m.reaching(n, Value{Root: symbol, Path: []string{}}) {
 		switch {
 		case def.Before:
 			if bound, ok := t.bound[symbol]; ok {
-				found = unionNodes(found, bound)
+				found = unionSources(found, bound)
 			} else {
-				found = unionNodes(found, []*ast.Node{d})
+				found = unionSources(found, []ValueSource{{Node: d}})
 			}
 		case def.Declaration != nil && def.Declaration.Initializer() != nil:
-			found = unionNodes(found, m.origins(def.Declaration.Initializer(), t))
+			found = unionSources(found, m.origins(def.Declaration.Initializer(), t))
 		case def.Write.Kind == Assignment && def.Write.Source != nil:
-			found = unionNodes(found, m.origins(def.Write.Source, t))
+			found = unionSources(found, m.origins(def.Write.Source, t))
 		case def.Declaration != nil:
-			found = unionNodes(found, []*ast.Node{def.Declaration})
+			found = unionSources(found, []ValueSource{{Node: def.Declaration}})
 		default:
-			found = unionNodes(found, []*ast.Node{def.Write.Node})
+			found = unionSources(found, []ValueSource{{Node: def.Write.Node}})
 		}
 	}
 	return found
@@ -106,22 +152,22 @@ func (m *Analyzer) variableOrigins(n *ast.Node, t *originTracing) []*ast.Node {
 
 // callOrigins returns the origins of a call: the values stored in a local container it looks an entry up in, or the
 // returns of the project function it resolves to, with its parameters bound to the call's arguments.
-func (m *Analyzer) callOrigins(n *ast.Node, t *originTracing) ([]*ast.Node, bool) {
+func (m *Analyzer) callOrigins(n *ast.Node, t *originTracing) ([]ValueSource, bool) {
 	if lookup, ok := m.LookupOf(n); ok {
 		if contents, ok := m.Contents(lookup.Container, n); ok {
-			found := []*ast.Node{}
+			found := []ValueSource{}
 			for _, entry := range contents.Entries {
-				found = unionNodes(found, m.origins(entry.Value, t))
+				found = unionSources(found, m.origins(entry.Value, t))
 			}
 			return found, true
 		}
-		return nil, false
+		return elementsOf(lookup.Container)
 	}
 	fn := m.followed(n)
 	if fn == nil || t.calling[fn] {
 		return nil, false
 	}
-	bound := map[*ast.Symbol][]*ast.Node{}
+	bound := map[*ast.Symbol][]ValueSource{}
 	arguments := n.Arguments()
 	for i, parameter := range fn.Parameters() {
 		if i >= len(arguments) || arguments[i].Kind == ast.KindSpreadElement || parameter.Name().Kind != ast.KindIdentifier || parameter.AsParameterDeclaration().DotDotDotToken != nil {
@@ -142,7 +188,7 @@ func (m *Analyzer) callOrigins(n *ast.Node, t *originTracing) ([]*ast.Node, bool
 	if body.Kind != ast.KindBlock {
 		return m.origins(body, t), true
 	}
-	found := []*ast.Node{}
+	found := []ValueSource{}
 	var walk func(*ast.Node) bool
 	walk = func(c *ast.Node) bool {
 		if ast.IsFunctionLike(c) || ast.IsClassLike(c) {
@@ -150,9 +196,9 @@ func (m *Analyzer) callOrigins(n *ast.Node, t *originTracing) ([]*ast.Node, bool
 		}
 		if c.Kind == ast.KindReturnStatement {
 			if c.Expression() == nil {
-				found = unionNodes(found, []*ast.Node{c})
+				found = unionSources(found, []ValueSource{{Node: c}})
 			} else {
-				found = unionNodes(found, m.origins(c.Expression(), t))
+				found = unionSources(found, m.origins(c.Expression(), t))
 			}
 		}
 		c.ForEachChild(walk)
@@ -160,13 +206,13 @@ func (m *Analyzer) callOrigins(n *ast.Node, t *originTracing) ([]*ast.Node, bool
 	}
 	body.ForEachChild(walk)
 	if m.flowControl().of(body).end != nil {
-		found = unionNodes(found, []*ast.Node{body})
+		found = unionSources(found, []ValueSource{{Node: body}})
 	}
 	return found, true
 }
 
 // iterated returns the origins of a variable a for-of loop over a local container binds: its keys or its values.
-func (m *Analyzer) iterated(d *ast.Node, t *originTracing) ([]*ast.Node, bool) {
+func (m *Analyzer) iterated(d *ast.Node, t *originTracing) ([]ValueSource, bool) {
 	position := -1
 	declaration := d
 	if d.Kind == ast.KindBindingElement && d.Parent.Kind == ast.KindArrayBindingPattern && d.AsBindingElement().DotDotDotToken == nil {
@@ -183,6 +229,9 @@ func (m *Analyzer) iterated(d *ast.Node, t *originTracing) ([]*ast.Node, bool) {
 	over, part := m.iteration(loop.Expression)
 	contents, ok := m.Contents(over, declaration)
 	if !ok {
+		if part == valuePart && position < 0 {
+			return elementsOf(over)
+		}
 		return nil, false
 	}
 	if part == entryParts && position >= 0 {
@@ -194,7 +243,7 @@ func (m *Analyzer) iterated(d *ast.Node, t *originTracing) ([]*ast.Node, bool) {
 	if part == entryParts {
 		return nil, false
 	}
-	found := []*ast.Node{}
+	found := []ValueSource{}
 	for _, entry := range contents.Entries {
 		of := entry.Value
 		if part == keyPart {
@@ -203,9 +252,41 @@ func (m *Analyzer) iterated(d *ast.Node, t *originTracing) ([]*ast.Node, bool) {
 		if of == nil {
 			return nil, false
 		}
-		found = unionNodes(found, m.origins(of, t))
+		found = unionSources(found, m.origins(of, t))
 	}
 	return found, true
+}
+
+// elementCallbacks names the global collection methods calling a callback with an element, and its position.
+var elementCallbacks = map[string]map[string]int{
+	"Array": {"forEach": 0, "map": 0, "filter": 0, "find": 0, "findIndex": 0, "findLast": 0, "findLastIndex": 0, "some": 0,
+		"every": 0, "flatMap": 0, "reduce": 1, "reduceRight": 1},
+	"ReadonlyArray": {"forEach": 0, "map": 0, "filter": 0, "find": 0, "findIndex": 0, "findLast": 0, "findLastIndex": 0,
+		"some": 0, "every": 0, "flatMap": 0, "reduce": 1, "reduceRight": 1},
+	"Set": {"forEach": 0}, "ReadonlySet": {"forEach": 0},
+}
+
+// elementParameter returns the elements a callback parameter is given, when the callback is the first argument of
+// a global collection method calling it with an element of the receiver at that parameter's position.
+func (m *Analyzer) elementParameter(d *ast.Node) ([]ValueSource, bool) {
+	if d.Kind != ast.KindParameter || d.Parent == nil {
+		return nil, false
+	}
+	callback := d.Parent
+	call := callback.Parent
+	if call == nil || call.Kind != ast.KindCallExpression || len(call.Arguments()) == 0 || call.Arguments()[0] != callback {
+		return nil, false
+	}
+	callee := Unwrap(call.Expression())
+	if callee.Kind != ast.KindPropertyAccessExpression {
+		return nil, false
+	}
+	owners, name, ok := m.libraryMember(callee.Name())
+	position, known := agreed(owners, name, elementCallbacks)
+	if !ok || !known || slices.Index(callback.Parameters(), d) != position {
+		return nil, false
+	}
+	return elementsOf(m.ValueOf(callee.Expression()))
 }
 
 type iterationPart int
@@ -271,7 +352,7 @@ type Contents struct {
 }
 
 // Contents returns what the container v holds as read at n, when it is local: a variable of n's function, never
-// rebound, initialized with an empty array literal or a construction of a global collection without arguments, and only
+// rebound, initialized with an empty array or object literal or a construction of a global collection without arguments, and only
 // used as the receiver of collection methods, by element access, as the object of a size read, or iterated by for-of.
 // Every effect in the function storing or appending into it is an entry, wherever it is; one whose value is unknown
 // stops the read.
@@ -307,7 +388,7 @@ func (m *Analyzer) Contents(v Value, n *ast.Node) (Contents, bool) {
 	return contents, true
 }
 
-// empty reports whether n creates an empty container: an empty array literal, or a construction of a global
+// empty reports whether n creates an empty container: an empty array or object literal, or a construction of a global
 // collection without arguments.
 func (m *Analyzer) empty(n *ast.Node) bool {
 	n = Unwrap(n)
@@ -316,10 +397,18 @@ func (m *Analyzer) empty(n *ast.Node) bool {
 		return false
 	case n.Kind == ast.KindArrayLiteralExpression:
 		return len(n.AsArrayLiteralExpression().Elements.Nodes) == 0
+	case emptyObject(n):
+		return true
 	case n.Kind == ast.KindNewExpression:
 		return len(n.Arguments()) == 0 && slices.ContainsFunc(collectionTypes, func(name string) bool { return m.typeIs(n, name) })
 	}
 	return false
+}
+
+// emptyObject reports whether n is an object literal without properties.
+func emptyObject(n *ast.Node) bool {
+	n = Unwrap(n)
+	return n != nil && n.Kind == ast.KindObjectLiteralExpression && len(n.Properties()) == 0
 }
 
 // confined reports whether every read of symbol in fn uses it as a container: the receiver of a global collection

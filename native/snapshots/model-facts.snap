@@ -1650,7 +1650,7 @@ Message: summary [append club.badges of badge carrying badge; store club.byId of
 
 [TestModelFacts/invalid-57 - 1]
 Diagnostic 1: origin (18:5 - 18:15)
-Message: origin [out.length; anchors[0]]
+Message: origin [out.length; elements of anchors]
   17 |   for (const [key, row] of rows) {
   18 |     origin(key);
      |     ~~~~~~~~~~~
@@ -1664,7 +1664,7 @@ Message: origin [[item]]
   20 |   }
 
 Diagnostic 3: origin (21:34 - 21:44)
-Message: origin [out.length; anchors[0]]
+Message: origin [out.length; elements of anchors]
   20 |   }
   21 |   for (const key of rows.keys()) origin(key);
      |                                  ~~~~~~~~~~~
@@ -1700,26 +1700,47 @@ Message: origin [lines.length]
 ---
 
 [TestModelFacts/invalid-58 - 1]
-Diagnostic 1: placeholder (11:3 - 11:14)
-Message: placeholder "" in out at out.length, filled by out[index] = compute()
-  10 |   const index = out.length;
-  11 |   out.push("");
+Diagnostic 1: overwritten (12:3 - 12:14)
+Message: overwritten placeholder "" in out at out.length, filled by out[index] = compute()
+  11 |   const index = out.length;
+  12 |   out.push("");
      |   ~~~~~~~~~~~~
-  12 |   out[index] = compute();
+  13 |   out[index] = compute();
 
-Diagnostic 2: placeholder (28:3 - 28:14)
-Message: placeholder "" in out at out.length, filled by out[index] = compute()
-  27 |   const index = out.length;
-  28 |   out.push("");
+Diagnostic 2: overwritten (32:3 - 32:14)
+Message: overwritten placeholder "" in out at out.length, filled by out[index] = compute()
+  31 |   const index = out.length;
+  32 |   out.push("");
      |   ~~~~~~~~~~~~
-  29 |   use(out[other]);
+  33 |   use(out[other]);
 
-Diagnostic 3: placeholder (49:7 - 49:27)
-Message: placeholder "" in output.lines at output.lines.length, filled by output.place(row.join(" "),...
-  48 |       index = output.lines.length;
-  49 |       output.lines.push("");
+Diagnostic 3: overwritten (45:3 - 45:21)
+Message: overwritten placeholder compute() in out at out.length, filled by out[index] = compute()
+  44 |   const index = out.length;
+  45 |   out.push(compute());
+     |   ~~~~~~~~~~~~~~~~~~~
+  46 |   out[index] = compute();
+
+Diagnostic 4: overwritten (56:7 - 56:27)
+Message: overwritten placeholder "" in output.lines at output.lines.length, filled by output.place(row.join(" "),...
+  55 |       index = output.lines.length;
+  56 |       output.lines.push("");
      |       ~~~~~~~~~~~~~~~~~~~~~
-  50 |       row = [];
+  57 |       row = [];
+
+Diagnostic 5: overwritten (72:5 - 72:19)
+Message: overwritten store "" in this.title, filled by this.title = next
+  71 |   rename(next: string) {
+  72 |     this.title = "";
+     |     ~~~~~~~~~~~~~~~
+  73 |     this.width = next.length;
+
+Diagnostic 6: overwritten (83:3 - 83:18)
+Message: overwritten store 0 in grid at key: string, filled by grid.set(key, 2)
+  82 | export function cells(grid: Map<string, number>, key: string, other: string) {
+  83 |   grid.set(key, 0);
+     |   ~~~~~~~~~~~~~~~~
+  84 |   grid.set(other, 1);
 ---
 
 [TestModelFacts/invalid-59 - 1]
@@ -1729,6 +1750,20 @@ Message: unaddressed rows key from extra.length + rows.size
    9 |     rows.set(index, row);
      |     ~~~~~~~~~~~~~~~~~~~~
   10 |   }
+
+Diagnostic 2: unaddressed (34:3 - 34:32)
+Message: unaddressed known key from extra.toUpperCase()
+  33 |   for (const item of items) known.add(item);
+  34 |   known.add(extra.toUpperCase());
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  35 |   return items.filter((item) => known.has(item)).length + known.size;
+
+Diagnostic 3: unaddressed (41:3 - 41:36)
+Message: unaddressed index key from String(fallback)
+  40 |   for (const item of items) index[item] = item.length;
+  41 |   index[String(fallback)] = fallback;
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  42 |   return index[items[0]!];
 ---
 
 [TestModelFacts/invalid-60 - 1]
