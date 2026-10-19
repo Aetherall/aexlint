@@ -111,17 +111,12 @@ A returned value other than a literal is read by its type: a field its type decl
 
 A decision whose branches set several values that the code after it reads. The decision has one outcome, but it is left as separate values: the code after it reads them apart and relies on a pairing only the branches state.
 
-Two diagnoses follow from what the code after the decision does with the values:
-
-- `splitOutcome`: it does the same job on every path, with values the branches chose. Make the outcome one value.
-- `falseMerge`: it does a different job depending on the branch. A branch replaces the values it acts on, so the shared code changes something else on that path: the branches produce different kinds of result, and the branch that redirects the shared code makes up whatever it expects from the other path. Do each branch's work inside it.
-
 ### Example
 
-Reported as `falseMerge` on `!shelf.fits(width)`: a full shelf sends the item to a new shelf at a new index, and the last two lines store whichever `index` and `shelf` survived. On one path they add to an existing shelf; on the other they fill a new one, under an index made up for it and a label pushed only to reserve its place.
+Reported on `!shelf.fits(width)`: a full shelf sends the item to a new shelf at a new index, and the last two lines store whichever `index` and `shelf` survived.
 
 ```ts
-let index = entry.failure ? anchors[0] : anchors.at(-1);
+let index = entry.failure ? 0 : labels.length - 1;
 let shelf = shelves.get(index) ?? new Shelf(labels[index]);
 if (!shelf.fits(width)) {
   if (!entry.overflows) continue;
@@ -133,7 +128,7 @@ shelf.items.push(entry.value);
 shelves.set(index, shelf);
 ```
 
-Reported as `splitOutcome` on `names[i] === wanted`: the flag and the position leave the loop together through its `break`.
+Reported on `names[i] === wanted`: the flag and the position leave the loop together through its `break`.
 
 ```ts
 let found = false;
@@ -148,7 +143,7 @@ for (let i = 0; i < names.length; i++) {
 report(found, position);
 ```
 
-Reported as `splitOutcome` on `shape`: each case picks an area and a label.
+Reported on `shape`: each case picks an area and a label.
 
 ```ts
 let area = 0;
@@ -166,7 +161,7 @@ switch (shape) {
 report(area, label);
 ```
 
-Accepted: each branch does its own work, so nothing crosses the end of the `if`.
+Accepted: each branch uses its own outcome, so nothing crosses the end of the `if`.
 
 ```ts
 if (shared.fits(width)) {
@@ -184,10 +179,9 @@ Also accepted: a branch that sets one value (`let label = "a"; if (formal) label
 - Its left values, as the [decision model](../../docs/design/decision-model.md) defines them: data its branches rebind (by assignment, compound assignment, increment, decrement or destructuring) whose root is a variable or parameter of its function declared outside it, or `this`, when the statements after it read that data before every way assigns it again. Data a branch rebinds before a `break` counts when the statements after the loop, `switch` or labeled statement it leaves read it.
 - How each branch can end comes from its [ending](../../docs/design/decision-model.md): a `return`, a `throw`, a call returning `never`, or a `break` or `continue` to another statement takes its writes elsewhere.
 - Several fields of one root are one value: the object already holds them together. Two or more values report.
-- The report is `falseMerge` when the decision has a [divergence](../../docs/design/decision-model.md): an effect after it (a store, append, removal or other change) acts on, or stores under a key read from, a value its arms define, and that value holds kinds of data sharing none on two arms, such as existing data on one and a new object or the size of a collection on another. Otherwise it is `splitOutcome`. Values carried across iterations or held by `this` change state rather than choose what this pass works on (`current = []; size = 0;` then `current.push(x)`), and an arm that finds the value missing fills it in (`if (!entry) entry = []` then `entry.push(x)`): neither is a divergence.
 
 ### Reporting and limits
 
-Reports `falseMerge` or `splitOutcome` on the condition, or the expression a `switch` tests, once per decision, listing the values in the order the branches write them. No fixes.
+Reports `splitOutcome` on the condition, or the expression a `switch` tests, once per decision, listing the values in the order the branches write them. No fixes.
 
-Writes in callbacks are not read, since when they run is not known. A method called on data is never a write the branch decides, even one that changes it, such as `push`. A call leaves only when its type is `never`, so a branch ending in an unresolved call, or in one typed `void` that always throws, is read as reaching the end. Reads in callbacks after the decision count. The rule does not judge how tightly the values are coupled: a clamp setting a position and a remainder reports like a flag and the result it guards. A divergence is only seen through effects the model reads and kinds it knows: shared code that passes the value to a function, or a value computed by a call or an operator on some arm, such as `labels.length - 1`, reads as `splitOutcome`.
+Writes in callbacks are not read, since when they run is not known. A method called on data is never a write the branch decides, even one that changes it, such as `push`. A call leaves only when its type is `never`, so a branch ending in an unresolved call, or in one typed `void` that always throws, is read as reaching the end. Reads in callbacks after the decision count. The rule does not judge how tightly the values are coupled: a clamp setting a position and a remainder reports like a flag and the result it guards.

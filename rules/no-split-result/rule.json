@@ -1,5 +1,5 @@
 {
   "name": "aexlint/no-split-result",
-  "description": "Reports an outcome split across several values: optional result fields its returns always set together, or never together, and values a decision's branches set for the code after it, including values that steer shared code to act on something else on one path.",
+  "description": "Reports an outcome split across several values: optional result fields its returns always set together, or never together, and values a decision's branches set for the code after it.",
   "requiresTypeChecking": true
 }

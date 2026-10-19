@@ -484,9 +484,6 @@ func (p *probe) merge(n *ast.Node) {
 	if len(carried) > 0 {
 		description += "; carried " + strings.Join(carried, ", ")
 	}
-	for _, d := range p.a.Divergences(n) {
-		description += fmt.Sprintf("; diverges %s through %s", model.Text(d.Effect.Node, 30), d.Through)
-	}
 	p.report("merge", model.DecisionCondition(n), description)
 }
 

@@ -874,6 +874,67 @@ export function keyed<K extends string>(store: Partial<Record<K, string[]>>, key
   slot.push("e");
 }`, Options: only("merge"), Errors: facts("merge", 6)},
 			{Code: `declare function use(...values: unknown[]): void;
+class Row {
+  constructor(readonly text: string) {}
+}
+function blank(): Row {
+  return new Row("");
+}
+const make = (text: string) => new Row(text);
+function either<T>(chosen: boolean, a: T, b: T): T {
+  return chosen ? a : b;
+}
+function slot(rows: Map<number, Row>, index: number) {
+  return rows.get(index);
+}
+function size(rows: Map<number, Row>) {
+  return rows.size;
+}
+function again(n: number): Row {
+  return n > 0 ? again(n - 1) : blank();
+}
+async function load(): Promise<Row> {
+  return new Row("loaded");
+}
+class Sheet {
+  #rows: Row[] = [];
+  get first(): Row | undefined {
+    return this.#rows[0];
+  }
+}
+export async function followed(rows: Map<number, Row>, current: Row, key: number, sheet: Sheet, list: Row[]) {
+  let a = current;
+  if (key > 1) a = blank();
+  use(a);
+  let b = current;
+  if (key > 2) b = make("b");
+  use(b);
+  let c = current;
+  if (key > 3) c = either(true, current, list[0]!);
+  use(c);
+  let d = current;
+  if (key > 4) d = either(false, current, new Row("d"));
+  use(d);
+  let e = current;
+  if (key > 5) e = slot(rows, key) ?? current;
+  use(e);
+  let f = key;
+  if (key > 6) f = size(rows);
+  use(f);
+  let g = current;
+  if (key > 7) g = again(key);
+  use(g);
+  let h = current;
+  if (key > 8) h = await load();
+  use(h);
+  let i = current;
+  if (key > 9) i = sheet.first ?? current;
+  use(i);
+  let j = list;
+  if (key > 10) j = list.filter((row) => row.text);
+  use(j);
+}`, Options: only("merge"), Errors: facts("merge", 10)},
+			{Code: `declare function use(...values: unknown[]): void;
 import * as store from "./store.js";
 type Handlers = { notify: (value: string) => void; record(value: string): void };
 class Grid extends Map<string, number> {}

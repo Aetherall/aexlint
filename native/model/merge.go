@@ -210,20 +210,28 @@ func (p Provenance) String() string {
 	return strings.Join(names, " or ")
 }
 
-// Differs reports whether p and o hold no computed value and share no kind.
-func (p Provenance) Differs(o Provenance) bool {
-	known := func(k Provenance) bool { return k != 0 && k&ComputedValue == 0 }
-	return known(p) && known(o) && p&o == 0
-}
-
 // ProvenanceOf returns the kinds of value n gives. Freshness is read from the expression, since no type states it; a
 // constant is an expression whose type is a single value; a const variable gives what its initializer gives, and
-// another variable what its definitions reaching n give.
+// another variable or a parameter what its definitions reaching n give. A call, or a getter read, gives what the
+// returns of the project function or accessor it resolves to give, its parameters giving what the call's arguments
+// give.
 func (m *Analyzer) ProvenanceOf(n *ast.Node) Provenance {
-	return m.provenance(n, map[*ast.Symbol]bool{})
+	return m.provenance(n, newTracing())
 }
 
-func (m *Analyzer) provenance(n *ast.Node, seen map[*ast.Symbol]bool) Provenance {
+// tracing is the state of one provenance read: the variables and functions being read, against cycles, and what the
+// parameters of the function being followed are given by the call it was reached from.
+type tracing struct {
+	seen    map[*ast.Symbol]bool
+	calling map[*ast.Node]bool
+	bound   map[*ast.Symbol]Provenance
+}
+
+func newTracing() *tracing {
+	return &tracing{seen: map[*ast.Symbol]bool{}, calling: map[*ast.Node]bool{}}
+}
+
+func (m *Analyzer) provenance(n *ast.Node, t *tracing) Provenance {
 	n = Unwrap(n)
 	if n == nil {
 		return ConstantValue
@@ -239,14 +247,14 @@ func (m *Analyzer) provenance(n *ast.Node, seen map[*ast.Symbol]bool) Provenance
 	switch n.Kind {
 	case ast.KindConditionalExpression:
 		c := n.AsConditionalExpression()
-		return m.provenance(c.WhenTrue, seen) | m.provenance(c.WhenFalse, seen)
+		return m.provenance(c.WhenTrue, t) | m.provenance(c.WhenFalse, t)
 	case ast.KindBinaryExpression:
 		b := n.AsBinaryExpression()
 		switch operator := b.OperatorToken.Kind; {
 		case ast.IsLogicalOperator(operator) || operator == ast.KindQuestionQuestionToken:
-			return m.provenance(b.Left, seen) | m.provenance(b.Right, seen)
+			return m.provenance(b.Left, t) | m.provenance(b.Right, t)
 		case operator == ast.KindCommaToken || operator == ast.KindEqualsToken:
-			return m.provenance(b.Right, seen)
+			return m.provenance(b.Right, t)
 		}
 	case ast.KindPropertyAccessExpression:
 		if m.size(n) {
@@ -255,33 +263,141 @@ func (m *Analyzer) provenance(n *ast.Node, seen map[*ast.Symbol]bool) Provenance
 		if !m.computed(n) {
 			return ExistingValue
 		}
+		if getter := m.getter(n); getter != nil {
+			return m.returnsOf(getter, nil, t)
+		}
 	case ast.KindElementAccessExpression, ast.KindThisKeyword:
 		return ExistingValue
+	case ast.KindAwaitExpression:
+		if call := Unwrap(n.Expression()); call.Kind == ast.KindCallExpression {
+			return m.called(call, true, t)
+		}
 	case ast.KindCallExpression:
-		if _, ok := m.LookupOf(n); ok {
-			return ExistingValue
-		}
+		return m.called(n, false, t)
 	case ast.KindIdentifier:
-		symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
-		if symbol == nil || seen[symbol] {
-			return ExistingValue
-		}
-		d := symbol.ValueDeclaration
-		if d == nil || d.Kind != ast.KindVariableDeclaration {
-			return ExistingValue
-		}
-		seen[symbol] = true
-		defer delete(seen, symbol)
-		if ast.IsVarConst(d) {
-			return m.provenance(d.Initializer(), seen)
-		}
-		var kinds Provenance
-		for _, def := range m.reaching(n, Value{Root: symbol, Path: []string{}}) {
-			kinds |= m.defProvenance(def, seen)
-		}
-		return kinds
+		return m.variable(n, t)
 	}
 	return ComputedValue
+}
+
+// variable returns what a variable or parameter read gives.
+func (m *Analyzer) variable(n *ast.Node, t *tracing) Provenance {
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n)
+	if symbol == nil || t.seen[symbol] {
+		return ExistingValue
+	}
+	d := symbol.ValueDeclaration
+	if d == nil || d.Kind != ast.KindVariableDeclaration && d.Kind != ast.KindParameter {
+		return ExistingValue
+	}
+	t.seen[symbol] = true
+	defer delete(t.seen, symbol)
+	if d.Kind == ast.KindVariableDeclaration && ast.IsVarConst(d) {
+		return m.provenance(d.Initializer(), t)
+	}
+	var kinds Provenance
+	for _, def := range m.reaching(n, Value{Root: symbol, Path: []string{}}) {
+		if bound, ok := t.bound[symbol]; ok && def.Before {
+			kinds |= bound
+		} else {
+			kinds |= m.defProvenance(def, t)
+		}
+	}
+	return kinds
+}
+
+// freshResults names the methods of global collections returning a new array.
+var freshResults = map[string]map[string]bool{
+	"Array": {"map": true, "filter": true, "slice": true, "concat": true, "flat": true, "flatMap": true, "toSorted": true,
+		"toReversed": true, "toSpliced": true, "with": true},
+	"ReadonlyArray": {"map": true, "filter": true, "slice": true, "concat": true, "flat": true, "flatMap": true,
+		"toSorted": true, "toReversed": true, "toSpliced": true, "with": true},
+}
+
+// called returns what a call gives, awaited or not: an entry of a collection is existing data, a collection method
+// building a new array a new object, and a call to a project function what its returns give. A generator, or an async
+// function not awaited, gives a new object. A call to a function being followed, or to anything else, is computed.
+func (m *Analyzer) called(n *ast.Node, awaited bool, t *tracing) Provenance {
+	if _, ok := m.LookupOf(n); ok {
+		return ExistingValue
+	}
+	if callee := Unwrap(n.Expression()); callee.Kind == ast.KindPropertyAccessExpression {
+		if owners, name, ok := m.libraryMember(callee.Name()); ok {
+			if _, fresh := agreed(owners, name, freshResults); fresh {
+				return FreshValue
+			}
+		}
+	}
+	declaration := Implementation(m.ctx.TypeChecker.GetResolvedSignature(n))
+	if declaration == nil || !ast.IsFunctionLike(declaration) || declaration.Body() == nil || !ProjectFile(ast.GetSourceFileOfNode(declaration)) {
+		return ComputedValue
+	}
+	flags := ast.GetFunctionFlags(declaration)
+	if flags&ast.FunctionFlagsGenerator != 0 || flags&ast.FunctionFlagsAsync != 0 && !awaited {
+		return FreshValue
+	}
+	bound := map[*ast.Symbol]Provenance{}
+	arguments := n.Arguments()
+	for i, parameter := range declaration.Parameters() {
+		if i >= len(arguments) || arguments[i].Kind == ast.KindSpreadElement || parameter.Name().Kind != ast.KindIdentifier || parameter.AsParameterDeclaration().DotDotDotToken != nil {
+			break
+		}
+		if symbol := parameter.Symbol(); symbol != nil {
+			bound[symbol] = m.provenance(arguments[i], t)
+		}
+	}
+	return m.returnsOf(declaration, bound, t)
+}
+
+// getter returns the get accessor with a body, in a project file, that a property read resolves to.
+func (m *Analyzer) getter(n *ast.Node) *ast.Node {
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n.Name())
+	if symbol == nil {
+		return nil
+	}
+	for _, d := range symbol.Declarations {
+		if d.Kind == ast.KindGetAccessor && d.Body() != nil && ProjectFile(ast.GetSourceFileOfNode(d)) {
+			return d
+		}
+	}
+	return nil
+}
+
+// returnsOf returns what the returns of a function give, its parameters giving what bound says: the expression body of
+// an arrow function, or every return outside the functions it declares. A return without a value, or reaching the end
+// of the body, gives undefined, a constant. A function already being followed is computed.
+func (m *Analyzer) returnsOf(fn *ast.Node, bound map[*ast.Symbol]Provenance, t *tracing) Provenance {
+	if t.calling[fn] {
+		return ComputedValue
+	}
+	t.calling[fn] = true
+	saved := t.bound
+	t.bound = bound
+	defer func() {
+		delete(t.calling, fn)
+		t.bound = saved
+	}()
+	body := fn.Body()
+	if body.Kind != ast.KindBlock {
+		return m.provenance(body, t)
+	}
+	var kinds Provenance
+	var walk func(*ast.Node) bool
+	walk = func(c *ast.Node) bool {
+		if ast.IsFunctionLike(c) || ast.IsClassLike(c) {
+			return false
+		}
+		if c.Kind == ast.KindReturnStatement {
+			kinds |= m.provenance(c.Expression(), t)
+		}
+		c.ForEachChild(walk)
+		return false
+	}
+	body.ForEachChild(walk)
+	if m.flowControl().of(body).end != nil {
+		kinds |= ConstantValue
+	}
+	return kinds
 }
 
 // unit reports whether n's type is a single value: a literal, an enum member, null, undefined or a unique symbol.
@@ -742,107 +858,101 @@ func declarationOf(v Value) *ast.Node {
 // DefProvenance returns the kinds of value a definition gives. The value held before is existing data, a destructured
 // part or loop variable is read from other data, and an update computes its value.
 func (m *Analyzer) DefProvenance(d Def) Provenance {
-	return m.defProvenance(d, map[*ast.Symbol]bool{})
+	return m.defProvenance(d, newTracing())
 }
 
-func (m *Analyzer) defProvenance(d Def, seen map[*ast.Symbol]bool) Provenance {
+func (m *Analyzer) defProvenance(d Def, t *tracing) Provenance {
 	switch {
 	case d.Before:
 		return ExistingValue
 	case d.Declaration != nil:
-		return m.provenance(d.Declaration.Initializer(), seen)
+		return m.provenance(d.Declaration.Initializer(), t)
 	case d.Write.Kind == Update:
 		return ComputedValue
 	case d.Write.Source != nil:
-		return m.provenance(d.Write.Source, seen)
+		return m.provenance(d.Write.Source, t)
 	}
 	return ExistingValue
 }
 
 // InputProvenance returns the kinds of value phi gets from the arm at index of merge, reading the value held before
-// the decision through Before.
+// the decision through Before. Kinds are read where the arm reaches the merge (see published): a new object the arm, or
+// the code before the decision, makes reachable from existing data is existing data there, and so is the size of a
+// collection read before an element is appended to it, which then names that element.
 func (m *Analyzer) InputProvenance(merge *Merge, phi Phi, arm int) Provenance {
 	var kinds Provenance
+	scope, end := merge.Arms[arm].Branch, merge.Decision.End()
+	if scope != nil {
+		end = scope.End()
+	}
 	for _, d := range phi.Inputs[arm] {
 		if !d.Before {
-			kinds |= m.DefProvenance(d)
+			kinds |= m.publishedAs(d, phi.Value, scope, end)
 			continue
 		}
 		for _, held := range m.Before(merge.Decision, phi.Value) {
-			kinds |= m.DefProvenance(held)
+			kinds |= m.publishedAs(held, phi.Value, enclosingFunction(merge.Decision), merge.Decision.Pos())
 		}
 	}
 	return kinds
 }
 
-// Divergence is an effect after a decision whose destination changes kind with the way into the decision's merge:
-// Through is a value the arms define, not carried, that the effect acts on or selects its key with, and Kinds are the
-// kinds of value it holds on each arm that does not find it missing. Two of them share no kind.
-type Divergence struct {
-	Effect  Effect
-	Through Value
-	Kinds   []Provenance
-}
-
-// Divergences lists the effects of the statements after a decision, in its statement list, whose destination diverges
-// with the way into its merge. An effect after the value is rebound does not see the merge.
-func (m *Analyzer) Divergences(n *ast.Node) []Divergence {
-	merge, ok := m.MergeOf(n)
-	if !ok || len(merge.Arms) < 2 || n.Parent == nil {
-		return nil
+// publishedAs returns the kinds of value d gives to v, read after the effects in scope between d and end.
+func (m *Analyzer) publishedAs(d Def, v Value, scope *ast.Node, end int) Provenance {
+	kinds := m.DefProvenance(d)
+	node := d.Declaration
+	source := (*ast.Node)(nil)
+	if node != nil {
+		source = node.Initializer()
+	} else if d.Write.Node != nil {
+		node, source = d.Write.Node, d.Write.Source
 	}
-	list := statementList(n.Parent)
-	i := slices.Index(list, n)
-	if i < 0 {
-		return nil
+	if node == nil || scope == nil {
+		return kinds
 	}
-	after := list[i+1:]
-	found := []Divergence{}
-	for _, effect := range m.EffectsIn(after) {
-		destinations := []Value{effect.Receiver}
-		if effect.Key != nil {
-			destinations = append(destinations, m.ValueOf(effect.Key))
-		}
-		for _, destination := range destinations {
-			phi, ok := m.steering(merge, destination)
-			if !ok || m.rebound(after, phi.Value, effect.Node) {
-				continue
-			}
-			kinds := []Provenance{}
-			for index, arm := range merge.Arms {
-				if !m.MissingOn(arm, phi.Reference) {
-					kinds = append(kinds, m.InputProvenance(merge, phi, index))
-				}
-			}
-			if slices.ContainsFunc(kinds, func(k Provenance) bool { return slices.ContainsFunc(kinds, k.Differs) }) {
-				found = append(found, Divergence{Effect: effect, Through: phi.Value, Kinds: kinds})
-				break
-			}
+	if kinds&FreshValue != 0 && m.published(v, scope, node.End(), end) {
+		kinds = kinds&^FreshValue | ExistingValue
+	}
+	if kinds&SizeValue != 0 && source != nil {
+		if sized := Unwrap(source); sized.Kind == ast.KindPropertyAccessExpression && m.appended(m.ValueOf(sized.Expression()), scope, node.End(), end) {
+			kinds = kinds&^SizeValue | ExistingValue
 		}
 	}
-	return found
+	return kinds
 }
 
-// steering returns the value destination is read from that merge's arms define and that is not carried: destination
-// itself or data it is read from.
-func (m *Analyzer) steering(merge *Merge, destination Value) (Phi, bool) {
-	for length := len(destination.Path); length >= 0; length-- {
-		v := destination
-		v.Node, v.Path = nil, slices.Clone(destination.Path[:length])
-		if phi, ok := m.PhiOf(merge, v); ok && phi.Joins() {
-			return phi, !phi.Carried
+// published reports whether an effect in scope between from and to makes v reachable from data that outlives scope:
+// it stores v, or passes it to a method, on a receiver that is this or rooted in a variable declared outside scope.
+func (m *Analyzer) published(v Value, scope *ast.Node, from, to int) bool {
+	return slices.ContainsFunc(m.effectsBetween(scope, from, to), func(e Effect) bool {
+		if !m.outlives(e.Receiver, scope) || e.Receiver.Within(v) {
+			return false
 		}
-	}
-	return Phi{}, false
-}
-
-// rebound reports whether statements rebind v before node.
-func (m *Analyzer) rebound(statements []*ast.Node, v Value, node *ast.Node) bool {
-	p, _ := placeOf(v)
-	return slices.ContainsFunc(writesIn(statements, false), func(w Write) bool {
-		written, ok := m.placeOfWrite(w)
-		return ok && written == p && w.Node.End() <= node.Pos()
+		carried := []*ast.Node{e.Stored}
+		if e.Node.Kind == ast.KindCallExpression {
+			carried = append(carried, e.Node.Arguments()...)
+		}
+		return slices.ContainsFunc(carried, func(n *ast.Node) bool { return n != nil && m.ValueOf(n).Same(v) })
 	})
+}
+
+// appended reports whether an effect in scope between from and to appends to collection.
+func (m *Analyzer) appended(collection Value, scope *ast.Node, from, to int) bool {
+	return slices.ContainsFunc(m.effectsBetween(scope, from, to), func(e Effect) bool {
+		return e.Kind == Append && e.Receiver.Same(collection)
+	})
+}
+
+func (m *Analyzer) effectsBetween(scope *ast.Node, from, to int) []Effect {
+	return slices.DeleteFunc(m.EffectsIn([]*ast.Node{scope}), func(e Effect) bool { return e.Node.Pos() < from || e.Node.End() > to })
+}
+
+// outlives reports whether v is data of this, or of a variable declared outside scope.
+func (m *Analyzer) outlives(v Value, scope *ast.Node) bool {
+	if v.This != nil {
+		return true
+	}
+	return v.Root != nil && v.Root.ValueDeclaration != nil && !encloses(scope, v.Root.ValueDeclaration)
 }
 
 // Defined lists the values merge's arms define that outlive the decision: data of this, or of a variable declared

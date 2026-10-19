@@ -1367,7 +1367,7 @@ Message: left [low (low, low); high (high)]
 
 [TestModelFacts/invalid-52 - 1]
 Diagnostic 1: merge (8:9 - 8:22)
-Message: merge [{ index = rows.si... (index: the size of a collection, row: a new object); no branch (index: existing data or a constant, row: existing data or a new object)]; diverges rows.set(index, row) through index
+Message: merge [{ index = rows.si... (index: the size of a collection, row: a new object); no branch (index: existing data or a constant, row: existing data or a new object)]
    7 |     let row = rows.get(index) ?? [];
    8 |     if (row.length > 3) {
      |         ~~~~~~~~~~~~~~
@@ -1381,7 +1381,7 @@ Message: merge [{ current = []; s... (current: a new object, size: a constant); 
   15 |       current = [];
 
 Diagnostic 3: merge (21:9 - 21:14)
-Message: merge [{ entry = []; tre... (entry: a new object (missing on entry)); no branch (entry: existing data)]
+Message: merge [{ entry = []; tre... (entry: existing data (missing on entry)); no branch (entry: existing data)]
   20 |     let entry = tree.get(item);
   21 |     if (!entry) {
      |         ~~~~~~
@@ -1455,14 +1455,14 @@ Message: effect change on recorder
 
 [TestModelFacts/invalid-54 - 1]
 Diagnostic 1: merge (9:7 - 9:13)
-Message: merge [{ index = Slot.Ta... (index: a constant); no branch (index: existing data)]; diverges rows.set(index, list) through index
+Message: merge [{ index = Slot.Ta... (index: a constant); no branch (index: existing data)]
    8 |   let index = key;
    9 |   if (key > 1) {
      |       ~~~~~~~
   10 |     index = Slot.Tail;
 
 Diagnostic 2: merge (15:7 - 15:13)
-Message: merge [{ target = fresh; } (target: a new object); no branch (target: existing data)]; diverges target.push("a") through target
+Message: merge [{ target = fresh; } (target: a new object); no branch (target: existing data)]
   14 |   let target = list;
   15 |   if (key > 2) {
      |       ~~~~~~~
@@ -1476,21 +1476,21 @@ Message: merge [{ entry = []; } (entry: a new object (missing on entry)); no bra
   20 |     entry = [];
 
 Diagnostic 4: merge (24:7 - 24:28)
-Message: merge [{ panel = new Pan... (panel: a new object); { panel = shape; } (panel: existing data)]; diverges panel.items.push("c") through panel
+Message: merge [{ panel = new Pan... (panel: a new object); { panel = shape; } (panel: existing data)]
   23 |   let panel = other;
   24 |   if (shape instanceof Error) {
      |       ~~~~~~~~~~~~~~~~~~~~~~
   25 |     panel = new Panel();
 
 Diagnostic 5: merge (31:7 - 31:13)
-Message: merge [{ bucket = []; st... (bucket: a new object (missing on entry)); no branch (bucket: existing data)]
+Message: merge [{ bucket = []; st... (bucket: existing data (missing on entry)); no branch (bucket: existing data)]
   30 |   let bucket = store[key];
   31 |   if (!bucket) {
      |       ~~~~~~~
   32 |     bucket = [];
 
 Diagnostic 6: merge (40:7 - 40:11)
-Message: merge [{ slot = []; stor... (slot: a new object (missing on entry)); no branch (slot: existing data)]
+Message: merge [{ slot = []; stor... (slot: existing data (missing on entry)); no branch (slot: existing data)]
   39 |   let slot = store[key];
   40 |   if (!slot) {
      |       ~~~~~
@@ -1498,6 +1498,78 @@ Message: merge [{ slot = []; stor... (slot: a new object (missing on entry)); no
 ---
 
 [TestModelFacts/invalid-55 - 1]
+Diagnostic 1: merge (32:7 - 32:13)
+Message: merge [a = blank(); (a: a new object); no branch (a: existing data)]
+  31 |   let a = current;
+  32 |   if (key > 1) a = blank();
+     |       ~~~~~~~
+  33 |   use(a);
+
+Diagnostic 2: merge (35:7 - 35:13)
+Message: merge [b = make("b"); (b: a new object); no branch (b: existing data)]
+  34 |   let b = current;
+  35 |   if (key > 2) b = make("b");
+     |       ~~~~~~~
+  36 |   use(b);
+
+Diagnostic 3: merge (38:7 - 38:13)
+Message: merge [c = either(true, ... (c: existing data); no branch (c: existing data)]
+  37 |   let c = current;
+  38 |   if (key > 3) c = either(true, current, list[0]!);
+     |       ~~~~~~~
+  39 |   use(c);
+
+Diagnostic 4: merge (41:7 - 41:13)
+Message: merge [d = either(false,... (d: existing data or a new object); no branch (d: existing data)]
+  40 |   let d = current;
+  41 |   if (key > 4) d = either(false, current, new Row("d"));
+     |       ~~~~~~~
+  42 |   use(d);
+
+Diagnostic 5: merge (44:7 - 44:13)
+Message: merge [e = slot(rows, ke... (e: existing data); no branch (e: existing data)]
+  43 |   let e = current;
+  44 |   if (key > 5) e = slot(rows, key) ?? current;
+     |       ~~~~~~~
+  45 |   use(e);
+
+Diagnostic 6: merge (47:7 - 47:13)
+Message: merge [f = size(rows); (f: the size of a collection); no branch (f: existing data)]
+  46 |   let f = key;
+  47 |   if (key > 6) f = size(rows);
+     |       ~~~~~~~
+  48 |   use(f);
+
+Diagnostic 7: merge (50:7 - 50:13)
+Message: merge [g = again(key); (g: a new object or a computed value); no branch (g: existing data)]
+  49 |   let g = current;
+  50 |   if (key > 7) g = again(key);
+     |       ~~~~~~~
+  51 |   use(g);
+
+Diagnostic 8: merge (53:7 - 53:13)
+Message: merge [h = await load(); (h: a new object); no branch (h: existing data)]
+  52 |   let h = current;
+  53 |   if (key > 8) h = await load();
+     |       ~~~~~~~
+  54 |   use(h);
+
+Diagnostic 9: merge (56:7 - 56:13)
+Message: merge [i = sheet.first ?... (i: existing data); no branch (i: existing data)]
+  55 |   let i = current;
+  56 |   if (key > 9) i = sheet.first ?? current;
+     |       ~~~~~~~
+  57 |   use(i);
+
+Diagnostic 10: merge (59:7 - 59:14)
+Message: merge [j = list.filter((... (j: a new object); no branch (j: existing data)]
+  58 |   let j = list;
+  59 |   if (key > 10) j = list.filter((row) => row.text);
+     |       ~~~~~~~~
+  60 |   use(j);
+---
+
+[TestModelFacts/invalid-56 - 1]
 Diagnostic 1: effect (6:3 - 6:18)
 Message: effect store on both at key of 1
    5 | export function receivers(either: Map<string, number> | Set<string>, both: Map<string, number> | Grid, handlers: Handlers, key: string, Map: { set(key: string, value: number): void }) {
