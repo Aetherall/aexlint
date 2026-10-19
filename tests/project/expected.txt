@@ -2544,10 +2544,20 @@ no-split-result/reported/imported.ts:3:82 aexlint(no-split-result)
   No return sets `capture` with `error`.
   help: The result type allows combinations no return builds, so each reader tests these fields one by one and decides what a partial combination means. With a union of what the returns build, such as `{ capture } | { error }`, the type states it once.
 
+no-split-result/reported/outcome-fill.ts:4:7 aexlint(no-split-result)
+  ~ !directory
+  This decision's outcome is split across `created` and `directory`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
 no-split-result/reported/outcome-placement.ts:17:9 aexlint(no-split-result)
   ~ !shelf.fits(width)
-  This decision's outcome is split across `index` and `shelf`: its branches change them, and the code after it reads them as separate values.
-  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+  The code after this decision is shared, but does a different job on each path: `shelves.set(index, shelf)` acts through `index`, which is the size of a collection on one path and existing data on another.
+  help: The branches produce different kinds of result, and the shared code hides it: a branch has to make up whatever that code expects from the other path. Do each branch's work inside it instead of steering shared code through these values.
+
+no-split-result/reported/outcome-placement.ts:34:9 aexlint(no-split-result)
+  ~ item.length > 8330
+  The code after this decision is shared, but does a different job on each path: `target.push(item)` acts through `target`, which is a new object on one path and existing data on another.
+  help: The branches produce different kinds of result, and the shared code hides it: a branch has to make up whatever that code expects from the other path. Do each branch's work inside it instead of steering shared code through these values.
 
 no-split-result/reported/outcome-range.ts:6:7 aexlint(no-split-result)
   ~ selection
@@ -2587,6 +2597,11 @@ no-split-result/reported/outcome-unresolved.ts:6:7 aexlint(no-split-result)
 no-split-result/reported/outcome-wrap.ts:6:9 aexlint(no-split-result)
   ~ width + word.length > max + 8304
   This decision's outcome is split across `line` and `width`: its branches change them, and the code after it reads them as separate values.
+  help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
+
+no-split-result/reported/outcome-wrap.ts:22:9 aexlint(no-split-result)
+  ~ used + height > max + 8328
+  This decision's outcome is split across `page` and `used`: its branches change them, and the code after it reads them as separate values.
   help: Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.
 
 no-split-result/reported/required-undefined.ts:3:40 aexlint(no-split-result)

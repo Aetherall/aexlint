@@ -9,9 +9,11 @@ import (
 	"github.com/microsoft/typescript-go/shim/checker"
 )
 
-// exit is one way out of a statement, with the writes made on the paths that take it.
+// exit is one way out of a statement, with the writes made on the paths that take it and, when its control tracks
+// places, the definitions of each place reaching it (see defs).
 type exit struct {
 	writes []Write
+	defs   defs
 }
 
 // ending is how a statement can end: by reaching its end (end), by a break leaving a statement around it (breaks, by
@@ -26,11 +28,13 @@ type ending struct {
 }
 
 // control reads endings. Without a checker, never is nil, so no call is known to return never, and exhaustive is nil,
-// so no switch without default is known to cover every value. When writes is set, exits carry the writes on their way.
+// so no switch without default is known to cover every value. When writes is set, exits carry the writes on their way,
+// and when place is set, the definitions of the places it names.
 type control struct {
 	never      func(*ast.Node) bool
 	exhaustive func(*ast.Node) bool
 	writes     bool
+	place      func(Write) (place, bool)
 	endings    map[*ast.Node]ending
 }
 
@@ -41,7 +45,7 @@ func join(a, b *exit) *exit {
 	case b == nil:
 		return a
 	}
-	return &exit{writes: append(slices.Clip(a.writes), b.writes...)}
+	return &exit{writes: append(slices.Clip(a.writes), b.writes...), defs: joinDefs(a.defs, b.defs)}
 }
 
 func joinAll(a, b map[*ast.Node]*exit) map[*ast.Node]*exit {
@@ -63,16 +67,17 @@ func (e ending) merge(o ending) ending {
 		returns: e.returns || o.returns, throws: e.throws || o.throws}
 }
 
-// after returns the ending of a statement run after writes were made.
-func (e ending) after(writes []Write) ending {
-	if len(writes) == 0 {
+// after returns the ending of a statement run after the way before it: its writes come first, and its definitions
+// reach the places the statement does not define on every way.
+func (e ending) after(before *exit) ending {
+	if before == nil || len(before.writes) == 0 && len(before.defs) == 0 {
 		return e
 	}
 	prefix := func(x *exit) *exit {
 		if x == nil {
 			return nil
 		}
-		return &exit{writes: append(slices.Clip(writes), x.writes...)}
+		return &exit{writes: append(slices.Clip(before.writes), x.writes...), defs: composeDefs(before.defs, x.defs)}
 	}
 	all := func(exits map[*ast.Node]*exit) map[*ast.Node]*exit {
 		if len(exits) == 0 {
@@ -106,8 +111,19 @@ func (c *control) effects(nodes ...*ast.Node) []Write {
 	return writesIn(nodes, false)
 }
 
+// effected returns the way through nodes, evaluated in order, with their writes and definitions.
+func (c *control) effected(nodes ...*ast.Node) *exit {
+	writes := c.effects(nodes...)
+	return &exit{writes: writes, defs: c.defined(writes, false)}
+}
+
 func reached(writes []Write) ending {
 	return ending{end: &exit{writes: writes}}
+}
+
+// reach returns the ending of code making writes in order and reaching its end.
+func (c *control) reach(writes []Write) ending {
+	return ending{end: &exit{writes: writes, defs: c.defined(writes, false)}}
 }
 
 // list reads statements run in order: a statement that cannot reach its end stops the rest.
@@ -117,7 +133,7 @@ func (c *control) list(statements []*ast.Node) ending {
 		if result.end == nil {
 			break
 		}
-		e := c.of(s).after(result.end.writes)
+		e := c.of(s).after(result.end)
 		e.breaks, e.continues = joinAll(result.breaks, e.breaks), joinAll(result.continues, e.continues)
 		e.returns, e.throws = e.returns || result.returns, e.throws || result.throws
 		result = e
@@ -147,7 +163,7 @@ func (c *control) read(n *ast.Node) ending {
 		if c.never != nil && c.never(n.Expression()) {
 			return ending{throws: true}
 		}
-		return reached(c.effects(n.Expression()))
+		return c.reach(c.effects(n.Expression()))
 	case ast.KindReturnStatement:
 		return ending{returns: true}
 	case ast.KindThrowStatement:
@@ -164,7 +180,7 @@ func (c *control) read(n *ast.Node) ending {
 		return ending{}
 	case ast.KindIfStatement:
 		s := n.AsIfStatement()
-		return c.of(s.ThenStatement).merge(c.of(s.ElseStatement)).after(c.effects(s.Expression))
+		return c.of(s.ThenStatement).merge(c.of(s.ElseStatement)).after(c.effected(s.Expression))
 	case ast.KindSwitchStatement:
 		return c.switchStatement(n)
 	case ast.KindForStatement, ast.KindForInStatement, ast.KindForOfStatement, ast.KindWhileStatement, ast.KindDoStatement:
@@ -179,7 +195,7 @@ func (c *control) read(n *ast.Node) ending {
 	if ast.IsFunctionLike(n) || ast.IsClassLike(n) || ast.IsDeclaration(n) && n.Kind != ast.KindVariableStatement {
 		return reached(nil)
 	}
-	return reached(c.effects(n))
+	return c.reach(c.effects(n))
 }
 
 func (c *control) switchStatement(n *ast.Node) ending {
@@ -189,7 +205,7 @@ func (c *control) switchStatement(n *ast.Node) ending {
 	clauses := s.CaseBlock.AsCaseBlock().Clauses.Nodes
 	for _, clause := range clauses {
 		entry := join(&exit{}, falling)
-		e := c.list(clause.Statements()).after(entry.writes)
+		e := c.list(clause.Statements()).after(entry)
 		falling = e.end
 		e.end = nil
 		result = result.merge(e)
@@ -200,11 +216,12 @@ func (c *control) switchStatement(n *ast.Node) ending {
 	if !covered || len(clauses) == 0 {
 		result.end = join(result.end, &exit{})
 	}
-	return result.after(c.effects(s.Expression))
+	return result.after(c.effected(s.Expression))
 }
 
 // loop reads a loop: it ends when its condition fails before or after an iteration, or through a break leaving it. A
-// loop without a condition, or whose condition is true, ends only through a break.
+// loop without a condition, or whose condition is true, ends only through a break. Definitions made by one iteration
+// reach the next, so each way out also carries those of earlier iterations.
 func (c *control) loop(n *ast.Node) ending {
 	var once, each []Write
 	var condition *ast.Node
@@ -222,7 +239,9 @@ func (c *control) loop(n *ast.Node) ending {
 		condition = n.Expression()
 		each = c.effects(condition)
 	}
-	body, broken, continued := c.of(n.Statement()).after(each).without(n)
+	body := c.of(n.Statement()).after(&exit{writes: each, defs: c.defined(each, false)})
+	body = body.repeated(join(join(&exit{}, body.end), body.continues[n]))
+	body, broken, continued := body.without(n)
 	infinite := condition == nil || condition.Kind == ast.KindTrueKeyword
 	result := body
 	result.end = broken
@@ -232,7 +251,7 @@ func (c *control) loop(n *ast.Node) ending {
 			result.end = join(result.end, &exit{})
 		}
 	}
-	return result.after(once)
+	return result.after(&exit{writes: once, defs: c.defined(once, false)})
 }
 
 // try reads a try statement: a throw in its block goes to its catch clause, and a finally block runs on every way out.
@@ -240,7 +259,8 @@ func (c *control) try(n *ast.Node) ending {
 	s := n.AsTryStatement()
 	result := c.of(s.TryBlock)
 	if s.CatchClause != nil {
-		caught := c.of(s.CatchClause.AsCatchClause().Block).after(c.effects(s.TryBlock))
+		thrown := c.effects(s.TryBlock)
+		caught := c.of(s.CatchClause.AsCatchClause().Block).after(&exit{writes: thrown, defs: c.defined(thrown, true)})
 		result.throws = false
 		result = result.merge(caught)
 	}
@@ -255,7 +275,7 @@ func (c *control) try(n *ast.Node) ending {
 		if x == nil {
 			return nil
 		}
-		return &exit{writes: append(slices.Clip(x.writes), finally.end.writes...)}
+		return &exit{writes: append(slices.Clip(x.writes), finally.end.writes...), defs: composeDefs(x.defs, finally.end.defs)}
 	}
 	all := func(exits map[*ast.Node]*exit) map[*ast.Node]*exit {
 		suffixed := map[*ast.Node]*exit{}
@@ -298,10 +318,10 @@ func (m *Analyzer) flowControl() *control {
 	return m.control
 }
 
-// writeControl reads endings with the checker and the writes on each way out.
+// writeControl reads endings with the checker, and the writes and definitions on each way out.
 func (m *Analyzer) writeControl() *control {
 	if m.writing == nil {
-		m.writing = &control{never: m.neverCall, exhaustive: m.Exhaustive, writes: true, endings: map[*ast.Node]ending{}}
+		m.writing = &control{never: m.neverCall, exhaustive: m.Exhaustive, writes: true, place: m.placeOfWrite, endings: map[*ast.Node]ending{}}
 	}
 	return m.writing
 }

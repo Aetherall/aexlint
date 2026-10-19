@@ -777,6 +777,57 @@ export function search(items: string[], wanted: string, out: string[]) {
   }
   use(out);
 }`, Options: only("left"), Errors: facts("left", 5)},
+			{Code: `declare function use(...values: unknown[]): void;
+export function steer(rows: Map<number, string[]>, anchors: number[], items: string[], tree: Map<string, string[]>) {
+  let current: string[] = [];
+  let size = 0;
+  for (const item of items) {
+    let index = anchors[0] ?? 0;
+    let row = rows.get(index) ?? [];
+    if (row.length > 3) {
+      index = rows.size;
+      row = [];
+    }
+    row.push(item);
+    rows.set(index, row);
+    if (size > 3) {
+      current = [];
+      size = 0;
+    }
+    current.push(item);
+    size += 1;
+    let entry = tree.get(item);
+    if (!entry) {
+      entry = [];
+      tree.set(item, entry);
+    }
+    entry.push(item);
+  }
+  use(current);
+}`, Options: only("merge"), Errors: facts("merge", 3)},
+			{Code: `declare function use(...values: unknown[]): void;
+class Recorder {
+  record(value: number) {}
+  total(): number {
+    return 0;
+  }
+}
+export function effects(rows: Map<string, number>, list: number[], seen: Set<number>, box: { count: number; items: number[] }, key: string) {
+  rows.set(key, 1);
+  rows.get(key);
+  list.push(2);
+  list.map((x) => x);
+  list.pop();
+  seen.add(3);
+  box.count = 4;
+  box.count++;
+  list[key.length] = 5;
+  box.items.sort();
+  const recorder = new Recorder();
+  recorder.record(6);
+  const total = recorder.total();
+  use(box, total);
+}`, Options: only("effect"), Errors: facts("effect", 9)},
 		},
 	)
 }

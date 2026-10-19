@@ -13,7 +13,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -445,6 +445,74 @@ func (p *probe) write(n *ast.Node) {
 	}
 }
 
+func (p *probe) merge(n *ast.Node) {
+	if !p.kinds["merge"] {
+		return
+	}
+	merge, ok := p.a.MergeOf(n)
+	if !ok {
+		return
+	}
+	values := p.a.Defined(merge)
+	if len(values) == 0 {
+		return
+	}
+	arms := []string{}
+	for i, arm := range merge.Arms {
+		label := "no branch"
+		if arm.Branch != nil {
+			label = model.Text(arm.Branch, 20)
+		}
+		parts := []string{}
+		for _, fact := range arm.Facts {
+			state := "present"
+			if fact.Missing {
+				state = "missing"
+			}
+			parts = append(parts, fmt.Sprintf("%s %s", model.Text(fact.Subject, 20), state))
+		}
+		for _, v := range values {
+			phi, _ := p.a.PhiOf(merge, v)
+			parts = append(parts, fmt.Sprintf("%s: %s", v, p.a.InputProvenance(merge, phi, i)))
+		}
+		arms = append(arms, fmt.Sprintf("%s (%s)", label, strings.Join(parts, ", ")))
+	}
+	description := "merge [" + strings.Join(arms, "; ") + "]"
+	carried := []string{}
+	for _, v := range values {
+		if phi, _ := p.a.PhiOf(merge, v); phi.Carried {
+			carried = append(carried, v.String())
+		}
+	}
+	if len(carried) > 0 {
+		description += "; carried " + strings.Join(carried, ", ")
+	}
+	for _, d := range p.a.Divergences(n) {
+		description += fmt.Sprintf("; diverges %s through %s", model.Text(d.Effect.Node, 30), d.Through)
+	}
+	p.report("merge", model.DecisionCondition(n), description)
+}
+
+func (p *probe) effect(n *ast.Node) {
+	if !p.kinds["effect"] {
+		return
+	}
+	for _, w := range model.WritesAt(n) {
+		e, ok := p.a.EffectOf(w)
+		if !ok {
+			continue
+		}
+		description := fmt.Sprintf("effect %s on %s", e.Kind, e.Receiver)
+		if e.Key != nil {
+			description += " at " + model.Text(e.Key, 20)
+		}
+		if e.Stored != nil {
+			description += " of " + model.Text(e.Stored, 20)
+		}
+		p.report("effect", w.Node, description)
+	}
+}
+
 func (p *probe) ending(n *ast.Node) {
 	if !p.kinds["ending"] {
 		return
@@ -478,7 +546,9 @@ func (p *probe) run() {
 		p.owner(n)
 		if n.Kind == ast.KindIfStatement || n.Kind == ast.KindSwitchStatement || n.Kind == ast.KindExpressionStatement {
 			p.left(n)
+			p.merge(n)
 		}
+		p.effect(n)
 		p.write(n)
 		p.ending(n)
 		if n.Kind == ast.KindConditionalExpression || n.Kind == ast.KindBinaryExpression {

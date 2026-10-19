@@ -1364,3 +1364,91 @@ Message: left [low (low, low); high (high)]
      |   ~~~~~~~~~~~~~~~~~
   49 |   use(low, high);
 ---
+
+[TestModelFacts/invalid-52 - 1]
+Diagnostic 1: merge (8:9 - 8:22)
+Message: merge [{ index = rows.si... (index: the size of a collection, row: a new object); no branch (index: existing data or a constant, row: existing data or a new object)]; diverges rows.set(index, row) through index
+   7 |     let row = rows.get(index) ?? [];
+   8 |     if (row.length > 3) {
+     |         ~~~~~~~~~~~~~~
+   9 |       index = rows.size;
+
+Diagnostic 2: merge (14:9 - 14:16)
+Message: merge [{ current = []; s... (current: a new object, size: a constant); no branch (current: existing data, size: existing data)]; carried current, size
+  13 |     rows.set(index, row);
+  14 |     if (size > 3) {
+     |         ~~~~~~~~
+  15 |       current = [];
+
+Diagnostic 3: merge (21:9 - 21:14)
+Message: merge [{ entry = []; tre... (entry missing, entry: a new object); no branch (entry present, entry: existing data)]
+  20 |     let entry = tree.get(item);
+  21 |     if (!entry) {
+     |         ~~~~~~
+  22 |       entry = [];
+---
+
+[TestModelFacts/invalid-53 - 1]
+Diagnostic 1: effect (9:3 - 9:18)
+Message: effect store on rows at key of 1
+   8 | export function effects(rows: Map<string, number>, list: number[], seen: Set<number>, box: { count: number; items: number[] }, key: string) {
+   9 |   rows.set(key, 1);
+     |   ~~~~~~~~~~~~~~~~
+  10 |   rows.get(key);
+
+Diagnostic 2: effect (11:3 - 11:14)
+Message: effect append on list of 2
+  10 |   rows.get(key);
+  11 |   list.push(2);
+     |   ~~~~~~~~~~~~
+  12 |   list.map((x) => x);
+
+Diagnostic 3: effect (13:3 - 13:12)
+Message: effect remove on list
+  12 |   list.map((x) => x);
+  13 |   list.pop();
+     |   ~~~~~~~~~~
+  14 |   seen.add(3);
+
+Diagnostic 4: effect (14:3 - 14:13)
+Message: effect append on seen of 3
+  13 |   list.pop();
+  14 |   seen.add(3);
+     |   ~~~~~~~~~~~
+  15 |   box.count = 4;
+
+Diagnostic 5: effect (15:3 - 15:15)
+Message: effect change on box of 4
+  14 |   seen.add(3);
+  15 |   box.count = 4;
+     |   ~~~~~~~~~~~~~
+  16 |   box.count++;
+
+Diagnostic 6: effect (16:3 - 16:13)
+Message: effect change on box
+  15 |   box.count = 4;
+  16 |   box.count++;
+     |   ~~~~~~~~~~~
+  17 |   list[key.length] = 5;
+
+Diagnostic 7: effect (17:3 - 17:22)
+Message: effect store on list at key.length of 5
+  16 |   box.count++;
+  17 |   list[key.length] = 5;
+     |   ~~~~~~~~~~~~~~~~~~~~
+  18 |   box.items.sort();
+
+Diagnostic 8: effect (18:3 - 18:18)
+Message: effect change on box.items
+  17 |   list[key.length] = 5;
+  18 |   box.items.sort();
+     |   ~~~~~~~~~~~~~~~~
+  19 |   const recorder = new Recorder();
+
+Diagnostic 9: effect (20:3 - 20:20)
+Message: effect change on recorder
+  19 |   const recorder = new Recorder();
+  20 |   recorder.record(6);
+     |   ~~~~~~~~~~~~~~~~~~
+  21 |   const total = recorder.total();
+---

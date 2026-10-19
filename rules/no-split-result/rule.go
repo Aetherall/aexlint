@@ -112,11 +112,33 @@ func checkDecision(ctx rule.RuleContext, a *model.Analyzer, n *ast.Node) {
 	for _, l := range left {
 		names = append(names, l.Value.String())
 	}
+	if divergences := a.Divergences(n); len(divergences) > 0 {
+		d := divergences[0]
+		ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
+			Id: "falseMerge",
+			Description: fmt.Sprintf("The code after this decision is shared, but does a different job on each path: `%s` acts through `%s`, which is %s.",
+				model.Text(d.Effect.Node, 40), d.Through, kinds(d.Kinds)),
+			Help: "The branches produce different kinds of result, and the shared code hides it: a branch has to make up whatever that code expects from the other path. Do each branch's work inside it instead of steering shared code through these values.",
+		})
+		return
+	}
 	ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
 		Id:          "splitOutcome",
 		Description: fmt.Sprintf("This decision's outcome is split across %s: its branches change them, and the code after it reads them as separate values.", listed(names)),
 		Help:        "Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.",
 	})
+}
+
+// kinds describes the kinds of value a steering value holds on two ways into a merge that share none.
+func kinds(found []model.Provenance) string {
+	for i, a := range found {
+		for _, b := range found[i+1:] {
+			if a.Differs(b) {
+				return fmt.Sprintf("%s on one path and %s on another", a, b)
+			}
+		}
+	}
+	return ""
 }
 
 var Rule = rule.Rule{

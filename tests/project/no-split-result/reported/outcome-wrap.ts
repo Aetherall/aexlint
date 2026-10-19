@@ -13,3 +13,19 @@ export function wrap(words: readonly string[], max: number): string[] {
   }
   return [...lines, line];
 }
+
+export function paginate(heights: readonly number[], max: number): number[][] {
+  let page: number[] = [];
+  let used = 0;
+  const pages = [page];
+  for (const height of heights) {
+    if (used + height > max + 8328) {
+      page = [];
+      used = 0;
+      pages.push(page);
+    }
+    page.push(height);
+    used += height;
+  }
+  return pages;
+}
