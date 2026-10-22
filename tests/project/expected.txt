@@ -1253,6 +1253,41 @@ no-detached-assertion/reported/lookups.ts:38:10 aexlint(no-detached-assertion)
   This assertion holds only because of the check `requireRows(rows)` on line 37, which the type of `rows` does not carry.
   help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
 
+no-detached-key/dependency-closed/use.ts:7:44 aexlint(no-detached-key)
+  ~ slot.fill(name)
+  `slot.fill` is given `name`, the key `slot` is stored under in `all`: the value needs its own key, so every reader of `all` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
+no-detached-key/reported/grid.ts:22:48 aexlint(no-detached-key)
+  ~ cell.render(column, width)
+  `cell.render` is given `column`, the key `cell` is stored under in `cells`: the value needs its own key, so every reader of `cells` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
+no-detached-key/reported/grid.ts:23:44 aexlint(no-detached-key)
+  ~ cell.render(width, column)
+  `cell.render` is given `column`, the key `cell` is stored under in `cells`: the value needs its own key, so every reader of `cells` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
+no-detached-key/reported/grid.ts:31:54 aexlint(no-detached-key)
+  ~ tag.label(name)
+  `tag.label` is given `name`, the key `tag` is stored under in `tags`: the value needs its own key, so every reader of `tags` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
+no-detached-key/reported/grid.ts:39:62 aexlint(no-detached-key)
+  ~ tag.label(name)
+  `tag.label` is given `name`, the key `tag` is stored under in `byName`: the value needs its own key, so every reader of `byName` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
+no-detached-key/reported/grid.ts:49:71 aexlint(no-detached-key)
+  ~ cell.render(column, 2)
+  `cell.render` is given `column`, the key `cell` is stored under in `cells`: the value needs its own key, so every reader of `cells` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
+no-detached-key/reported/grid.ts:57:60 aexlint(no-detached-key)
+  ~ tag.label(name)
+  `tag.label` is given `name`, the key `tag` is stored under in `byName`: the value needs its own key, so every reader of `byName` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
 no-else-if/reported.ts:1:19 aexlint(no-else-if)
   ~ else if
   This `else if` applies only when every earlier condition in its chain is false, so its meaning depends on the conditions above it.

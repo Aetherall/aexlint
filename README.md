@@ -123,6 +123,7 @@ The plugin enables no rules by default. Type-aware rules need the TypeScript set
 | [no-widened-union](rules/no-widened-union/README.md)                           | `string` parameters and results compared with literals hiding a union               |
 | [no-detached-assertion](rules/no-detached-assertion/README.md)                 | Entry assertions that hold only because of an earlier size or key check             |
 | [no-default-outside-owner](rules/no-default-outside-owner/README.md)           | Defaults of optional properties that readers outside the owner repeat or contradict |
+| [no-detached-key](rules/no-detached-key/README.md)                             | Map values whose methods are given the key they are stored under                    |
 
 `max-held-context` allows `else if` chains and `no-else-if` reports them; early returns satisfy both.
 

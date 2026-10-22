@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-detached-key",
+  "description": "Report methods of a map's values given the key each value is stored under, when the map holds values made for their key.",
+  "requiresTypeChecking": true
+}

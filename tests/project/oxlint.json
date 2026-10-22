@@ -595,6 +595,14 @@
     },
     {
       "files": [
+        "no-detached-key/**"
+      ],
+      "rules": {
+        "aexlint/no-detached-key": "error"
+      }
+    },
+    {
+      "files": [
         "no-default-outside-owner/max-0/**"
       ],
       "rules": {
