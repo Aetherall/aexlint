@@ -262,7 +262,25 @@ func accepting(v *Vocabulary, values []string) (Claim, bool) {
 	return Claim{Domain: v.Values, Accepted: within(v.Values, values), Vocabulary: v}, true
 }
 
+// Defaulted returns the value n reads through a default: for `value ?? D`, with D one of the literal values of value's
+// declared type, value, whose absence the default only names as D; otherwise n. A test of the whole is a test of value:
+// claims about literal values range over the literal values alone, where both read alike.
+func (m *Analyzer) Defaulted(n *ast.Node) *ast.Node {
+	u := Unwrap(n)
+	if u.Kind != ast.KindBinaryExpression || u.AsBinaryExpression().OperatorToken.Kind != ast.KindQuestionQuestionToken {
+		return n
+	}
+	b := u.AsBinaryExpression()
+	v := m.Vocabulary(b.Left)
+	value, ok := m.Unit(b.Right)
+	if v == nil || !ok || !slices.Contains(v.Values, value) {
+		return n
+	}
+	return b.Left
+}
+
 func (m *Analyzer) valueTest(n, subject *ast.Node, values []string, negated bool) *expr {
+	subject = m.Defaulted(subject)
 	v := m.Vocabulary(subject)
 	if v == nil {
 		return nil
@@ -392,7 +410,7 @@ func (m *Analyzer) build(n *ast.Node, text string) *expr {
 			return &expr{op: "|", kids: []*expr{m.build(binary.Left, text), m.build(binary.Right, text)}}
 		}
 	}
-	return &expr{opaque: Squash(text[scanner.SkipTrivia(text, n.Pos()):n.End()]), node: n}
+	return &expr{opaque: Squash(between(text, n.Pos(), n.End())), node: n}
 }
 
 func negate(e *expr) *expr {
@@ -643,7 +661,8 @@ func named(n *ast.Node) bool {
 
 func (m *Analyzer) caseGroup(first *ast.Node) *Site {
 	switchStatement := first.Parent.Parent
-	v := m.Vocabulary(switchStatement.Expression())
+	subject := m.Defaulted(switchStatement.Expression())
+	v := m.Vocabulary(subject)
 	if v == nil {
 		return nil
 	}
@@ -668,14 +687,14 @@ func (m *Analyzer) caseGroup(first *ast.Node) *Site {
 	if !ok {
 		return nil
 	}
-	t := &Test{Node: first, Value: m.ValueOf(switchStatement.Expression()), Claim: claim}
+	t := &Test{Node: first, Value: m.ValueOf(subject), Claim: claim}
 	text := ast.GetSourceFileOfNode(first).Text()
 	return &Site{Root: first, Pos: scanner.SkipTrivia(text, first.Pos()), End: last.Expression().End(), Tests: []Test{*t}, Canon: canon(&expr{test: t}), Outcome: OutcomeText(first)}
 }
 
 // Exhaustive reports whether a switch on a vocabulary has no default clause and a case for every value.
 func (m *Analyzer) Exhaustive(n *ast.Node) bool {
-	v := m.Vocabulary(n.Expression())
+	v := m.Vocabulary(m.Defaulted(n.Expression()))
 	if v == nil {
 		return false
 	}

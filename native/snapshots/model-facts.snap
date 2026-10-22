@@ -1592,7 +1592,7 @@ Message: summary []; reads [this.badges size, this.byId size]
   22 |     return this.badges.length + this.byId.size;
 
 Diagnostic 5: summary (24:3 - 24:5)
-Message: summary []; reads [this.badges]
+Message: summary []; reads [this.badges, this.badges.[].active]; fresh
   23 |   }
   24 |   all() {
      |   ~~~
@@ -1606,7 +1606,7 @@ Message: summary []; reads [badge.active]
   26 |   }
 
 Diagnostic 7: summary (27:3 - 27:5)
-Message: summary []; reads [badge]
+Message: summary []; reads [badge]; escapes [badge]; opaque
   26 |   }
   27 |   log(badge: Badge) {
      |   ~~~
@@ -1633,15 +1633,22 @@ Message: summary [append target]; reads [count]
      |          ~~~~
   41 |   for (let i = 0; i < count; i++) target.push(new Badge());
 
-Diagnostic 11: summary (52:10 - 52:13)
+Diagnostic 11: summary (43:10 - 43:14)
+Message: summary []; reads []; fresh
+  42 | }
+  43 | function local() {
+     |          ~~~~~
+  44 |   const mine: Badge[] = [];
+
+Diagnostic 12: summary (52:10 - 52:13)
 Message: summary [append club.badges of badge carrying badge]; reads [n, badge]
   51 | }
   52 | function loop(n: number, club: Club, badge: Badge): void {
      |          ~~~~
   53 |   if (n > 0) loop(n - 1, club, badge);
 
-Diagnostic 12: summary (56:17 - 56:21)
-Message: summary [append club.badges of badge carrying badge; store club.byId of badge carrying badge; append club.badges of badge carrying badge; change badge; append list; append club.badges of badge carrying badge]; reads [badge, list]
+Diagnostic 13: summary (56:17 - 56:21)
+Message: summary [append club.badges of badge carrying badge; store club.byId of badge carrying badge; append club.badges of badge carrying badge; change badge; append list; append club.badges of badge carrying badge]; reads [badge, list]; escapes [badge]; opaque
   55 | }
   56 | export function calls(club: Club, badge: Badge, list: Badge[]) {
      |                 ~~~~~
@@ -1741,6 +1748,90 @@ Message: overwritten store 0 in grid at key: string, filled by grid.set(key, 2)
   83 |   grid.set(key, 0);
      |   ~~~~~~~~~~~~~~~~
   84 |   grid.set(other, 1);
+
+Diagnostic 7: overwritten (106:3 - 106:14)
+Message: overwritten store "" in d.title, filled by d.title = next
+  105 |   c.title = next + all.length;
+  106 |   d.title = "";
+      |   ~~~~~~~~~~~~
+  107 |   for (const item of list) void item;
+
+Diagnostic 8: overwritten (155:3 - 155:23)
+Message: overwritten store next + seen in b.title, filled by b.title = ""; b.title = next
+  154 |   const { seen } = lens;
+  155 |   b.title = next + seen;
+      |   ~~~~~~~~~~~~~~~~~~~~~
+  156 |   b.title = "";
+
+Diagnostic 9: overwritten (156:3 - 156:14)
+Message: overwritten store "" in b.title, filled by b.title = next
+  155 |   b.title = next + seen;
+  156 |   b.title = "";
+      |   ~~~~~~~~~~~~
+  157 |   void lens.size;
+
+Diagnostic 10: overwritten (166:3 - 166:16)
+Message: overwritten store next in b.title, filled by b.title = ""
+  165 |   run.call(undefined);
+  166 |   b.title = next;
+      |   ~~~~~~~~~~~~~~
+  167 |   c.title = "";
+
+Diagnostic 11: overwritten (167:3 - 167:14)
+Message: overwritten store "" in c.title, filled by c.title = next
+  166 |   b.title = next;
+  167 |   c.title = "";
+      |   ~~~~~~~~~~~~
+  168 |   items.forEach((item) => void item);
+
+Diagnostic 12: overwritten (173:3 - 173:14)
+Message: overwritten store "" in a.title, filled by a.title = next + count
+  172 |   b.title = next;
+  173 |   a.title = "";
+      |   ~~~~~~~~~~~~
+  174 |   const count = items.map(Number).filter(Boolean).length;
+
+Diagnostic 13: overwritten (185:3 - 185:18)
+Message: overwritten store "" in local.title, filled by local.title = next
+  184 |   const local = new Panel();
+  185 |   local.title = "";
+      |   ~~~~~~~~~~~~~~~~
+  186 |   check(next);
+
+Diagnostic 14: overwritten (202:3 - 202:20)
+Message: overwritten store "" in list.1.title, filled by list[1].title = next + count
+  201 |   list[0].title = next;
+  202 |   list[1].title = "";
+      |   ~~~~~~~~~~~~~~~~~~
+  203 |   const count = list.length;
+
+Diagnostic 15: overwritten (213:3 - 213:16)
+Message: overwritten store next in a.title, filled by a.title = ""
+  212 |   });
+  213 |   a.title = next;
+      |   ~~~~~~~~~~~~~~
+  214 |   b.title = "";
+
+Diagnostic 16: overwritten (214:3 - 214:14)
+Message: overwritten store "" in b.title, filled by b.title = next
+  213 |   a.title = next;
+  214 |   b.title = "";
+      |   ~~~~~~~~~~~~
+  215 |   void new Promise<void>((resolve) => resolve());
+
+Diagnostic 17: overwritten (237:3 - 237:14)
+Message: overwritten store "" in b.title, filled by b.title = next
+  236 |   a.title = next;
+  237 |   b.title = "";
+      |   ~~~~~~~~~~~~
+  238 |   quiet.tidy();
+
+Diagnostic 18: overwritten (264:3 - 264:17)
+Message: overwritten store "" in kept.title, filled by kept.title = next
+  263 |   const kept = new Panel();
+  264 |   kept.title = "";
+      |   ~~~~~~~~~~~~~~~
+  265 |   peek();
 ---
 
 [TestModelFacts/invalid-59 - 1]
@@ -1767,6 +1858,572 @@ Message: unaddressed index key from String(fallback)
 ---
 
 [TestModelFacts/invalid-60 - 1]
+Diagnostic 1: buffer (22:5 - 22:24)
+Message: unsettled entry of rows at elements of anchors, drained by rows
+  21 |     row.push(item);
+  22 |     rows.set(index, row);
+     |     ~~~~~~~~~~~~~~~~~~~~
+  23 |   }
+
+Diagnostic 2: buffer (22:5 - 22:24)
+Message: settled entry of rows at output.lines.length, drained by rows; ordered with output.lines.length, output.lines.push(""), output.lines[anchors[0]!]
+  21 |     row.push(item);
+  22 |     rows.set(index, row);
+     |     ~~~~~~~~~~~~~~~~~~~~
+  23 |   }
+
+Diagnostic 3: buffer (31:29 - 31:57)
+Message: settled entry of loud, drained by loud; exposed to use(word)
+  30 |   const loud: string[] = [];
+  31 |   for (const word of words) loud.push(word.toUpperCase());
+     |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  32 |   for (const word of loud) use(word);
+
+Diagnostic 4: buffer (39:5 - 39:19)
+Message: settled entry of boxes, drained by boxes; exposed to use(box)
+  38 |     use(box.word);
+  39 |     boxes.push(box);
+     |     ~~~~~~~~~~~~~~~
+  40 |   }
+
+Diagnostic 5: buffer (55:5 - 55:33)
+Message: settled entry of loud, drained by loud; ordered with log.length
+  54 |     if (log.length > 3) continue;
+  55 |     loud.push(word.toUpperCase());
+     |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  56 |   }
+
+Diagnostic 6: buffer (63:5 - 63:21)
+Message: unsettled entry of picked, drained by picked
+  62 |   for (const item of items) {
+  63 |     picked.push(item);
+     |     ~~~~~~~~~~~~~~~~~
+  64 |     notify();
+
+Diagnostic 7: buffer (70:44 - 70:60)
+Message: settled entry of picked, drained by picked; exposed to use(item.name)
+  69 |   const picked: Item[] = [];
+  70 |   for (const item of items) if (item.seen) picked.push(item);
+     |                                            ~~~~~~~~~~~~~~~~~
+  71 |   for (const item of picked) use(item.name);
+
+Diagnostic 8: buffer (77:5 - 77:21)
+Message: unsettled entry of picked, drained by picked
+  76 |     const item = { name, seen: false };
+  77 |     picked.push(item);
+     |     ~~~~~~~~~~~~~~~~~
+  78 |     item.seen = true;
+
+Diagnostic 9: buffer (87:5 - 87:21)
+Message: unsettled entry of picked, drained by picked
+  86 |     setTimeout(() => use(item));
+  87 |     picked.push(item);
+     |     ~~~~~~~~~~~~~~~~~
+  88 |   }
+
+Diagnostic 10: buffer (93:50 - 93:63)
+Message: unsettled entry of seen at elements of words, drained by seen
+  92 |   const seen = new Set<string>();
+  93 |   for (const word of words) if (!seen.has(word)) seen.add(word);
+     |                                                  ~~~~~~~~~~~~~~
+  94 |   seen.add(extra.trim());
+
+Diagnostic 11: buffer (94:3 - 94:24)
+Message: settled entry of seen at extra.trim(), drained by seen
+  93 |   for (const word of words) if (!seen.has(word)) seen.add(word);
+  94 |   seen.add(extra.trim());
+     |   ~~~~~~~~~~~~~~~~~~~~~~
+  95 |   for (const word of seen) use(word);
+
+Diagnostic 12: buffer (107:5 - 107:24)
+Message: unsettled entry of rows at anchor: number, drained by rows
+  106 |     row.push(item);
+  107 |     rows.set(index, row);
+      |     ~~~~~~~~~~~~~~~~~~~~
+  108 |   }
+
+Diagnostic 13: buffer (107:5 - 107:24)
+Message: unsettled entry of rows at item.length + 100, drained by rows
+  106 |     row.push(item);
+  107 |     rows.set(index, row);
+      |     ~~~~~~~~~~~~~~~~~~~~
+  108 |   }
+
+Diagnostic 14: buffer (124:29 - 124:49)
+Message: unsettled entry of seen at word.trim(), drained by seen
+  123 |   const seen = new Set<string>();
+  124 |   for (const word of words) seen.add(word.trim());
+      |                             ~~~~~~~~~~~~~~~~~~~~~
+  125 |   for (const word of seen) use(word);
+
+Diagnostic 15: buffer (132:33 - 132:63)
+Message: unsettled entry of opened, drained by opened
+  131 |     try {
+  132 |       for (const name of names) opened.push([name, open(name)]);
+      |                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  133 |     } catch (error) {
+
+Diagnostic 16: buffer (141:31 - 141:62)
+Message: settled entry of opened, drained by opened; ordered with this.#handles.clear()
+  140 |     const opened: [string, number][] = [];
+  141 |     for (const name of names) opened.push([name, name.length]);
+      |                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  142 |     this.#handles.clear();
+
+Diagnostic 17: buffer (148:29 - 148:68)
+Message: unsettled entry of byWord at word.toLowerCase(), drained by Object.entries(byWord)
+  147 |   const byWord: Record<string, string> = {};
+  148 |   for (const word of words) byWord[word.toLowerCase()] = word.trim();
+      |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  149 |   for (const [key, word] of Object.entries(byWord)) out.push(key + word);
+
+Diagnostic 18: buffer (153:3 - 153:43)
+Message: settled entry of byWord at words.join(","), drained by Object.entries(byWord)
+  152 |   const byWord: Record<string, string> = {};
+  153 |   byWord[words.join(",")] = words.join(" ");
+      |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  154 |   Object.entries(byWord).forEach(([key, word]) => out.push(key + word));
+
+Diagnostic 19: buffer (162:5 - 162:33)
+Message: unsettled entry of loud, drained by loud
+  161 |   for (const word of words) {
+  162 |     loud.push(word.toUpperCase());
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  163 |     nonBlank(word);
+
+Diagnostic 20: buffer (170:5 - 170:33)
+Message: settled entry of loud, drained by loud; ordered with seen.push(word)
+  169 |   for (const word of words) {
+  170 |     loud.push(word.toUpperCase());
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  171 |     seen.push(word);
+
+Diagnostic 21: buffer (179:5 - 179:33)
+Message: settled entry of loud, drained by loud
+  178 |   for (const word of words) {
+  179 |     loud.push(word.toUpperCase());
+      |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  180 |     counts.set(word, (counts.get(word) ?? 0) + 1);
+
+Diagnostic 22: buffer (187:29 - 187:57)
+Message: settled entry of loud, drained by loud
+  186 |   const loud: string[] = [];
+  187 |   for (const word of words) loud.push(word.toUpperCase());
+      |                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  188 |   loud.forEach((word) => out.push(word));
+
+Diagnostic 23: buffer (192:29 - 192:53)
+Message: settled entry of pending, drained by pending; exposed to await save(name), save(name)
+  191 |   const pending: string[] = [];
+  192 |   for (const name of names) pending.push(name.trim());
+      |                             ~~~~~~~~~~~~~~~~~~~~~~~~~
+  193 |   for (const name of pending) await save(name);
+
+Diagnostic 24: buffer (197:25 - 197:50)
+Message: settled entry of texts, drained by texts; exposed to await load(id), load(id)
+  196 |   const texts: string[] = [];
+  197 |   for (const id of ids) texts.push(await load(id));
+      |                         ~~~~~~~~~~~~~~~~~~~~~~~~~~
+  198 |   for (const text of texts) out.push(text);
+---
+
+[TestModelFacts/invalid-61 - 1]
+Diagnostic 1: backing (5:39 - 5:52)
+Message: backing of indices by guard indices.length
+   4 |   if (!indices.length) return;
+   5 |   for (const line of lines) use(line, indices.at(0)!, indices.at(-1)!, indices.at(-2)!);
+     |                                       ~~~~~~~~~~~~~~
+   6 |   if (anchors.length > 1) use(anchors.at(1)!, anchors.at(2)!);
+
+Diagnostic 2: backing (5:55 - 5:69)
+Message: backing of indices by guard indices.length
+   4 |   if (!indices.length) return;
+   5 |   for (const line of lines) use(line, indices.at(0)!, indices.at(-1)!, indices.at(-2)!);
+     |                                                       ~~~~~~~~~~~~~~~
+   6 |   if (anchors.length > 1) use(anchors.at(1)!, anchors.at(2)!);
+
+Diagnostic 3: backing (6:31 - 6:44)
+Message: backing of anchors by condition anchors.length > 1
+   5 |   for (const line of lines) use(line, indices.at(0)!, indices.at(-1)!, indices.at(-2)!);
+   6 |   if (anchors.length > 1) use(anchors.at(1)!, anchors.at(2)!);
+     |                               ~~~~~~~~~~~~~~
+   7 |   use(anchors.length === 0 ? 0 : anchors.at(0)!);
+
+Diagnostic 4: backing (7:34 - 7:47)
+Message: backing of anchors by condition anchors.length === 0
+   6 |   if (anchors.length > 1) use(anchors.at(1)!, anchors.at(2)!);
+   7 |   use(anchors.length === 0 ? 0 : anchors.at(0)!);
+     |                                  ~~~~~~~~~~~~~~
+   8 |   use(anchors.length >= 3 && anchors.at(-3)!);
+
+Diagnostic 5: backing (8:30 - 8:44)
+Message: backing of anchors by condition anchors.length >= 3
+   7 |   use(anchors.length === 0 ? 0 : anchors.at(0)!);
+   8 |   use(anchors.length >= 3 && anchors.at(-3)!);
+     |                              ~~~~~~~~~~~~~~~
+   9 | }
+
+Diagnostic 6: backing (12:7 - 12:22)
+Message: backing of counts by guard counts.has(key)
+  11 |   if (!counts.has(key)) return;
+  12 |   use(counts.get(key)!, counts.get(other)!);
+     |       ~~~~~~~~~~~~~~~~
+  13 |   if (counts.has(other) && counts.get(other)! > 2) use(other);
+
+Diagnostic 7: backing (13:28 - 13:45)
+Message: backing of counts by condition counts.has(other)
+  12 |   use(counts.get(key)!, counts.get(other)!);
+  13 |   if (counts.has(other) && counts.get(other)! > 2) use(other);
+     |                            ~~~~~~~~~~~~~~~~~~
+  14 | }
+
+Diagnostic 8: backing (28:7 - 28:18)
+Message: backing of items by guard items.length === 0
+  27 |   items.sort();
+  28 |   use(items.at(0)!, from.at(1)!, from.at(2)!);
+     |       ~~~~~~~~~~~~
+  29 | }
+
+Diagnostic 9: backing (28:21 - 28:31)
+Message: backing of from by guard from.length < 2
+  27 |   items.sort();
+  28 |   use(items.at(0)!, from.at(1)!, from.at(2)!);
+     |                     ~~~~~~~~~~~
+  29 | }
+
+Diagnostic 10: backing (39:7 - 39:18)
+Message: backing of items by guard count < 2
+  38 |   if (count < 2 || !known) return;
+  39 |   use(items.at(1)!, counts.get(key)!);
+     |       ~~~~~~~~~~~~
+  40 | }
+
+Diagnostic 11: backing (39:21 - 39:36)
+Message: backing of counts by guard counts.has(key)
+  38 |   if (count < 2 || !known) return;
+  39 |   use(items.at(1)!, counts.get(key)!);
+     |                     ~~~~~~~~~~~~~~~~
+  40 | }
+
+Diagnostic 12: backing (45:7 - 45:19)
+Message: backing of items by guard items.length > 1
+  44 |   assert(counts.has(key));
+  45 |   use(items.at(-2)!, counts.get(key)!);
+     |       ~~~~~~~~~~~~~
+  46 | }
+
+Diagnostic 13: backing (45:22 - 45:37)
+Message: backing of counts by guard counts.has(key)
+  44 |   assert(counts.has(key));
+  45 |   use(items.at(-2)!, counts.get(key)!);
+     |                      ~~~~~~~~~~~~~~~~
+  46 | }
+
+Diagnostic 14: backing (60:7 - 60:17)
+Message: backing of rows by guard needRows(rows, counts, key)
+  59 |   needRows(rows, counts, key);
+  60 |   use(rows.at(1)!, counts.get(key)!);
+     |       ~~~~~~~~~~~
+  61 |   softRows(rows);
+
+Diagnostic 15: backing (60:20 - 60:35)
+Message: backing of counts by guard needRows(rows, counts, key)
+  59 |   needRows(rows, counts, key);
+  60 |   use(rows.at(1)!, counts.get(key)!);
+     |                    ~~~~~~~~~~~~~~~~
+  61 |   softRows(rows);
+---
+
+[TestModelFacts/invalid-62 - 1]
+Diagnostic 1: filter (7:5 - 7:30)
+Message: filter note.hidden
+   6 |   for (const note of notes) {
+   7 |     if (note.hidden) continue;
+     |     ~~~~~~~~~~~~~~~~~~~~~~~~~~
+   8 |     const { text } = note;
+
+Diagnostic 2: filter (10:5 - 12:5)
+Message: filter size === 0 || size > limit
+   9 |     const size = text.length;
+  10 |     if (size === 0 || size > limit) {
+     |     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  11 |       continue;
+     | ~~~~~~~~~~~~~~~
+  12 |     }
+     | ~~~~~
+  13 |     total += size;
+
+Diagnostic 3: filter (19:5 - 19:28)
+Message: filter note.hidden
+  18 |   notes.forEach((note) => {
+  19 |     if (note.hidden) return;
+     |     ~~~~~~~~~~~~~~~~~~~~~~~~
+  20 |     out.push(note.text);
+
+Diagnostic 4: filter (41:5 - 41:28)
+Message: filter size > 10; exposed to width(note.text)
+  40 |     const size = width(note.text);
+  41 |     if (size > 10) continue;
+     |     ~~~~~~~~~~~~~~~~~~~~~~~~
+  42 |     out.push(note.text);
+---
+
+[TestModelFacts/invalid-63 - 1]
+Diagnostic 1: default (7:12 - 7:30)
+Message: default of side to "left", owned by Panel, inside yes
+   6 |   get resolved() {
+   7 |     return this.side ?? "left";
+     |            ~~~~~~~~~~~~~~~~~~~
+   8 |   }
+
+Diagnostic 2: default (12:7 - 12:29)
+Message: default of overflow to "hide", owned by Note, inside no
+  11 | export function read(note: Note, panel: Panel, options: Options, loose: { flag?: boolean }) {
+  12 |   use(note.overflow ?? "hide", note.overflow ?? null, note.text ?? "", note.text);
+     |       ~~~~~~~~~~~~~~~~~~~~~~~
+  13 |   use(panel.side ?? "right", panel.width ?? 0, options.mode ?? "fast", options.label ?? "none");
+
+Diagnostic 3: default (13:7 - 13:27)
+Message: default of side to "right", owned by Panel, inside no
+  12 |   use(note.overflow ?? "hide", note.overflow ?? null, note.text ?? "", note.text);
+  13 |   use(panel.side ?? "right", panel.width ?? 0, options.mode ?? "fast", options.label ?? "none");
+     |       ~~~~~~~~~~~~~~~~~~~~~
+  14 |   const { overflow = "own", text = "" } = note;
+
+Diagnostic 4: default (13:30 - 13:45)
+Message: default of width to 0, owned by Panel, inside no
+  12 |   use(note.overflow ?? "hide", note.overflow ?? null, note.text ?? "", note.text);
+  13 |   use(panel.side ?? "right", panel.width ?? 0, options.mode ?? "fast", options.label ?? "none");
+     |                              ~~~~~~~~~~~~~~~~
+  14 |   const { overflow = "own", text = "" } = note;
+
+Diagnostic 5: default (13:48 - 13:69)
+Message: default of mode to "fast", owned by Options, inside yes
+  12 |   use(note.overflow ?? "hide", note.overflow ?? null, note.text ?? "", note.text);
+  13 |   use(panel.side ?? "right", panel.width ?? 0, options.mode ?? "fast", options.label ?? "none");
+     |                                                ~~~~~~~~~~~~~~~~~~~~~~
+  14 |   const { overflow = "own", text = "" } = note;
+
+Diagnostic 6: default (13:72 - 13:94)
+Message: default of label to "none", owned by Options, inside yes
+  12 |   use(note.overflow ?? "hide", note.overflow ?? null, note.text ?? "", note.text);
+  13 |   use(panel.side ?? "right", panel.width ?? 0, options.mode ?? "fast", options.label ?? "none");
+     |                                                                        ~~~~~~~~~~~~~~~~~~~~~~~
+  14 |   const { overflow = "own", text = "" } = note;
+
+Diagnostic 7: default (14:11 - 14:26)
+Message: default of overflow to "own", owned by Note, inside no
+  13 |   use(panel.side ?? "right", panel.width ?? 0, options.mode ?? "fast", options.label ?? "none");
+  14 |   const { overflow = "own", text = "" } = note;
+     |           ~~~~~~~~~~~~~~~~
+  15 |   use(overflow, text, loose.flag ?? false);
+
+Diagnostic 8: default (17:28 - 17:40)
+Message: default of mode to "slow", owned by Options, inside yes
+  16 | }
+  17 | export function defaults({ mode = "slow", count = 1 }: Options) {
+     |                            ~~~~~~~~~~~~~
+  18 |   return [mode, count];
+
+Diagnostic 9: default (17:43 - 17:51)
+Message: default of count to 1, owned by Options, inside yes
+  16 | }
+  17 | export function defaults({ mode = "slow", count = 1 }: Options) {
+     |                                           ~~~~~~~~~
+  18 |   return [mode, count];
+
+Diagnostic 10: default (21:3 - 21:25)
+Message: default of overflow to "own", owned by Note, inside no
+  20 | export function normalized(note: Note) {
+  21 |   note.overflow ??= "own";
+     |   ~~~~~~~~~~~~~~~~~~~~~~~
+  22 |   return note;
+---
+
+[TestModelFacts/invalid-64 - 1]
+Diagnostic 1: ownkey (19:3 - 19:72)
+Message: own key index of row in rows given by row.render(index, width)
+  18 |   }
+  19 |   for (const [index, row] of rows) use(row.render(index, width), index);
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  20 |   rows.forEach((row, index) => use(row.render(width, index)));
+
+Diagnostic 2: ownkey (20:3 - 20:61)
+Message: own key index of row in rows given by row.render(width, index)
+  19 |   for (const [index, row] of rows) use(row.render(index, width), index);
+  20 |   rows.forEach((row, index) => use(row.render(width, index)));
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  21 |   for (const [index, row] of rows) use(row.render(0, width), index);
+---
+
+[TestModelFacts/invalid-65 - 1]
+Diagnostic 1: summary (2:17 - 2:24)
+Message: summary []; reads [rows size, counts, key]; throws; guarantees size of rows at least 2; guarantees counts holds key
+   1 | declare function assert(condition: unknown): asserts condition;
+   2 | export function needRows(rows: string[], counts: Map<string, number>, key: string) {
+     |                 ~~~~~~~~
+   3 |   if (rows.length < 2) throw new Error("two rows");
+
+Diagnostic 2: summary (6:17 - 6:25)
+Message: summary []; reads [rows size]; opaque; guarantees size of rows at least 1
+   5 | }
+   6 | export function asserting(rows: string[]) {
+     |                 ~~~~~~~~~
+   7 |   assert(rows.length > 0);
+
+Diagnostic 3: summary (9:17 - 9:24)
+Message: summary []; reads [rows size]
+   8 | }
+   9 | export function softRows(rows: string[]) {
+     |                 ~~~~~~~~
+  10 |   if (!rows.length) return;
+
+Diagnostic 4: summary (12:17 - 12:24)
+Message: summary [remove rows]; reads [rows size, rows]; throws
+  11 | }
+  12 | export function draining(rows: string[]) {
+     |                 ~~~~~~~~
+  13 |   if (!rows.length) throw new Error("rows");
+
+Diagnostic 5: summary (16:17 - 16:23)
+Message: summary []; reads [rows size, counts, key]
+  15 | }
+  16 | export function careful(rows: string[], counts: Map<string, number>, key: string) {
+     |                 ~~~~~~~
+  17 |   try {
+
+Diagnostic 6: summary (24:17 - 24:24)
+Message: summary []; reads [rows size, counts, key]; throws; guarantees size of rows at least 2; guarantees counts holds key
+  23 | }
+  24 | export function careless(rows: string[], counts: Map<string, number>, key: string) {
+     |                 ~~~~~~~~
+  25 |   needRows(rows, counts, key);
+
+Diagnostic 7: summary (28:17 - 28:20)
+Message: summary []; reads [rows, rows.[]]; throws
+  27 | }
+  28 | export function each(rows: string[]) {
+     |                 ~~~~
+  29 |   rows.forEach((row) => {
+
+Diagnostic 8: summary (29:16 - 29:23)
+Message: summary []; reads [row]; throws
+  28 | export function each(rows: string[]) {
+  29 |   rows.forEach((row) => {
+     |                ~~~~~~~~
+  30 |     if (!row) throw new Error("blank");
+
+Diagnostic 9: summary (33:17 - 33:22)
+Message: summary [change rows.[]]; reads [rows]
+  32 | }
+  33 | export function marked(rows: { done: boolean }[]) {
+     |                 ~~~~~~
+  34 |   rows.forEach((row) => {
+
+Diagnostic 10: summary (34:16 - 34:23)
+Message: summary [change row]; reads []
+  33 | export function marked(rows: { done: boolean }[]) {
+  34 |   rows.forEach((row) => {
+     |                ~~~~~~~~
+  35 |     row.done = true;
+
+Diagnostic 11: summary (38:17 - 38:24)
+Message: summary [append out carrying rows]; reads [rows, rows.[], out]
+  37 | }
+  38 | export function gathered(rows: string[], out: string[]) {
+     |                 ~~~~~~~~
+  39 |   return rows.reduce((all, row) => {
+
+Diagnostic 12: summary (39:22 - 39:34)
+Message: summary [append all of row carrying row]; reads [row, all]
+  38 | export function gathered(rows: string[], out: string[]) {
+  39 |   return rows.reduce((all, row) => {
+     |                      ~~~~~~~~~~~~~
+  40 |     all.push(row);
+
+Diagnostic 13: summary (44:17 - 44:22)
+Message: summary [change rows.[] carrying rows; change byName.[]]; reads [rows, rows.[].done, byName]
+  43 | }
+  44 | export function looped(rows: { done: boolean }[], byName: Map<string, { done: boolean }>) {
+     |                 ~~~~~~
+  45 |   for (const row of rows) row.done = row.done || true;
+
+Diagnostic 14: summary (48:17 - 48:23)
+Message: summary [change rows.[]]; reads [rows]
+  47 | }
+  48 | export function indexed(rows: { done: boolean }[]) {
+     |                 ~~~~~~~
+  49 |   for (const [index, row] of rows.entries()) row.done = index > 0;
+---
+
+[TestModelFacts/invalid-66 - 1]
+Diagnostic 1: effect (3:3 - 3:42)
+Message: effect change on panel carrying next, { width: 1 }
+   2 | export function assigned(panel: Panel, next: Panel, key: string) {
+   3 |   Object.assign(panel, next, { width: 1 });
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   4 |   Object.defineProperty(panel, "title", { value: next.title });
+
+Diagnostic 2: effect (4:3 - 4:62)
+Message: effect change on panel carrying { value: next.tit...
+   3 |   Object.assign(panel, next, { width: 1 });
+   4 |   Object.defineProperty(panel, "title", { value: next.title });
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   5 |   Reflect.set(panel, key, next);
+
+Diagnostic 3: effect (5:3 - 5:31)
+Message: effect change on panel carrying next
+   4 |   Object.defineProperty(panel, "title", { value: next.title });
+   5 |   Reflect.set(panel, key, next);
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   6 |   Reflect.deleteProperty(panel, key);
+
+Diagnostic 4: effect (6:3 - 6:36)
+Message: effect remove on panel
+   5 |   Reflect.set(panel, key, next);
+   6 |   Reflect.deleteProperty(panel, key);
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   7 |   Object.keys(panel);
+---
+
+[TestModelFacts/invalid-67 - 1]
+Diagnostic 1: local (9:9 - 9:12)
+Message: local rows
+   8 | export function rows(lines: string[], given: Row, keep: Row[]) {
+   9 |   const rows = new Map<number, Row>();
+     |         ~~~~
+  10 |   for (const [index, line] of lines.entries()) {
+
+Diagnostic 2: local (11:9 - 11:11)
+Message: local row
+  10 |   for (const [index, line] of lines.entries()) {
+  11 |     let row = rows.get(index) ?? new Row();
+     |         ~~~
+  12 |     if (row.items.length > 3) row = new Row();
+
+Diagnostic 3: local (16:17 - 16:19)
+Message: local row
+  15 |   }
+  16 |   for (const [, row] of rows) {
+     |                 ~~~
+  17 |     const { items } = given;
+
+Diagnostic 4: local (34:9 - 34:14)
+Message: local parsed
+  33 |   }
+  34 |   const parsed = JSON.parse("{}") as { done?: boolean };
+     |         ~~~~~~
+  35 |   parsed.done = true;
+
+Diagnostic 5: local (36:9 - 36:14)
+Message: local copied
+  35 |   parsed.done = true;
+  36 |   const copied = Array.from(lines);
+     |         ~~~~~~
+  37 |   copied.push("");
+---
+
+[TestModelFacts/invalid-68 - 1]
 Diagnostic 1: effect (9:5 - 9:27)
 Message: effect append on this.badges of badge
    8 |   add(badge: Badge) {
@@ -1880,7 +2537,7 @@ Message: effect append on club.badges of badge
   66 |   new Shared(badge);
 ---
 
-[TestModelFacts/invalid-61 - 1]
+[TestModelFacts/invalid-69 - 1]
 Diagnostic 1: effect (6:3 - 6:18)
 Message: effect store on both at key of 1
    5 | export function receivers(either: Map<string, number> | Set<string>, both: Map<string, number> | Grid, handlers: Handlers, key: string, Map: { set(key: string, value: number): void }) {
@@ -1908,4 +2565,120 @@ Message: effect remove on either
   11 |   either.clear();
      |   ~~~~~~~~~~~~~~
   12 |   console.log(key);
+---
+
+[TestModelFacts/invalid-70 - 1]
+Diagnostic 1: decision (3:8 - 3:16)
+Message: guard on vent.flow; field flow @ ../../fixtures/file.ts:1; owner Vent, inside yes; arms {"low"} of {"high" | "low" | "off"} complete tested -> constant 1, control flow 0, built 0; constructions []
+   2 | export function f(vent: Vent, flows: ("low" | "high")[]) {
+   3 |   if ((vent.flow ?? "low") === "low") return 1;
+     |        ~~~~~~~~~
+   4 |   if (vent.flow ?? "off" !== "high") return 2;
+
+Diagnostic 2: decision (7:11 - 7:19)
+Message: dispatch on vent.flow; field flow @ ../../fixtures/file.ts:1; owner Vent, inside yes; arms {"off"} of {"high" | "low" | "off"} complete tested -> constant 5, control flow 0, built 0 / {"high"} of {"high" | "low" | "off"} complete tested -> constant 6, control flow 0, built 0; constructions []
+   6 |   if ((vent.flow ?? flows[0]) === "high") return 4;
+   7 |   switch (vent.flow ?? "off") {
+     |           ~~~~~~~~~
+   8 |     case "off":
+
+Diagnostic 3: test (3:7 - 3:36)
+Message: test value vent.flow; claim {"low"} of {"high" | "low" | "off"}; field flow @ ../../fixtures/file.ts:1; named "low"; property flow; declared {"low"} of {"high" | "low" | "off"}; answered by none
+   2 | export function f(vent: Vent, flows: ("low" | "high")[]) {
+   3 |   if ((vent.flow ?? "low") === "low") return 1;
+     |       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   4 |   if (vent.flow ?? "off" !== "high") return 2;
+---
+
+[TestModelFacts/invalid-71 - 1]
+Diagnostic 1: scan (12:3 - 17:3)
+Message: scan carrying column into targets; also text
+  11 |   let text = "";
+  12 |   for (const width of widths) {
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  13 |     const end = column + width;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  14 |     targets.push(new Target(column, end));
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  15 |     text += " ".repeat(width);
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  16 |     column = end + 2;
+     | ~~~~~~~~~~~~~~~~~~~~~
+  17 |   }
+     | ~~~
+  18 |   use(text);
+
+Diagnostic 2: scan (24:3 - 27:3)
+Message: scan carrying current into found
+  23 |   let current = folder.parent;
+  24 |   while (current) {
+     |   ~~~~~~~~~~~~~~~~~
+  25 |     found.push(current);
+     | ~~~~~~~~~~~~~~~~~~~~~~~~
+  26 |     current = current.parent;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  27 |   }
+     | ~~~
+  28 |   return found;
+---
+
+[TestModelFacts/invalid-72 - 1]
+Diagnostic 1: scan (6:3 - 10:3)
+Message: scan carrying count, page into items from page; counting count
+   5 |   let count = 0;
+   6 |   while (page) {
+     |   ~~~~~~~~~~~~~~
+   7 |     if (count++ > 100) throw new Error("too many pages");
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   8 |     items.push(...page.items);
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   9 |     page = page.next;
+     | ~~~~~~~~~~~~~~~~~~~~~
+  10 |   }
+     | ~~~
+  11 |   return items;
+
+Diagnostic 2: scan (16:3 - 19:3)
+Message: scan carrying index into out; counting index
+  15 |   let index = 0;
+  16 |   for (const name of names) {
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  17 |     out.push(index + ": " + name);
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  18 |     index += 1;
+     | ~~~~~~~~~~~~~~~
+  19 |   }
+     | ~~~
+  20 |   return out;
+
+Diagnostic 3: scan (25:3 - 29:3)
+Message: scan carrying index into out
+  24 |   let index = 0;
+  25 |   for (const name of names) {
+     |   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  26 |     if (!name) continue;
+     | ~~~~~~~~~~~~~~~~~~~~~~~~
+  27 |     out.push(index + ": " + name);
+     | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  28 |     index++;
+     | ~~~~~~~~~~~~
+  29 |   }
+     | ~~~
+  30 |   return out;
+---
+
+[TestModelFacts/invalid-73 - 1]
+Diagnostic 1: derivation (5:55 - 5:74)
+Message: derivation by slugOf of Parcel.label, 2 readers in 1 files
+   4 | export class Shelf { find(label: string): string { return label; } }
+   5 | export function link(parcel: Parcel): string { return slugOf(parcel.label); }
+     |                                                       ~~~~~~~~~~~~~~~~~~~~
+   6 | export function heading(parcel: Parcel): string { return slugOf(parcel.label); }
+
+Diagnostic 2: derivation (6:58 - 6:77)
+Message: derivation by slugOf of Parcel.label, 2 readers in 1 files
+   5 | export function link(parcel: Parcel): string { return slugOf(parcel.label); }
+   6 | export function heading(parcel: Parcel): string { return slugOf(parcel.label); }
+     |                                                          ~~~~~~~~~~~~~~~~~~~~
+   7 | export function empty(parcel: Parcel): boolean { return blank(parcel.label); }
 ---

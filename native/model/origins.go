@@ -7,23 +7,43 @@ import (
 	"github.com/microsoft/typescript-go/shim/ast"
 )
 
-// ValueSource is an origin: an expression or declaration (Node), or the elements of data the model cannot see the contents
-// of (Elements), which every read of one of its elements shares.
+// ValueSource is an origin: an expression or declaration (Node), or the elements of data the model cannot see the
+// contents of (Elements), which every read of one of its elements shares, then the property path read from it (Path).
 type ValueSource struct {
 	Node     *ast.Node
 	Elements place
+	Path     string
 }
 
 // SourceText describes a source for messages.
 func SourceText(s ValueSource) string {
+	text := ""
 	if s.Node != nil {
-		return Text(s.Node, 30)
+		text = Text(s.Node, 30)
+	} else {
+		v := Value{Root: s.Elements.root, This: s.Elements.this, Path: []string{}}
+		if s.Elements.path != "" {
+			v.Path = strings.Split(s.Elements.path, "\x00")
+		}
+		text = "elements of " + v.String()
 	}
-	v := Value{Root: s.Elements.root, This: s.Elements.this, Path: []string{}}
-	if s.Elements.path != "" {
-		v.Path = strings.Split(s.Elements.path, "\x00")
+	if s.Path != "" {
+		text += "." + strings.ReplaceAll(s.Path, "\x00", ".")
 	}
-	return "elements of " + v.String()
+	return text
+}
+
+// property returns the origins of a property read from data with the origins given.
+func property(origins []ValueSource, name string) []ValueSource {
+	found := []ValueSource{}
+	for _, o := range origins {
+		if o.Path != "" {
+			o.Path += "\x00"
+		}
+		o.Path += name
+		found = unionSources(found, []ValueSource{o})
+	}
+	return found
 }
 
 // elementsOf returns the source the elements of data n reads share, when n names that data.
@@ -36,15 +56,22 @@ func elementsOf(v Value) ([]ValueSource, bool) {
 }
 
 // OriginsOf returns where the value n gives comes from, as the expressions or declarations the model cannot follow
-// further: a new object, a constant, a size read, a read of data, a computed value, or a parameter or variable whose
-// definitions are not seen. An element of data whose contents are not seen, read by element access or a lookup,
-// bound by a for-of loop over it, or passed to the callback of an array or set method on it, comes from its elements,
-// one source for every such read. Origins are followed through const initializers and the definitions of other variables
-// reaching the read, conditional and logical operators, calls to project functions and their returns (a parameter
-// giving the origins of the call's argument), and the entries of local containers (see Contents): a lookup gives the
-// origins of the values stored, and a loop over the container binds its keys and values to theirs.
+// further: a new object, a constant, a size read, a computed value, this, or a parameter or variable whose definitions
+// are not seen. A property read that is neither a size read nor an accessor's comes from that property of what its
+// object comes from, so reads of the same data share an origin. An element of data whose contents are not seen, read by
+// element access or a lookup, bound by a for-of loop over it, or passed to the callback of an array or set method on
+// it, comes from its elements, one source for every such read. Origins are followed through const initializers and the
+// definitions of other variables reaching the read, conditional and logical operators, calls to project functions and
+// their returns (a parameter giving the origins of the call's argument), and the entries of local containers (see
+// Contents): a lookup gives the origins of the values stored, and a loop over the container binds its keys and values
+// to theirs.
 func (m *Analyzer) OriginsOf(n *ast.Node) []ValueSource {
-	return m.origins(n, &originTracing{seen: map[*ast.Symbol]bool{}, calling: map[*ast.Node]bool{}})
+	if found, ok := m.originsOf[n]; ok {
+		return slices.Clone(found)
+	}
+	found := m.origins(n, &originTracing{seen: map[*ast.Symbol]bool{}, calling: map[*ast.Node]bool{}})
+	m.originsOf[n] = found
+	return slices.Clone(found)
 }
 
 type originTracing struct {
@@ -101,6 +128,12 @@ func (m *Analyzer) origins(n *ast.Node, t *originTracing) []ValueSource {
 		if found, ok := elementsOf(lookup.Container); ok {
 			return found
 		}
+	case ast.KindPropertyAccessExpression:
+		if !m.size(n) && !m.computed(n) {
+			return property(m.origins(n.Expression(), t), n.Name().Text())
+		}
+	case ast.KindThisKeyword:
+		return []ValueSource{{Node: ast.GetThisContainer(n, false, false)}}
 	case ast.KindIdentifier:
 		return m.variableOrigins(n, t)
 	}
@@ -257,13 +290,14 @@ func (m *Analyzer) iterated(d *ast.Node, t *originTracing) ([]ValueSource, bool)
 	return found, true
 }
 
-// elementCallbacks names the global collection methods calling a callback with an element, and its position.
+// elementCallbacks names the global collection methods calling a callback with an element, a map's value, and its
+// position.
 var elementCallbacks = map[string]map[string]int{
 	"Array": {"forEach": 0, "map": 0, "filter": 0, "find": 0, "findIndex": 0, "findLast": 0, "findLastIndex": 0, "some": 0,
-		"every": 0, "flatMap": 0, "reduce": 1, "reduceRight": 1},
+		"every": 0, "flatMap": 0, "reduce": 1, "reduceRight": 1, "sort": 0, "toSorted": 0},
 	"ReadonlyArray": {"forEach": 0, "map": 0, "filter": 0, "find": 0, "findIndex": 0, "findLast": 0, "findLastIndex": 0,
-		"some": 0, "every": 0, "flatMap": 0, "reduce": 1, "reduceRight": 1},
-	"Set": {"forEach": 0}, "ReadonlySet": {"forEach": 0},
+		"some": 0, "every": 0, "flatMap": 0, "reduce": 1, "reduceRight": 1, "toSorted": 0},
+	"Set": {"forEach": 0}, "ReadonlySet": {"forEach": 0}, "Map": {"forEach": 0}, "ReadonlyMap": {"forEach": 0},
 }
 
 // elementParameter returns the elements a callback parameter is given, when the callback is the first argument of
@@ -298,9 +332,20 @@ const (
 )
 
 // iteration returns the container a for-of loop iterates and which part of its entries each element is: a map, or its
-// entries(), gives [key, value] pairs, its keys() and values() those parts, and an array or set its values.
+// entries(), gives [key, value] pairs, its keys() and values() those parts, and an array or set its values. Object.entries,
+// Object.keys and Object.values read an object's entries the same way.
 func (m *Analyzer) iteration(n *ast.Node) (Value, iterationPart) {
 	n = Unwrap(n)
+	if n.Kind == ast.KindCallExpression && len(n.Arguments()) == 1 {
+		if callee := Unwrap(n.Expression()); callee.Kind == ast.KindPropertyAccessExpression {
+			parts := map[string]iterationPart{"entries": entryParts, "keys": keyPart, "values": valuePart}
+			if symbol := m.ctx.TypeChecker.GetSymbolAtLocation(callee.Name()); symbol != nil && len(symbol.Declarations) > 0 && m.ownedBy(symbol.Declarations[0], "ObjectConstructor") {
+				if part, known := parts[symbol.Name]; known {
+					return m.ValueOf(n.Arguments()[0]), part
+				}
+			}
+		}
+	}
 	if n.Kind == ast.KindCallExpression && len(n.Arguments()) == 0 {
 		if callee := Unwrap(n.Expression()); callee.Kind == ast.KindPropertyAccessExpression {
 			if owners, name, ok := m.libraryMember(callee.Name()); ok {
@@ -352,10 +397,10 @@ type Contents struct {
 }
 
 // Contents returns what the container v holds as read at n, when it is local: a variable of n's function, never
-// rebound, initialized with an empty array or object literal or a construction of a global collection without arguments, and only
-// used as the receiver of collection methods, by element access, as the object of a size read, or iterated by for-of.
-// Every effect in the function storing or appending into it is an entry, wherever it is; one whose value is unknown
-// stops the read.
+// rebound, initialized with an empty array or object literal or a construction of a global collection without
+// arguments, and only used as the receiver of collection methods, by element access, as the object of a size read, or
+// iterated by for-of. Every effect in the function storing or appending into it is an entry, wherever it is; one whose
+// value is unknown stops the read.
 func (m *Analyzer) Contents(v Value, n *ast.Node) (Contents, bool) {
 	fn := enclosingFunction(n)
 	if fn == nil || v.Root == nil || len(v.Path) > 0 || v.Partial {
@@ -412,7 +457,8 @@ func emptyObject(n *ast.Node) bool {
 }
 
 // confined reports whether every read of symbol in fn uses it as a container: the receiver of a global collection
-// method, the object of an element access or a size read, or the expression a for-of loop iterates.
+// method, the object of an element access or a size read, the expression a for-of loop iterates, or the argument of
+// Object.entries, Object.keys or Object.values.
 func (m *Analyzer) confined(symbol *ast.Symbol, fn *ast.Node) bool {
 	confined := true
 	var walk func(*ast.Node) bool
@@ -444,6 +490,9 @@ func (m *Analyzer) containerUse(c *ast.Node) bool {
 	case p.Kind == ast.KindPropertyAccessExpression && p.Expression() == c:
 		_, _, ok := m.libraryMember(p.Name())
 		return ok
+	case p.Kind == ast.KindCallExpression && len(p.Arguments()) == 1 && p.Arguments()[0] == c:
+		over, _ := m.iteration(p)
+		return over.Root != nil && over.Root == m.ctx.TypeChecker.GetSymbolAtLocation(c)
 	}
 	return false
 }

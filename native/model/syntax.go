@@ -11,8 +11,17 @@ import (
 func Squash(s string) string { return strings.Join(strings.Fields(s), " ") }
 
 func source(n *ast.Node) string {
-	text := ast.GetSourceFileOfNode(n).Text()
-	return text[scanner.SkipTrivia(text, n.Pos()):n.End()]
+	return between(ast.GetSourceFileOfNode(n).Text(), n.Pos(), n.End())
+}
+
+// between returns the text from pos, past its leading trivia, to end; empty for a node the parser made up, whose
+// trivia reaches past its end.
+func between(text string, pos, end int) string {
+	start := scanner.SkipTrivia(text, pos)
+	if start > end {
+		return ""
+	}
+	return text[start:end]
 }
 
 // written returns n's whole source text with whitespace collapsed: the text code is compared by.
@@ -217,7 +226,7 @@ func statementOutcome(statements []*ast.Node) string {
 		}
 	}
 	text := ast.GetSourceFileOfNode(statements[0]).Text()
-	return Squash(text[scanner.SkipTrivia(text, statements[0].Pos()):statements[len(statements)-1].End()])
+	return Squash(between(text, statements[0].Pos(), statements[len(statements)-1].End()))
 }
 
 func expressionOutcome(n *ast.Node) string {

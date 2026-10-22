@@ -3,6 +3,7 @@ package model_facts
 import (
 	"fmt"
 	"maps"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/typescript-eslint/tsgolint/internal/rule"
 )
 
-var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary", "origin", "overwritten", "unaddressed"}
+var kinds = []string{"site", "test", "decision", "function", "gate", "guard", "entry", "boundary", "flow", "rejection", "contract", "callers", "result", "owner", "optional", "left", "write", "ending", "merge", "effect", "summary", "origin", "overwritten", "unaddressed", "scan", "buffer", "backing", "filter", "default", "ownkey", "local", "derivation"}
 
 // selected reads the fact kinds to report from {"facts": [...]}, defaulting to all of them.
 func selected(options any) map[string]bool {
@@ -74,8 +75,11 @@ func (p *probe) reportHead(kind string, fn *ast.Node, description string) {
 	p.ctx.ReportRange(core.NewTextRange(start, end), rule.RuleMessage{Id: kind, Description: clean(description)})
 }
 
+// privateName matches the checker's numbering of a private name, which depends on the order it reads files in.
+var privateName = regexp.MustCompile(`##\d+@`)
+
 func clean(text string) string {
-	return strings.ReplaceAll(text, ast.InternalSymbolNamePrefix, "#")
+	return privateName.ReplaceAllString(strings.ReplaceAll(text, ast.InternalSymbolNamePrefix, "#"), "")
 }
 
 func claim(c model.Claim) string {
@@ -277,7 +281,7 @@ func (p *probe) guard(kind string, g model.Guard) {
 		for _, e := range p.a.Rechecks(b, g.Test, caller) {
 			rechecks = append(rechecks, fmt.Sprintf("%s fallback %q", claim(e.Claim), e.Shown))
 		}
-		p.report("boundary", argument, fmt.Sprintf("boundary into %s of %s; keeps %s; rechecks [%s]", b.Parameter.Name().Text(), model.Text(call.Expression(), 60), yes(p.a.Keeps(b, g.Test)), strings.Join(rechecks, ", ")))
+		p.report("boundary", argument, fmt.Sprintf("boundary into %s of %s; keeps %s; rechecks [%s]", model.Text(b.Parameter.Name(), 30), model.Text(call.Expression(), 60), yes(p.a.Keeps(b, g.Test)), strings.Join(rechecks, ", ")))
 	}
 }
 
@@ -555,8 +559,32 @@ func (p *probe) summary(fn *ast.Node) {
 			reads = append(reads, text)
 		}
 	}
-	if len(effects) > 0 || len(reads) > 0 {
-		p.reportHead("summary", fn, "summary ["+strings.Join(effects, "; ")+"]; reads ["+strings.Join(reads, ", ")+"]")
+	escapes := []string{}
+	for _, e := range summary.Escapes {
+		escapes = append(escapes, anchor(model.Anchor{Parameter: e}))
+	}
+	if len(effects) > 0 || len(reads) > 0 || len(escapes) > 0 || summary.Opaque || summary.Throws || summary.Fresh || len(summary.Guarantees) > 0 {
+		description := "summary [" + strings.Join(effects, "; ") + "]; reads [" + strings.Join(reads, ", ") + "]"
+		if len(escapes) > 0 {
+			description += "; escapes [" + strings.Join(escapes, ", ") + "]"
+		}
+		if summary.Opaque {
+			description += "; opaque"
+		}
+		if summary.Throws {
+			description += "; throws"
+		}
+		if summary.Fresh {
+			description += "; fresh"
+		}
+		for _, g := range summary.Guarantees {
+			held := fmt.Sprintf("size of %s at least %d", anchor(g.Container), g.Minimum)
+			if g.Key != nil {
+				held = fmt.Sprintf("%s holds %s", anchor(g.Container), anchor(*g.Key))
+			}
+			description += "; guarantees " + held
+		}
+		p.reportHead("summary", fn, description)
 	}
 }
 
@@ -595,6 +623,166 @@ func (p *probe) unaddressed(fn *ast.Node) {
 	}
 	for _, k := range p.a.UnaddressedKeys(fn) {
 		p.report("unaddressed", k.Entry.Node, fmt.Sprintf("unaddressed %s key from %s", k.Container, model.SourceText(k.Origin)))
+	}
+}
+
+func (p *probe) scan(fn *ast.Node) {
+	if !p.kinds["scan"] {
+		return
+	}
+	for _, s := range p.a.ScansIn(fn) {
+		carried := []string{}
+		for _, c := range s.Carried {
+			carried = append(carried, c.Name)
+		}
+		emits := []string{}
+		for _, e := range s.Emits {
+			emits = append(emits, e.Receiver.String())
+		}
+		description := fmt.Sprintf("scan carrying %s into %s", strings.Join(carried, ", "), strings.Join(emits, ", "))
+		if len(s.Computed) < len(s.Carried) {
+			computed := []string{}
+			for _, c := range s.Computed {
+				computed = append(computed, c.Name)
+			}
+			description += " from " + strings.Join(computed, ", ")
+		}
+		if len(s.Counters) > 0 {
+			counters := []string{}
+			for _, c := range s.Counters {
+				counters = append(counters, c.Name)
+			}
+			description += "; counting " + strings.Join(counters, ", ")
+		}
+		if len(s.Other) > 0 {
+			other := []string{}
+			for _, n := range s.Other {
+				other = append(other, model.Text(n, 30))
+			}
+			description += "; also " + strings.Join(other, ", ")
+		}
+		p.report("scan", s.Loop, description)
+	}
+}
+
+func (p *probe) buffer(fn *ast.Node) {
+	if !p.kinds["buffer"] {
+		return
+	}
+	for _, b := range p.a.Buffers(fn) {
+		for _, e := range b.Entries {
+			state := "unsettled"
+			if e.Settled {
+				state = "settled"
+			}
+			keys := []string{}
+			for _, k := range e.Keys {
+				keys = append(keys, model.SourceText(k))
+			}
+			description := fmt.Sprintf("%s entry of %s", state, b.Contents.Container)
+			if len(keys) > 0 {
+				description += " at " + strings.Join(keys, ", ")
+			}
+			iterated, _, _ := model.DrainParts(b.Drain)
+			description += ", drained by " + model.Text(iterated, 30)
+			if len(e.Ordered) > 0 {
+				ordered := []string{}
+				for _, n := range e.Ordered {
+					ordered = append(ordered, model.Text(n, 30))
+				}
+				description += "; ordered with " + strings.Join(ordered, ", ")
+			}
+			if len(e.Exposed) > 0 {
+				exposed := []string{}
+				for _, n := range e.Exposed {
+					exposed = append(exposed, model.Text(n, 30))
+				}
+				description += "; exposed to " + strings.Join(exposed, ", ")
+			}
+			p.report("buffer", e.Entry.Node, description)
+		}
+	}
+}
+
+func (p *probe) backing(n *ast.Node) {
+	if !p.kinds["backing"] || n.Kind != ast.KindNonNullExpression {
+		return
+	}
+	if b, ok := p.a.BackingOf(n); ok {
+		kind := "condition"
+		if b.Guard {
+			kind = "guard"
+		}
+		p.report("backing", n, fmt.Sprintf("backing of %s by %s %s", b.Container, kind, model.Text(b.Check, 40)))
+	}
+}
+
+func (p *probe) filter(n *ast.Node) {
+	if !p.kinds["filter"] || n.Kind != ast.KindForOfStatement && n.Kind != ast.KindCallExpression {
+		return
+	}
+	for _, f := range p.a.Filters(n) {
+		description := "filter " + model.Text(f.Test, 40)
+		if len(f.Exposed) > 0 {
+			exposed := []string{}
+			for _, e := range f.Exposed {
+				exposed = append(exposed, model.Text(e, 30))
+			}
+			description += "; exposed to " + strings.Join(exposed, ", ")
+		}
+		p.report("filter", f.Guard, description)
+	}
+}
+
+func (p *probe) defaulted(n *ast.Node) {
+	if !p.kinds["default"] {
+		return
+	}
+	if d, ok := p.a.DefaultOf(n); ok {
+		p.report("default", n, fmt.Sprintf("default of %s to %s, owned by %s, inside %s", d.Name, model.Text(d.Value, 20), d.Owner.Name, yes(d.Inside)))
+	}
+}
+
+func (p *probe) derivation(n *ast.Node) {
+	if !p.kinds["derivation"] {
+		return
+	}
+	d, ok := p.a.DerivationOf(n)
+	if !ok {
+		return
+	}
+	readers := map[*ast.Node]bool{}
+	files := map[*ast.SourceFile]bool{}
+	for _, other := range p.a.DerivationsLike(d) {
+		readers[other.Reader] = true
+		files[ast.GetSourceFileOfNode(other.Node)] = true
+	}
+	p.report("derivation", n, fmt.Sprintf("derivation by %s of %s.%s, %d readers in %d files", model.Text(n.Expression(), 30), d.Owner.Name, d.Property.Name().Text(), len(readers), len(files)))
+}
+
+func (p *probe) ownKey(n *ast.Node) {
+	if !p.kinds["ownkey"] {
+		return
+	}
+	if o, ok := p.a.OwnKeyOf(n); ok {
+		calls := []string{}
+		for _, c := range o.Calls {
+			calls = append(calls, model.Text(c, 30))
+		}
+		p.report("ownkey", n, fmt.Sprintf("own key %s of %s in %s given by %s", o.Key.Name, o.Value.Name, o.Container, strings.Join(calls, ", ")))
+	}
+}
+
+func (p *probe) local(n *ast.Node) {
+	if !p.kinds["local"] || n.Kind != ast.KindVariableDeclaration && n.Kind != ast.KindBindingElement || n.Name() == nil || n.Name().Kind != ast.KindIdentifier {
+		return
+	}
+	fn := n.Parent
+	for fn != nil && !ast.IsFunctionLike(fn) {
+		fn = fn.Parent
+	}
+	if fn != nil && p.a.Local(n.Symbol(), fn) {
+		p.report("local", n.Name(), "local "+n.Name().Text())
 	}
 }
 
@@ -649,6 +837,12 @@ func (p *probe) run() {
 			p.merge(n)
 		}
 		p.effect(n)
+		p.backing(n)
+		p.filter(n)
+		p.defaulted(n)
+		p.derivation(n)
+		p.ownKey(n)
+		p.local(n)
 		p.origin(n)
 		p.write(n)
 		p.ending(n)
@@ -665,6 +859,8 @@ func (p *probe) run() {
 			p.summary(n)
 			p.overwritten(n)
 			p.unaddressed(n)
+			p.scan(n)
+			p.buffer(n)
 			p.contract(n)
 			p.callers(n)
 			p.result(n)

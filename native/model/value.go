@@ -169,14 +169,16 @@ func (m *Analyzer) computed(n *ast.Node) bool {
 // assigned reports whether code in the function declaring symbol rebinds it, by assignment, update, destructuring
 // assignment or as the variable of a for-in or for-of loop.
 func (m *Analyzer) assigned(symbol *ast.Symbol) bool {
-	scope := enclosingFunction(symbol.ValueDeclaration)
-	if scope == nil {
-		return false
+	if known, ok := m.rebound[symbol]; ok {
+		return known
 	}
-	return slices.ContainsFunc(writesIn([]*ast.Node{scope}, true), func(w Write) bool {
+	scope := enclosingFunction(symbol.ValueDeclaration)
+	result := scope != nil && slices.ContainsFunc(writesIn([]*ast.Node{scope}, true), func(w Write) bool {
 		target := Unwrap(w.Target)
 		return w.Rebinds() && target.Kind == ast.KindIdentifier && m.SymbolOf(target) == symbol
 	})
+	m.rebound[symbol] = result
+	return result
 }
 
 // Named reports whether v can be read again by name: its root is a variable or this.
@@ -193,11 +195,17 @@ func (v Value) root() bool {
 
 func related(a, b []string) bool {
 	for i := range min(len(a), len(b)) {
-		if a[i] != b[i] {
+		if !segments(a[i], b[i]) {
 			return false
 		}
 	}
 	return true
+}
+
+// segments reports whether two path segments may name the same data: they are equal, or one names an element of a
+// collection, whichever it is (see Element).
+func segments(a, b string) bool {
+	return a == b || a == Element || b == Element
 }
 
 // overlaps reports whether v and o can denote the same data: one path contains the other. A partial value overlaps a
@@ -289,9 +297,9 @@ func (v Value) Same(o Value) bool {
 	return v.Root == o.Root && v.This == o.This && v.Base == o.Base && slices.Equal(v.Path, o.Path)
 }
 
-// Within reports whether v is o or data read from it.
+// Within reports whether v is o or data read from it, an element segment (see Element) matching any segment.
 func (v Value) Within(o Value) bool {
-	return v.Root == o.Root && v.This == o.This && v.Base == o.Base && len(v.Path) >= len(o.Path) && slices.Equal(v.Path[:len(o.Path)], o.Path)
+	return v.Root == o.Root && v.This == o.This && v.Base == o.Base && len(v.Path) >= len(o.Path) && slices.EqualFunc(v.Path[:len(o.Path)], o.Path, segments)
 }
 
 // Reads reports whether n is a value within v, or a property or element read from one.

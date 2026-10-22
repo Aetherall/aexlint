@@ -132,7 +132,7 @@ func checkDecision(ctx rule.RuleContext, a *model.Analyzer, n *ast.Node) {
 		ctx.ReportNode(model.DecisionCondition(n), rule.RuleMessage{
 			Id:          "fabricatedOutcome",
 			Description: fmt.Sprintf("What a branch of this decision writes for the code after it is never used as written: it %s.%s", strings.Join(made, ", and "), split),
-			Help:        "Either the branch's work is lost, or it only makes up what the shared code expects so that code can treat the branch's result like the others'. Do that branch's work inside it, or give its result a path of its own.",
+			Help:        "Either the branch's work is lost, or it only makes up what the shared code expects so that code can treat the branch's result like the others'. Do that branch's work inside it, or give its result a path of its own." + deferral(a, fabrication),
 		})
 		return
 	}
@@ -144,6 +144,36 @@ func checkDecision(ctx rule.RuleContext, a *model.Analyzer, n *ast.Node) {
 		Description: fmt.Sprintf("This decision's outcome is split across %s: its branches change them, and the code after it reads them as separate values.", listed(names)),
 		Help:        "Only the branches know which values go together, so the code after the decision relies on a pairing nothing states, and changing what one branch sets breaks it silently. Make the outcome one value, or use it inside each branch.",
 	})
+}
+
+// deferral explains how the branch can hand over the entries it makes up keys for, when they are settled entries of a
+// buffer: the drain can take them where the branch makes them, once the code the deferral orders the drain after,
+// other than the fabrication itself, stops depending on that order. It is advice on the design, not a rewrite: it
+// leaves out what the entry is exposed to, which only code the model does not see could make depend on the order.
+func deferral(a *model.Analyzer, fabrication model.Fabrication) string {
+	made := []*ast.Node{}
+	for _, o := range fabrication.Stores {
+		made = append(made, o.Store.Node)
+	}
+	for _, k := range fabrication.Keys {
+		made = append(made, k.Origin.Node)
+	}
+	for _, k := range fabrication.Keys {
+		if _, e, ok := a.Deferred(k); ok {
+			ordered := []string{}
+			for _, o := range e.Ordered {
+				if !slices.Contains(made, o) {
+					ordered = append(ordered, model.Text(o, 30))
+				}
+			}
+			help := fmt.Sprintf(" `%s` only defers the branch's entries to the loop over it, so that loop's work can take each one where the branch makes it, yielded to it when that work belongs outside", k.Container)
+			if len(ordered) > 0 {
+				return help + fmt.Sprintf("; %s must then stop depending on that work running after it.", listed(ordered))
+			}
+			return help + "."
+		}
+	}
+	return ""
 }
 
 var Rule = rule.Rule{

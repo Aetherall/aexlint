@@ -147,19 +147,39 @@ var derivedClasses = NewShared(func(program *compiler.Program) *derived {
 	return index
 })
 
-// overrides returns the instance members named name declared by project classes extending class.
-func (m *Analyzer) overrides(class *ast.Node, name string) []*ast.Node {
-	found := []*ast.Node{}
-	for _, c := range derivedClasses.For(m.ctx.Program).classes {
-		if c == class || !m.Extends(c, class) {
-			continue
-		}
-		for _, member := range c.Members() {
-			if member.Name() != nil && member.Name().Kind == ast.KindIdentifier && member.Name().Text() == name && member.ModifierFlags()&ast.ModifierFlagsStatic == 0 {
-				found = append(found, member)
+// subclasses returns the project classes extending class directly, resolving each derived class's base once.
+func (m *Analyzer) subclasses(class *ast.Node) []*ast.Node {
+	if m.derivedFrom == nil {
+		m.derivedFrom = map[*ast.Node][]*ast.Node{}
+		for _, c := range derivedClasses.For(m.ctx.Program).classes {
+			if base := m.baseOf(c); base != nil {
+				m.derivedFrom[base] = append(m.derivedFrom[base], c)
 			}
 		}
 	}
+	return m.derivedFrom[class]
+}
+
+// overrides returns the instance members named name declared by project classes extending class, at any depth.
+func (m *Analyzer) overrides(class *ast.Node, name string) []*ast.Node {
+	found := []*ast.Node{}
+	seen := map[*ast.Node]bool{class: true}
+	var below func(*ast.Node)
+	below = func(base *ast.Node) {
+		for _, c := range m.subclasses(base) {
+			if seen[c] {
+				continue
+			}
+			seen[c] = true
+			for _, member := range c.Members() {
+				if member.Name() != nil && member.Name().Kind == ast.KindIdentifier && member.Name().Text() == name && member.ModifierFlags()&ast.ModifierFlagsStatic == 0 {
+					found = append(found, member)
+				}
+			}
+			below(c)
+		}
+	}
+	below(class)
 	return found
 }
 

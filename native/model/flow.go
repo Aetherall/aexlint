@@ -249,8 +249,11 @@ func (a *flowAnalysis) exact(n *ast.Node) (Value, bool) {
 	return Value{}, false
 }
 
-func (a *flowAnalysis) primitive(n *ast.Node) bool {
-	t := a.m.ctx.TypeChecker.GetTypeAtLocation(n)
+func (a *flowAnalysis) primitive(n *ast.Node) bool { return a.m.primitive(n) }
+
+// primitive reports whether every member of n's type is a primitive or undefined.
+func (m *Analyzer) primitive(n *ast.Node) bool {
+	t := m.ctx.TypeChecker.GetTypeAtLocation(n)
 	if t == nil {
 		return false
 	}

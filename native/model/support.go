@@ -26,12 +26,21 @@ func ParseOptions(name string, options any) {
 
 // ParseMax reads the options of a rule with one optional limit, max, a positive safe integer.
 func ParseMax(name string, options any, fallback int) int {
+	return ParseLimit(name, options, fallback, 1)
+}
+
+// ParseLimit reads the options of a rule with one optional limit, max, a safe integer of at least minimum.
+func ParseLimit(name string, options any, fallback, minimum int) int {
+	kind := "a positive"
+	if minimum == 0 {
+		kind = "a non-negative"
+	}
 	if options == nil {
 		return fallback
 	}
 	object, ok := options.(map[string]any)
 	if !ok {
-		panic(fmt.Sprintf(`aexlint/%s accepts an optional options object: { "max"?: <positive integer> }`, name))
+		panic(fmt.Sprintf(`aexlint/%s accepts an optional options object: { "max"?: <%s integer> }`, name, kind[2:]))
 	}
 	for key := range object {
 		if key != "max" {
@@ -43,8 +52,8 @@ func ParseMax(name string, options any, fallback int) int {
 		return fallback
 	}
 	value, ok := raw.(float64)
-	if !ok || value < 1 || value > 1<<53-1 || value != float64(int64(value)) {
-		panic(fmt.Sprintf(`aexlint/%s: "max" must be a positive safe integer`, name))
+	if !ok || value < float64(minimum) || value > 1<<53-1 || value != float64(int64(value)) {
+		panic(fmt.Sprintf(`aexlint/%s: "max" must be %s safe integer`, name, kind))
 	}
 	return int(value)
 }

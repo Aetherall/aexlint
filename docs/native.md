@@ -38,7 +38,7 @@ The executable lives at `dist/native/<platform>-<arch>/aexlint-typed` (`.exe` on
 
 `native/model/` is a Go package, not a rule. It is copied next to the rules and imported as `internal/aexlint/model`. It holds the analyzer that reads tests of finite literal values and of presence, syntax helpers, the per-program index of decision sites, ownership resolution, result construction, and the per-file decision model described in [decision model](design/decision-model.md). Rules build on it instead of copying its logic: a rule is a query over the model's facts plus its wording. Rules do not call the checker or import its package, except `TypeToString` to name a type in a message; the catalog test enforces this. When a rule needs a fact about types, add it to the model with a `model-facts` fixture.
 
-The test-only `native/probe/model-facts` rule reports every kind of model fact as a diagnostic: sites, tests, decisions with their arms and outcomes, functions, gates, guards, entry tests, boundaries, flows, the rejections of flows and type-predicate contracts. Its `facts` option selects kinds, so each fixture asserts one kind exactly while its snapshot pins the content. A fact enters the model together with its fixture, before a rule relies on it. Run `pnpm native:test model-facts`.
+The test-only `native/probe/model-facts` rule reports every kind of model fact as a diagnostic: sites, tests, decisions with their arms and outcomes, functions, gates, guards, entry tests, boundaries, flows, the rejections of flows and type-predicate contracts, and the facts about data: merges, effects, function summaries, origins, overwritten stores, unaddressed keys, scans, buffers, backings, filters, defaults, derivations, own keys and local variables. Its `facts` option selects kinds, so each fixture asserts one kind exactly while its snapshot pins the content. A fact enters the model together with its fixture, before a rule relies on it. Run `pnpm native:test model-facts`.
 
 To review a model change on real code, dump the facts of whole programs before and after it and diff them:
 
@@ -46,7 +46,7 @@ To review a model change on real code, dump the facts of whole programs before a
 node scripts/scan.ts facts .native/probe/<platform>-<arch>/aexlint-typed <project root> <seed file>... > facts.tsv
 ```
 
-`pnpm native:test` builds that probe binary; keep a copy from the base commit to compare with. `rules` instead of `facts` runs the shipped rules with a binary from `pnpm native:build`. Each line holds the seed, rule, file, byte range, message ID and text, sorted. Dumps are deterministic, so every difference is a changed fact to review against the [decision model](design/decision-model.md).
+`pnpm native:test` builds that probe binary once its tests pass, and only then; keep a copy from the base commit to compare with. `rules` instead of `facts` runs the shipped rules with a binary from `pnpm native:build`. Each line holds the seed, rule, file, byte range, message ID and text, sorted. Dumps are deterministic, the checker's numbering of private names included, so every difference is a changed fact to review against the [decision model](design/decision-model.md).
 
 ## Shared program indexes
 

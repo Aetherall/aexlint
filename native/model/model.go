@@ -11,26 +11,35 @@ import (
 )
 
 type Analyzer struct {
-	ctx             rule.RuleContext
-	sites           map[*ast.Node]*Site
-	vocabs          map[*checker.Type]*Vocabulary
-	truthiness      map[*checker.Type]bool
-	htmlAll         *checker.Type
-	htmlAllResolved bool
-	flows           map[*ast.Node]*Flow
-	stored          map[storedKey]bool
-	aliases         map[*ast.Symbol]*Value
-	control         *control
-	writing         *control
-	globals         map[string]*ast.Symbol
-	summaries       map[*ast.Node]FunctionSummary
-	overwritten     map[*ast.Node][]Overwritten
-	unaddressed     map[*ast.Node][]UnaddressedKey
+	ctx               rule.RuleContext
+	sites             map[*ast.Node]*Site
+	vocabs            map[*checker.Type]*Vocabulary
+	truthiness        map[*checker.Type]bool
+	htmlAll           *checker.Type
+	htmlAllResolved   bool
+	flows             map[*ast.Node]*Flow
+	stored            map[storedKey]bool
+	aliases           map[*ast.Symbol]*Value
+	control           *control
+	writing           *control
+	globals           map[string]*ast.Symbol
+	summaries         map[*ast.Node]FunctionSummary
+	overwritten       map[*ast.Node][]Overwritten
+	unaddressed       map[*ast.Node][]UnaddressedKey
+	buffers           map[*ast.Node][]Buffer
+	originsOf         map[*ast.Node][]ValueSource
+	privacy           map[privacyKey]int
+	locals            map[privacyKey]bool
+	assuming          []privacyKey
+	defaults          map[*ast.Node]knownDefault
+	rebound           map[*ast.Symbol]bool
+	overriddenMembers map[*ast.Node]bool
+	derivedFrom       map[*ast.Node][]*ast.Node
 }
 
 // NewAnalyzer reads one invocation's program with its checker.
 func NewAnalyzer(ctx rule.RuleContext) *Analyzer {
-	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}, aliases: map[*ast.Symbol]*Value{}, summaries: map[*ast.Node]FunctionSummary{}, overwritten: map[*ast.Node][]Overwritten{}, unaddressed: map[*ast.Node][]UnaddressedKey{}}
+	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}, aliases: map[*ast.Symbol]*Value{}, summaries: map[*ast.Node]FunctionSummary{}, overwritten: map[*ast.Node][]Overwritten{}, unaddressed: map[*ast.Node][]UnaddressedKey{}, buffers: map[*ast.Node][]Buffer{}, originsOf: map[*ast.Node][]ValueSource{}, privacy: map[privacyKey]int{}, locals: map[privacyKey]bool{}, defaults: map[*ast.Node]knownDefault{}, rebound: map[*ast.Symbol]bool{}, overriddenMembers: map[*ast.Node]bool{}}
 }
 
 // DecisionForm is how many arms of a decision do work: at most one for a guard, several for a dispatch.
@@ -466,7 +475,7 @@ func (md *builder) clauseBody(clauses []*ast.Node) []*ast.Node {
 }
 
 func (md *builder) switchStatement(n *ast.Node) {
-	subjectNode := n.Expression()
+	subjectNode := md.m.Defaulted(n.Expression())
 	v := md.m.Vocabulary(subjectNode)
 	if v == nil {
 		return

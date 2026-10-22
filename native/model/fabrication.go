@@ -8,9 +8,9 @@ import (
 
 // UnaddressedKey is an origin of a key a local map stores entries under that no keyed access to the map shares, while
 // keyed accesses do reach entries stored under other origins. A map is a global Map, a set, whose values are its keys,
-// or an object created empty and used only by element access: Entry stores under a key with Origin among its origins, and no lookup, check
-// or removal by key in the function has Origin among the origins of its key. Entries stored that way are only reached
-// by going through the whole map, as a list would be.
+// or an object created empty and used only by element access: Entry stores under a key with Origin among its origins,
+// and no lookup, check or removal by key in the function has Origin among the origins of its key. Entries stored that
+// way are only reached by going through the whole map, as a list would be.
 type UnaddressedKey struct {
 	Container Value
 	Entry     Entry
@@ -81,12 +81,8 @@ func (m *Analyzer) addressed(container Value, reads []Read, effects []Effect) []
 		if r.Value.Same(container) && r.Key != nil {
 			add(r.Key)
 		}
-		if r.Value.Same(container) && r.Node.Kind == ast.KindCallExpression && len(r.Node.Arguments()) > 0 {
-			if callee := Unwrap(r.Node.Expression()); callee.Kind == ast.KindPropertyAccessExpression {
-				if owners, name, ok := m.libraryMember(callee.Name()); ok && name == "has" && !slices.Contains(owners, "String") {
-					add(r.Node.Arguments()[0])
-				}
-			}
+		if key := m.checked(r); r.Value.Same(container) && key != nil {
+			add(key)
 		}
 	}
 	for _, e := range effects {
@@ -99,6 +95,19 @@ func (m *Analyzer) addressed(container Value, reads []Read, effects []Effect) []
 		}
 	}
 	return found
+}
+
+// checked returns the key a read checks its collection holds, when it is a call to a global collection's has.
+func (m *Analyzer) checked(r Read) *ast.Node {
+	if r.Node.Kind != ast.KindCallExpression || len(r.Node.Arguments()) == 0 {
+		return nil
+	}
+	if callee := Unwrap(r.Node.Expression()); callee.Kind == ast.KindPropertyAccessExpression {
+		if owners, name, ok := m.libraryMember(callee.Name()); ok && name == "has" && !slices.Contains(owners, "String") {
+			return r.Node.Arguments()[0]
+		}
+	}
+	return nil
 }
 
 // Fabrication is what a branch of a decision makes up only so the code after it can treat the branch's result like
@@ -136,3 +145,26 @@ func (m *Analyzer) FabricationOf(decision *ast.Node) Fabrication {
 
 // Fabricated reports whether a branch makes up anything.
 func (f Fabrication) Fabricated() bool { return len(f.Stores) > 0 || len(f.Keys) > 0 }
+
+// Fabricated reports whether an overwritten store is one a decision's branch makes up for the code after it (see
+// FabricationOf).
+func (m *Analyzer) Fabricated(o Overwritten) bool {
+	fn := enclosingFunction(o.Store.Node)
+	if fn == nil || fn.Body() == nil {
+		return false
+	}
+	found := false
+	var walk func(*ast.Node) bool
+	walk = func(n *ast.Node) bool {
+		if found || ast.IsFunctionLike(n) || ast.IsClassLike(n) {
+			return found
+		}
+		if (n.Kind == ast.KindIfStatement || n.Kind == ast.KindSwitchStatement || n.Kind == ast.KindExpressionStatement) && encloses(n, o.Store.Node) {
+			found = slices.ContainsFunc(m.FabricationOf(n).Stores, func(s Overwritten) bool { return s.Store.Node == o.Store.Node })
+		}
+		n.ForEachChild(walk)
+		return found
+	}
+	fn.Body().ForEachChild(walk)
+	return found
+}

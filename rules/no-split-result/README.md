@@ -140,7 +140,7 @@ if (Session.active !== undefined && Session.active !== this) {
 Session.active = this;
 ```
 
-Reported as `fabricatedOutcome` on the width check: a note too wide for the last line gets a line of its own, so the branch appends `""` to `grid.lines` under the index it was about to have, and the last loop replaces it through that index. The shared `rows.set(index, row)` stores two kinds of row: rows looked up by the last line's index, and rows under new indices no lookup uses. The placeholder and the new index exist only so the new line can pass for an existing one.
+Reported as `fabricatedOutcome` on the width check: a note too wide for the last line gets a line of its own, so the branch appends `""` to `grid.lines` under the index it was about to have, and the last loop replaces it through that index. The shared `rows.set(index, row)` stores two kinds of row: rows looked up by the last line's index, and rows under new indices no lookup uses. The placeholder and the new index exist only so the new line can pass for an existing one. Since `rows` is a [buffer](../../docs/design/decision-model.md) that only defers these rows to the last loop, the help adds that the loop's work can take each row where the branch makes it, yielded to it when that work belongs outside, and names anything besides the placeholder and its index that the code before that loop reads or changes of data the loop's work uses. It assumes that code the rule does not see, such as library calls or other tasks running at an `await`, does not depend on that order.
 
 ```ts
 for (const note of notes) {

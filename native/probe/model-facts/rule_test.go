@@ -1002,7 +1002,7 @@ export async function followed(rows: Map<number, Row>, current: Row, key: number
   if (key > 10) j = list.filter((row) => row.text);
   use(j);
 }`, Options: only("merge"), Errors: facts("merge", 10)},
-			{Code: summarized, Options: only("summary"), Errors: facts("summary", 12)},
+			{Code: summarized, Options: only("summary"), Errors: facts("summary", 13)},
 			{Code: `declare function origin(value: unknown): void;
 declare function use(value: unknown): void;
 function pass<T>(value: T): T {
@@ -1128,6 +1128,179 @@ export async function awaited(panel: Panel, next: Promise<string>) {
   panel.title = "";
   panel.title = await next;
 }
+export function iterated(a: Panel, b: Panel, c: Panel, d: Panel, items: Iterable<string>, list: string[], next: string) {
+  a.title = "";
+  for (const item of items) void item;
+  a.title = next;
+  b.title = "";
+  const [first] = items;
+  b.title = first ?? next;
+  c.title = "";
+  const all = [...items];
+  c.title = next + all.length;
+  d.title = "";
+  for (const item of list) void item;
+  d.title = next;
+}
+export class Lens {
+  constructor(readonly panel: Panel) {}
+  get seen(): number {
+    use(this.panel);
+    return 1;
+  }
+  get size(): number {
+    return this.panel.title.length;
+  }
+}
+export class Box {
+  x = 0;
+  get double(): number {
+    return this.x * 2;
+  }
+}
+export function doubled(box: Box, next: number): number {
+  box.x = 1;
+  const d = box.double;
+  box.x = next;
+  return d;
+}
+export class Tally {
+  x = 0;
+  #seen = 0;
+  set seen(value: number) {
+    this.#seen = value + this.x;
+  }
+  get seen(): number {
+    return this.#seen;
+  }
+}
+export function marked(tally: Tally, next: number): void {
+  tally.x = 1;
+  tally.seen = 5;
+  tally.x = next;
+  tally.seen = 1;
+  tally.seen = next;
+}
+export function looked(a: Panel, b: Panel, lens: Lens, next: string) {
+  a.title = "";
+  void lens.seen;
+  a.title = next;
+  b.title = "";
+  const { seen } = lens;
+  b.title = next + seen;
+  b.title = "";
+  void lens.size;
+  b.title = next;
+}
+export function handed(a: Panel, b: Panel, c: Panel, items: string[], cb: (item: string) => void, run: () => void, next: string) {
+  a.title = "";
+  items.forEach(cb);
+  a.title = next;
+  b.title = "";
+  run.call(undefined);
+  b.title = next;
+  c.title = "";
+  items.forEach((item) => void item);
+  c.title = next;
+  b.title = "";
+  items.forEach((item) => cb(item));
+  b.title = next;
+  a.title = "";
+  const count = items.map(Number).filter(Boolean).length;
+  a.title = next + count;
+}
+function check(value: string) {
+  if (!value) throw new Error("empty");
+}
+export function guarded(panel: Panel, next: string) {
+  panel.title = "";
+  check(next);
+  panel.title = next;
+  const local = new Panel();
+  local.title = "";
+  check(next);
+  local.title = next;
+  return local;
+}
+export function aliased(next: string, keep: (inner: { panel: Panel }) => void) {
+  const outer = { inner: { panel: new Panel() }, title: "" };
+  outer.inner.panel.title = "";
+  const inner = outer.inner;
+  keep(inner);
+  outer.inner.panel.title = next;
+  return outer;
+}
+export function titled(list: [Panel, Panel], next: string) {
+  list[0].title = "";
+  const titles = list.map((panel) => panel.title);
+  list[0].title = next;
+  list[1].title = "";
+  const count = list.length;
+  list[1].title = next + count;
+  return titles;
+}
+export function promised(a: Panel, b: Panel, run: () => void, next: string) {
+  a.title = "";
+  void new Promise<void>((resolve) => {
+    run();
+    resolve();
+  });
+  a.title = next;
+  b.title = "";
+  void new Promise<void>((resolve) => resolve());
+  b.title = next;
+  a.title = "";
+  void next.replace(/x/g, (found) => {
+    run();
+    return found;
+  });
+  a.title = next;
+}
+export class Quiet {
+  log(): void {}
+  tidy(): void {}
+}
+export class Loud extends Quiet {
+  override log(): void {
+    use(this);
+  }
+}
+export function logged(a: Panel, b: Panel, quiet: Quiet, next: string) {
+  a.title = "";
+  quiet.log();
+  a.title = next;
+  b.title = "";
+  quiet.tidy();
+  b.title = next;
+}
+export async function streamed(panel: Panel, lines: AsyncIterable<string>, next: string) {
+  panel.title = "";
+  for await (const line of lines) use(line.length);
+  panel.title = next;
+}
+function make() {
+  const panel = new Panel();
+  return { panel, check: () => panel.title.length };
+}
+export function closed(next: string) {
+  const ctx = make();
+  ctx.panel.title = "";
+  ctx.check();
+  ctx.panel.title = next;
+}
+export function captures(next: string, other: Panel) {
+  const panel = new Panel();
+  const look = () => panel.title.length;
+  const peek = () => other.title.length;
+  panel.title = "";
+  look();
+  panel.title = next;
+  const kept = new Panel();
+  kept.title = "";
+  peek();
+  kept.title = next;
+  return [panel, kept];
+}
 export function escapes(lines: string[], keep: (out: string[]) => void) {
   const out = [...lines];
   const index = out.length;
@@ -1136,7 +1309,7 @@ export function escapes(lines: string[], keep: (out: string[]) => void) {
   use(index);
   out[index] = compute();
   return out;
-}`, Options: only("overwritten"), Errors: facts("overwritten", 6)},
+}`, Options: only("overwritten"), Errors: facts("overwritten", 18)},
 			{Code: `declare function use(...values: unknown[]): void;
 export function mixed(items: string[], anchor: number, extra: number[]) {
   const rows = new Map<number, string[]>();
@@ -1180,7 +1353,505 @@ export function byName(items: string[], fallback: number) {
   index[String(fallback)] = fallback;
   return index[items[0]!];
 }`, Options: only("unaddressed"), Errors: facts("unaddressed", 3)},
+			{Code: `declare function use(...values: unknown[]): void;
+declare function notify(): void;
+class Lines {
+  lines: string[] = [];
+  place(text: string, index: number) {
+    this.lines[index] = text;
+  }
+}
+export function shelve(items: string[], anchors: number[]) {
+  const output = new Lines();
+  const rows = new Map<number, string[]>();
+  for (const item of items) {
+    let index = anchors[0]!;
+    let row = rows.get(index) ?? [];
+    if (row.length > 3) {
+      index = output.lines.length;
+      output.lines.push("");
+      row = [];
+    }
+    use(output.lines[anchors[0]!]);
+    row.push(item);
+    rows.set(index, row);
+  }
+  for (const [index, row] of rows) {
+    output.place(row.join(" "), index);
+  }
+  return output;
+}
+export function shout(words: string[]) {
+  const loud: string[] = [];
+  for (const word of words) loud.push(word.toUpperCase());
+  for (const word of loud) use(word);
+}
+export function wrapped(words: string[]) {
+  const boxes: { word: string }[] = [];
+  for (const word of words) {
+    const box = { word };
+    use(box.word);
+    boxes.push(box);
+  }
+  for (const box of boxes) use(box);
+}
+export function counted(words: string[]) {
+  const loud: string[] = [];
+  for (const word of words) {
+    if (loud.length > 3) break;
+    loud.push(word);
+  }
+  for (const word of loud) use(word);
+}
+export function logged(words: string[], log: string[]) {
+  const loud: string[] = [];
+  for (const word of words) {
+    if (log.length > 3) continue;
+    loud.push(word.toUpperCase());
+  }
+  for (const word of loud) log.push(word);
+}
+type Item = { name: string; seen: boolean };
+export function marked(items: Item[]) {
+  const picked: Item[] = [];
+  for (const item of items) {
+    picked.push(item);
+    notify();
+  }
+  for (const item of picked) use(item.name);
+}
+export function kept(items: Item[]) {
+  const picked: Item[] = [];
+  for (const item of items) if (item.seen) picked.push(item);
+  for (const item of picked) use(item.name);
+}
+export function touched(names: string[]) {
+  const picked: Item[] = [];
+  for (const name of names) {
+    const item = { name, seen: false };
+    picked.push(item);
+    item.seen = true;
+  }
+  for (const item of picked) use(item);
+}
+export function captured(names: string[]) {
+  const picked: { name: string }[] = [];
+  for (const name of names) {
+    const item = { name };
+    setTimeout(() => use(item));
+    picked.push(item);
+  }
+  for (const item of picked) use(item);
+}
+export function distinct(words: string[], extra: string) {
+  const seen = new Set<string>();
+  for (const word of words) if (!seen.has(word)) seen.add(word);
+  seen.add(extra.trim());
+  for (const word of seen) use(word);
+}
+export function moved(items: string[], anchor: number, spare: string[]) {
+  const rows = new Map<number, string[]>();
+  for (const item of items) {
+    let index = anchor;
+    let row = rows.get(index) ?? [];
+    if (row.length > 3) {
+      index = item.length + 100;
+      row = spare;
+    }
+    row.push(item);
+    rows.set(index, row);
+  }
+  for (const [index, row] of rows) use(index, row);
+}
+export function twice(words: string[]) {
+  const loud: string[] = [];
+  for (const word of words) loud.push(word);
+  for (const word of loud) use(word);
+  for (const word of loud) use(word);
+}
+export function reversed(words: string[]) {
+  const loud: string[] = [];
+  for (const word of words) loud.unshift(word);
+  for (const word of loud) use(word);
+}
+export function trimmed(words: string[]) {
+  const seen = new Set<string>();
+  for (const word of words) seen.add(word.trim());
+  for (const word of seen) use(word);
+}
+export class Registry {
+  readonly #handles = new Map<string, number>();
+  attach(names: string[], open: (name: string) => number) {
+    const opened: [string, number][] = [];
+    try {
+      for (const name of names) opened.push([name, open(name)]);
+    } catch (error) {
+      this.#handles.clear();
+      throw error;
+    }
+    for (const [name, handle] of opened) this.#handles.set(name, handle);
+  }
+  reset(names: string[]) {
+    const opened: [string, number][] = [];
+    for (const name of names) opened.push([name, name.length]);
+    this.#handles.clear();
+    for (const [name, handle] of opened) this.#handles.set(name, handle);
+  }
+}
+export function tallied(words: string[], out: string[]) {
+  const byWord: Record<string, string> = {};
+  for (const word of words) byWord[word.toLowerCase()] = word.trim();
+  for (const [key, word] of Object.entries(byWord)) out.push(key + word);
+}
+export function listed(words: string[], out: string[]) {
+  const byWord: Record<string, string> = {};
+  byWord[words.join(",")] = words.join(" ");
+  Object.entries(byWord).forEach(([key, word]) => out.push(key + word));
+}
+function nonBlank(word: string) {
+  if (!word.trim()) throw new Error("blank");
+}
+export function strict(words: string[], out: string[]) {
+  const loud: string[] = [];
+  for (const word of words) {
+    loud.push(word.toUpperCase());
+    nonBlank(word);
+  }
+  for (const word of loud) out.push(word);
+}
+export function failing(words: string[], seen: string[]) {
+  const loud: string[] = [];
+  for (const word of words) {
+    loud.push(word.toUpperCase());
+    seen.push(word);
+  }
+  for (const word of loud) nonBlank(word);
+}
+export function tallies(words: string[]) {
+  const loud: string[] = [];
+  const counts = new Map<string, number>();
+  for (const word of words) {
+    loud.push(word.toUpperCase());
+    counts.set(word, (counts.get(word) ?? 0) + 1);
+  }
+  for (const word of loud) nonBlank(word);
+  return counts.size;
+}
+export function sent(words: string[], out: string[]) {
+  const loud: string[] = [];
+  for (const word of words) loud.push(word.toUpperCase());
+  loud.forEach((word) => out.push(word));
+}
+export async function saved(names: string[], save: (name: string) => Promise<void>) {
+  const pending: string[] = [];
+  for (const name of names) pending.push(name.trim());
+  for (const name of pending) await save(name);
+}
+export async function loaded(ids: number[], load: (id: number) => Promise<string>, out: string[]) {
+  const texts: string[] = [];
+  for (const id of ids) texts.push(await load(id));
+  for (const text of texts) out.push(text);
+}`, Options: only("buffer"), Errors: facts("buffer", 24)},
 
+			{Code: `declare function use(...values: unknown[]): void;
+export function ends(lines: string[], anchors: number[]) {
+  const indices = lines.flatMap((line, row) => (line ? [row] : []));
+  if (!indices.length) return;
+  for (const line of lines) use(line, indices.at(0)!, indices.at(-1)!, indices.at(-2)!);
+  if (anchors.length > 1) use(anchors.at(1)!, anchors.at(2)!);
+  use(anchors.length === 0 ? 0 : anchors.at(0)!);
+  use(anchors.length >= 3 && anchors.at(-3)!);
+}
+export function lookups(counts: Map<string, number>, key: string, other: string) {
+  if (!counts.has(key)) return;
+  use(counts.get(key)!, counts.get(other)!);
+  if (counts.has(other) && counts.get(other)! > 2) use(other);
+}
+export function changed(items: string[], extra: Map<string, number>, key: string) {
+  if (!items.length) return;
+  items.pop();
+  use(items.at(0)!);
+  if (!extra.has(key)) return;
+  for (const item of items) {
+    use(extra.get(key)!);
+    extra.delete(item);
+  }
+}
+export function reordered(items: string[], from: string[]) {
+  if (items.length === 0 || from.length < 2) return;
+  items.sort();
+  use(items.at(0)!, from.at(1)!, from.at(2)!);
+}
+export function rebound(items: string[]) {
+  if (!items.length) return;
+  items = [];
+  use(items.at(0)!);
+}
+export function held(items: string[], counts: Map<string, number>, key: string) {
+  let count = items.length;
+  const known = counts.has(key);
+  if (count < 2 || !known) return;
+  use(items.at(1)!, counts.get(key)!);
+}
+declare function assert(condition: unknown, message?: string): asserts condition;
+export function asserted(items: string[], counts: Map<string, number>, key: string) {
+  assert(items.length > 1, "two items");
+  assert(counts.has(key));
+  use(items.at(-2)!, counts.get(key)!);
+}
+function needRows(rows: string[], counts: Map<string, number>, key: string) {
+  if (rows.length < 2) throw new Error("two rows");
+  if (!counts.has(key)) throw new Error("key");
+}
+function softRows(rows: string[]) {
+  if (!rows.length) return;
+}
+function draining(rows: string[]) {
+  if (!rows.length) throw new Error("rows");
+  rows.pop();
+}
+export function viaCalls(rows: string[], counts: Map<string, number>, key: string) {
+  needRows(rows, counts, key);
+  use(rows.at(1)!, counts.get(key)!);
+  softRows(rows);
+  draining(rows);
+  use(rows.at(0)!);
+}
+export function holes(items: (string | undefined)[], counts: Map<string, number | undefined>, key: string) {
+  if (!items.length || !counts.has(key)) return;
+  use(items.at(0)!, counts.get(key)!);
+}`, Options: only("backing"), Errors: facts("backing", 15)},
+			{Code: `declare function use(...values: unknown[]): void;
+declare function width(text: string): number;
+type Note = { text: string; hidden?: boolean; size: number };
+export function sum(notes: Note[], limit: number) {
+  let total = 0;
+  for (const note of notes) {
+    if (note.hidden) continue;
+    const { text } = note;
+    const size = text.length;
+    if (size === 0 || size > limit) {
+      continue;
+    }
+    total += size;
+  }
+  return total;
+}
+export function each(notes: Note[], out: string[]) {
+  notes.forEach((note) => {
+    if (note.hidden) return;
+    out.push(note.text);
+  });
+  notes.forEach((note) => {
+    if (note.hidden) return note.size;
+    out.push(note.text);
+    return 0;
+  });
+}
+function sized(note: Note) {
+  if (note.size < 0) throw new Error("negative");
+  return note.size;
+}
+export function risky(notes: Note[], out: string[]) {
+  for (const note of notes) {
+    if (sized(note) > 10) continue;
+    out.push(note.text);
+  }
+}
+export function measured(notes: Note[], out: string[]) {
+  for (const note of notes) {
+    const size = width(note.text);
+    if (size > 10) continue;
+    out.push(note.text);
+  }
+}
+export function changing(notes: Note[], seen: Set<string>, limit: number) {
+  let budget = limit;
+  for (const note of notes) {
+    if (seen.has(note.text)) continue;
+    seen.add(note.text);
+  }
+  for (const note of notes) {
+    if (note.size > budget) continue;
+    budget -= note.size;
+  }
+  for (const note of notes) {
+    if (note.hidden) continue;
+    note.hidden = true;
+  }
+}
+export function ordered(notes: Note[], total: { count: number }) {
+  for (const note of notes) {
+    total.count += 1;
+    if (note.hidden) continue;
+    use(note);
+  }
+  for (const note of notes) {
+    if (note.hidden) break;
+    use(note);
+  }
+  outer: for (const note of notes) {
+    for (const other of notes) {
+      if (other === note) continue outer;
+    }
+  }
+}`, Options: only("filter"), Errors: facts("filter", 4)},
+			{Code: `import type { Note } from "./note.js";
+declare function use(...values: unknown[]): void;
+export class Panel {
+  side?: "left" | "right";
+  width: number | undefined;
+  get resolved() {
+    return this.side ?? "left";
+  }
+}
+type Options = { mode?: "fast" | "slow"; label?: string; count?: number };
+export function read(note: Note, panel: Panel, options: Options, loose: { flag?: boolean }) {
+  use(note.overflow ?? "hide", note.overflow ?? null, note.text ?? "", note.text);
+  use(panel.side ?? "right", panel.width ?? 0, options.mode ?? "fast", options.label ?? "none");
+  const { overflow = "own", text = "" } = note;
+  use(overflow, text, loose.flag ?? false);
+}
+export function defaults({ mode = "slow", count = 1 }: Options) {
+  return [mode, count];
+}
+export function normalized(note: Note) {
+  note.overflow ??= "own";
+  return note;
+}`, Files: map[string]string{"note.ts": "export interface Note { text: string; overflow?: \"hide\" | \"own\" }\n"}, Options: only("default"), Errors: facts("default", 10)},
+			{Code: `declare function use(...values: unknown[]): void;
+class Row {
+  constructor(readonly text: string) {}
+  render(index: number, width: number) {
+    return this.text.padEnd(width) + index;
+  }
+}
+class Listener {
+  handle(event: string) {
+    use(event);
+  }
+}
+export function rows(lines: string[], width: number) {
+  const rows = new Map<number, Row>();
+  for (const [index, line] of lines.entries()) {
+    const row = rows.get(index) ?? new Row(line);
+    rows.set(index, row);
+  }
+  for (const [index, row] of rows) use(row.render(index, width), index);
+  rows.forEach((row, index) => use(row.render(width, index)));
+  for (const [index, row] of rows) use(row.render(0, width), index);
+}
+export function shared(events: string[], listener: Listener, made: Listener[]) {
+  const listeners = new Map<string, Listener>();
+  for (const event of events) listeners.set(event, listener);
+  for (const [event, handler] of listeners) handler.handle(event);
+  const own = new Map<string, Listener>();
+  for (const event of events) own.set(event, made[0] ?? new Listener());
+  for (const [event, handler] of own) handler.handle(event);
+}
+export function counted(words: string[]) {
+  const counts = new Map<string, number>();
+  for (const word of words) counts.set(word, (counts.get(word) ?? 0) + 1);
+  for (const [word, count] of counts) use(word, count.toFixed(word.length));
+}`, Options: only("ownkey"), Errors: facts("ownkey", 2)},
+			{Code: `declare function assert(condition: unknown): asserts condition;
+export function needRows(rows: string[], counts: Map<string, number>, key: string) {
+  if (rows.length < 2) throw new Error("two rows");
+  if (!counts.has(key)) throw new Error("key");
+}
+export function asserting(rows: string[]) {
+  assert(rows.length > 0);
+}
+export function softRows(rows: string[]) {
+  if (!rows.length) return;
+}
+export function draining(rows: string[]) {
+  if (!rows.length) throw new Error("rows");
+  rows.pop();
+}
+export function careful(rows: string[], counts: Map<string, number>, key: string) {
+  try {
+    needRows(rows, counts, key);
+  } catch {
+    return false;
+  }
+  return true;
+}
+export function careless(rows: string[], counts: Map<string, number>, key: string) {
+  needRows(rows, counts, key);
+  return true;
+}
+export function each(rows: string[]) {
+  rows.forEach((row) => {
+    if (!row) throw new Error("blank");
+  });
+}
+export function marked(rows: { done: boolean }[]) {
+  rows.forEach((row) => {
+    row.done = true;
+  });
+}
+export function gathered(rows: string[], out: string[]) {
+  return rows.reduce((all, row) => {
+    all.push(row);
+    return all;
+  }, out);
+}
+export function looped(rows: { done: boolean }[], byName: Map<string, { done: boolean }>) {
+  for (const row of rows) row.done = row.done || true;
+  for (const [, row] of byName) row.done = false;
+}
+export function indexed(rows: { done: boolean }[]) {
+  for (const [index, row] of rows.entries()) row.done = index > 0;
+}`, Options: only("summary"), Errors: facts("summary", 14)},
+			{Code: `type Panel = { title: string; width?: number };
+export function assigned(panel: Panel, next: Panel, key: string) {
+  Object.assign(panel, next, { width: 1 });
+  Object.defineProperty(panel, "title", { value: next.title });
+  Reflect.set(panel, key, next);
+  Reflect.deleteProperty(panel, key);
+  Object.keys(panel);
+  Object.freeze(next);
+}`, Options: only("effect"), Errors: facts("effect", 4)},
+			{Code: `declare function use(...values: unknown[]): void;
+class Row {
+  items: string[] = [];
+  add(item: string) {
+    this.items.push(item);
+  }
+}
+export function rows(lines: string[], given: Row, keep: Row[]) {
+  const rows = new Map<number, Row>();
+  for (const [index, line] of lines.entries()) {
+    let row = rows.get(index) ?? new Row();
+    if (row.items.length > 3) row = new Row();
+    row.add(line);
+    rows.set(index, row);
+  }
+  for (const [, row] of rows) {
+    const { items } = given;
+    use(row.items.length, items.length);
+  }
+  const borrowed = given;
+  const kept = new Row();
+  keep.push(kept);
+  const shared = new Row();
+  use(shared);
+  const closed = new Row();
+  const read = () => closed.items.length;
+  const fresh = [new Row(), new Row()];
+  const sizes = fresh.map((row) => row.items.length);
+  try {
+    use(sizes);
+  } catch (error) {
+    use(String(error));
+  }
+  const parsed = JSON.parse("{}") as { done?: boolean };
+  parsed.done = true;
+  const copied = Array.from(lines);
+  copied.push("");
+  return [borrowed, read(), sizes, parsed.done, copied.length];
+}`, Options: only("local"), Errors: facts("local", 5)},
 			{Code: summarized, Options: only("effect"), Errors: facts("effect", 16)},
 			{Code: `declare function use(...values: unknown[]): void;
 import * as store from "./store.js";
@@ -1196,6 +1867,116 @@ export function receivers(either: Map<string, number> | Set<string>, both: Map<s
   console.log(key);
   use(either);
 }`, Files: map[string]string{"store.ts": "export function save(key: string) {}\n"}, Options: only("effect"), Errors: facts("effect", 4)},
+			{Code: `type Vent = { flow?: "low" | "high" | "off"; name?: string };
+export function f(vent: Vent, flows: ("low" | "high")[]) {
+  if ((vent.flow ?? "low") === "low") return 1;
+  if (vent.flow ?? "off" !== "high") return 2;
+  if ((vent.name ?? "low") === "low") return 3;
+  if ((vent.flow ?? flows[0]) === "high") return 4;
+  switch (vent.flow ?? "off") {
+    case "off":
+      return 5;
+    case "low":
+    case "high":
+      return 6;
+  }
+}`, Options: only("test", "decision"), Errors: []rule_tester.InvalidTestCaseError{
+				{MessageId: "decision"}, {MessageId: "decision"}, {MessageId: "test"},
+			}},
+			{Code: `declare function use(...values: unknown[]): void;
+class Target {
+  constructor(readonly start: number, readonly end: number) {}
+}
+class Folder {
+  constructor(readonly parent?: Folder) {}
+}
+export function layout(widths: number[]): Target[] {
+  const targets: Target[] = [];
+  let column = 0;
+  let text = "";
+  for (const width of widths) {
+    const end = column + width;
+    targets.push(new Target(column, end));
+    text += " ".repeat(width);
+    column = end + 2;
+  }
+  use(text);
+  return targets;
+}
+export function ancestors(folder: Folder): Folder[] {
+  const found: Folder[] = [];
+  let current = folder.parent;
+  while (current) {
+    found.push(current);
+    current = current.parent;
+  }
+  return found;
+}
+export function mapped(widths: number[]): number[] {
+  const doubled: number[] = [];
+  for (const width of widths) doubled.push(width * 2);
+  return doubled;
+}
+export function folded(widths: number[]): number {
+  let total = 0;
+  for (const width of widths) total += width;
+  return total;
+}
+export function counted(widths: number[]): number[] {
+  const out: number[] = [];
+  let index: number;
+  for (index = 0; index < widths.length; index++) out.push(widths[index]! + index);
+  return out;
+}
+export function aside(widths: number[]): number[] {
+  const out: number[] = [];
+  let seen = 0;
+  for (const width of widths) {
+    out.push(width);
+    seen++;
+  }
+  use(seen);
+  return out;
+}`, Options: only("scan"), Errors: facts("scan", 2)},
+			{Code: `type Page = { items: string[]; next?: Page };
+export function paged(first: Page): string[] {
+  const items: string[] = [];
+  let page: Page | undefined = first;
+  let count = 0;
+  while (page) {
+    if (count++ > 100) throw new Error("too many pages");
+    items.push(...page.items);
+    page = page.next;
+  }
+  return items;
+}
+export function labelled(names: string[]): string[] {
+  const out: string[] = [];
+  let index = 0;
+  for (const name of names) {
+    out.push(index + ": " + name);
+    index += 1;
+  }
+  return out;
+}
+export function skipping(names: string[]): string[] {
+  const out: string[] = [];
+  let index = 0;
+  for (const name of names) {
+    if (!name) continue;
+    out.push(index + ": " + name);
+    index++;
+  }
+  return out;
+}`, Options: only("scan"), Errors: facts("scan", 3)},
+			{Code: `import type { Parcel } from "./parcel.js";
+export function slugOf(text: string): string { return text.toLowerCase(); }
+export function blank(text: string): boolean { return text === ""; }
+export class Shelf { find(label: string): string { return label; } }
+export function link(parcel: Parcel): string { return slugOf(parcel.label); }
+export function heading(parcel: Parcel): string { return slugOf(parcel.label); }
+export function empty(parcel: Parcel): boolean { return blank(parcel.label); }
+export function found(parcel: Parcel, shelf: Shelf): string { return shelf.find(parcel.label); }`, Files: map[string]string{"parcel.ts": "export interface Parcel { readonly label: string }\n"}, Options: only("derivation"), Errors: facts("derivation", 2)},
 		},
 	)
 }

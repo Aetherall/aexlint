@@ -4,15 +4,17 @@ import (
 	"slices"
 
 	"github.com/microsoft/typescript-go/shim/ast"
+	"github.com/microsoft/typescript-go/shim/checker"
 )
 
 // Overwritten is a store into data that nothing reads: Store puts a value into a field of data (Field), into an
 // element of a collection under a key, or appends it right after a variable is given the collection's size, which
 // names its position (an append reserving a position: a placeholder). Keys are the origins of that key or position.
 // Fills replace the value on every way from the store, an element through a key every origin of Keys flows to, through
-// variables and the keys of a local container, before anything can read it: no read of the data as a whole or of data
-// holding it, of the field, or of an element whose key shares an origin with Keys, and, unless the data is private to
-// its function (see private), no code the model does not see runs in between (see Unseen).
+// variables and the keys of a local container, with nothing able to read it before them, and one is enough: no read of
+// the data as a whole or of data holding it, of the field, or of an element whose key shares an origin with Keys, and,
+// unless no code outside the function can reach the data (see unreachable), no code the model does not see runs in
+// between (see Unseen), nor a call to a project function that throws (see Throwing).
 type Overwritten struct {
 	Store Effect
 	Field *Value
@@ -56,7 +58,8 @@ func (m *Analyzer) overwrittenOf(fn *ast.Node) []Overwritten {
 		if reads == nil {
 			reads = m.ReadsIn([]*ast.Node{fn.Body()})
 		}
-		if slices.ContainsFunc(candidate.Fills, func(w Effect) bool { return m.seen(candidate, w, reads) || m.exposed(fn, candidate, w) }) {
+		candidate.Fills = slices.DeleteFunc(candidate.Fills, func(w Effect) bool { return m.seen(candidate, w, reads) || m.exposed(fn, candidate, w) })
+		if len(candidate.Fills) == 0 {
 			continue
 		}
 		found = append(found, candidate)
@@ -89,13 +92,21 @@ func (m *Analyzer) storeOf(s Effect) (Overwritten, bool) {
 	return Overwritten{}, false
 }
 
-// fieldOf returns the field a plain assignment effect sets.
+// fieldOf returns the field a plain assignment effect sets: a declared property, not set through a setter, which runs
+// code.
 func (m *Analyzer) fieldOf(e Effect) (Value, bool) {
 	if !ast.IsAssignmentExpression(e.Node, false) || e.Node.AsBinaryExpression().OperatorToken.Kind != ast.KindEqualsToken {
 		return Value{}, false
 	}
 	target := Unwrap(e.Node.AsBinaryExpression().Left)
-	if target.Kind != ast.KindPropertyAccessExpression && target.Kind != ast.KindElementAccessExpression {
+	if target.Kind != ast.KindPropertyAccessExpression && target.Kind != ast.KindElementAccessExpression || m.computed(target) {
+		return Value{}, false
+	}
+	name := target
+	if target.Kind == ast.KindPropertyAccessExpression {
+		name = target.Name()
+	}
+	if m.ctx.TypeChecker.GetSymbolAtLocation(name) == nil {
 		return Value{}, false
 	}
 	v := m.ValueOf(target)
@@ -337,18 +348,20 @@ func commonList(a, b *ast.Node) *ast.Node {
 	return nil
 }
 
-// exposed reports whether code the model does not see may read the stored value before the fill w: the data is not
-// private to fn up to w, and such code runs between them, in the region seen reads.
+// exposed reports whether code the model does not see may read the stored value before the fill w, or a caller may
+// once a call between them throws: the data is reachable from outside fn up to w (see unreachable), and such code or
+// such a call runs between them, in the region seen reads.
 func (m *Analyzer) exposed(fn *ast.Node, candidate Overwritten, w Effect) bool {
 	data := candidate.Store.Receiver
 	if candidate.Field != nil {
 		data = *candidate.Field
 	}
-	if m.private(data, fn, w.Node.End()) {
+	if m.unreachable(data, fn, w.Node.End()) {
 		return false
 	}
 	nodes, start, end := m.region(candidate.Store, w)
-	return slices.ContainsFunc(m.Unseen(nodes, false), func(n *ast.Node) bool { return n.Pos() >= start && n.End() <= end })
+	in := func(n *ast.Node) bool { return n.Pos() >= start && n.End() <= end }
+	return slices.ContainsFunc(m.Unseen(nodes, false), in) || slices.ContainsFunc(m.Throwing(nodes), in)
 }
 
 // region returns the statements from the one holding the store s, in the statement list holding both, to the one
@@ -397,4 +410,39 @@ func (m *Analyzer) seen(candidate Overwritten, w Effect, reads []Read) bool {
 		}
 		return collection.Within(r.Value)
 	})
+}
+
+// Lost reports whether an overwritten store is lost whole: it sets a field, an element of an array, or an entry of a
+// local container (see Contents) that its function only reads by key, where the order its keys come in cannot show. A
+// placeholder still grows its collection, and a store into another map, set or object may still fix where its key
+// comes in iteration order.
+func (m *Analyzer) Lost(o Overwritten) bool {
+	if o.Field != nil {
+		return true
+	}
+	if o.Store.Kind != Store {
+		return false
+	}
+	if o.Store.Node.Kind == ast.KindBinaryExpression && m.array(o.Store.Node.AsBinaryExpression().Left) {
+		return true
+	}
+	fn := enclosingFunction(o.Store.Node)
+	if _, ok := m.Contents(o.Store.Receiver, o.Store.Node); !ok || fn == nil {
+		return false
+	}
+	container := o.Store.Receiver
+	return !slices.ContainsFunc(m.ReadsIn([]*ast.Node{fn.Body()}), func(r Read) bool {
+		return r.Value.Within(container) && r.Key == nil && !r.Size && m.checked(r) == nil
+	})
+}
+
+// array reports whether an element access reads an array or tuple.
+func (m *Analyzer) array(n *ast.Node) bool {
+	n = Unwrap(n)
+	if n.Kind != ast.KindElementAccessExpression {
+		return false
+	}
+	tc := m.ctx.TypeChecker
+	t := tc.GetNonNullableType(tc.GetTypeAtLocation(n.Expression()))
+	return t != nil && (checker.Checker_isArrayType(tc, t) || checker.IsTupleType(t))
 }

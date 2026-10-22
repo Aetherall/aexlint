@@ -8,6 +8,7 @@ import (
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
+	"github.com/typescript-eslint/tsgolint/internal/utils"
 )
 
 // flowTypeOfReference is the checker's own narrowing: the type of reference where flowNode is reached.
@@ -313,9 +314,43 @@ var freshResults = map[string]map[string]bool{
 		"toSorted": true, "toReversed": true, "toSpliced": true, "with": true},
 }
 
+// freshFunctions names the default library functions building a new object, by the global interface declaring them,
+// or "" for a global function.
+var freshFunctions = map[string][]string{
+	"JSON":              {"parse"},
+	"ArrayConstructor":  {"from", "of"},
+	"ObjectConstructor": {"fromEntries", "entries", "keys", "values", "create"},
+	"":                  {"structuredClone"},
+}
+
+// freshFunction reports whether a call resolves to a default library function building a new object (see
+// freshFunctions).
+func (m *Analyzer) freshFunction(call *ast.Node) bool {
+	callee := Unwrap(call.Expression())
+	name := callee
+	if callee.Kind == ast.KindPropertyAccessExpression {
+		name = callee.Name()
+	}
+	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(name)
+	if symbol == nil || len(symbol.Declarations) == 0 || !utils.IsSymbolFromDefaultLibrary(m.ctx.Program, symbol) {
+		return false
+	}
+	d := symbol.Declarations[0]
+	for owner, names := range freshFunctions {
+		if !slices.Contains(names, symbol.Name) {
+			continue
+		}
+		if owner == "" && d.Parent != nil && d.Parent.Kind == ast.KindSourceFile || owner != "" && m.ownedBy(d, owner) {
+			return true
+		}
+	}
+	return false
+}
+
 // called returns what a call gives, awaited or not: an entry of a collection is existing data, a collection method
-// building a new array a new object, and a call to a project function what its returns give. A generator, or an async
-// function not awaited, gives a new object. A call to a function being followed, or to anything else, is computed.
+// building a new array, or a default library function building a new object such as JSON.parse, a new object, and a
+// call to a project function what its returns give. A generator, or an async function not awaited, gives a new object.
+// A call to a function being followed, or to anything else, is computed.
 func (m *Analyzer) called(n *ast.Node, awaited bool, t *tracing) Provenance {
 	if _, ok := m.LookupOf(n); ok {
 		return ExistingValue
@@ -326,6 +361,9 @@ func (m *Analyzer) called(n *ast.Node, awaited bool, t *tracing) Provenance {
 				return FreshValue
 			}
 		}
+	}
+	if m.freshFunction(n) {
+		return FreshValue
 	}
 	declaration := Implementation(m.ctx.TypeChecker.GetResolvedSignature(n))
 	if declaration == nil || !ast.IsFunctionLike(declaration) || declaration.Body() == nil || !ProjectFile(ast.GetSourceFileOfNode(declaration)) {
@@ -350,12 +388,21 @@ func (m *Analyzer) called(n *ast.Node, awaited bool, t *tracing) Provenance {
 
 // getter returns the get accessor with a body, in a project file, that a property read resolves to.
 func (m *Analyzer) getter(n *ast.Node) *ast.Node {
+	return m.accessor(n, ast.KindGetAccessor)
+}
+
+// setter returns the project setter with a body that an assignment to the property access n runs.
+func (m *Analyzer) setter(n *ast.Node) *ast.Node {
+	return m.accessor(n, ast.KindSetAccessor)
+}
+
+func (m *Analyzer) accessor(n *ast.Node, kind ast.Kind) *ast.Node {
 	symbol := m.ctx.TypeChecker.GetSymbolAtLocation(n.Name())
 	if symbol == nil {
 		return nil
 	}
 	for _, d := range symbol.Declarations {
-		if d.Kind == ast.KindGetAccessor && d.Body() != nil && ProjectFile(ast.GetSourceFileOfNode(d)) {
+		if d.Kind == kind && d.Body() != nil && ProjectFile(ast.GetSourceFileOfNode(d)) && !m.overridden(d) {
 			return d
 		}
 	}
@@ -857,8 +904,8 @@ func (m *Analyzer) outlives(v Value, scope *ast.Node) bool {
 // outside it, in the order of their first definition.
 func (m *Analyzer) Defined(merge *Merge) []Value {
 	type defined struct {
-		value    Value
-		position int
+		value         Value
+		write, target int
 	}
 	found := map[place]defined{}
 	for _, arm := range merge.Arms {
@@ -871,14 +918,23 @@ func (m *Analyzer) Defined(merge *Merge) []Value {
 				if !ok || v.Root != nil && v.Root.ValueDeclaration != nil && encloses(merge.Decision, v.Root.ValueDeclaration) {
 					continue
 				}
-				if earlier, ok := found[p]; !ok || d.Write.Node.Pos() < earlier.position {
+				write, target := d.Write.Node.Pos(), d.Write.Node.Pos()
+				if d.Write.Target != nil {
+					target = d.Write.Target.Pos()
+				}
+				if earlier, ok := found[p]; !ok || write < earlier.write || write == earlier.write && target < earlier.target {
 					v.Node = nil
-					found[p] = defined{v, d.Write.Node.Pos()}
+					found[p] = defined{v, write, target}
 				}
 			}
 		}
 	}
-	sorted := slices.SortedFunc(maps.Values(found), func(a, b defined) int { return a.position - b.position })
+	sorted := slices.SortedFunc(maps.Values(found), func(a, b defined) int {
+		if a.write != b.write {
+			return a.write - b.write
+		}
+		return a.target - b.target
+	})
 	values := []Value{}
 	for _, d := range sorted {
 		values = append(values, d.value)

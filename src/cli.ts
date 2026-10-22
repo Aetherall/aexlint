@@ -150,6 +150,7 @@ function check(): number {
       "aexlint/no-embedded-translation": "error",
       "aexlint/no-lookup-fallback": "error",
       "aexlint/no-widened-union": "error",
+      "aexlint/no-split-result": "error",
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));
