@@ -603,6 +603,14 @@
     },
     {
       "files": [
+        "no-lost-write/**"
+      ],
+      "rules": {
+        "aexlint/no-lost-write": "error"
+      }
+    },
+    {
+      "files": [
         "no-default-outside-owner/max-0/**"
       ],
       "rules": {

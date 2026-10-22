@@ -1919,6 +1919,41 @@ no-lookup-fallback/reported/ternary-chain.ts:3:95 aexlint(no-lookup-fallback)
   `"humid"` answers for "mangrove" | "savanna" of `biome` without naming them.
   help: The other branches answer for one value each, and a value added to the union will get this answer too. Name these values, or use a complete table or exhaustive switch so a new value is a type error.
 
+no-lost-write/dependency-closed/use.ts:4:3 aexlint(no-lost-write)
+  ~ dial.angle = 0
+  `dial.angle` is set to 0 here, but `dial.angle = next` replaces it before anything can read it.
+  help: Nothing can see this value, so the write does nothing: either it is a leftover, or the code meant to read it in between. Remove it, or read it where it matters.
+
+no-lost-write/reported/lost.ts:7:5 aexlint(no-lost-write)
+  ~ this.level = 0
+  `this.level` is set to 0 here, but `this.level = next` replaces it before anything can read it.
+  help: Nothing can see this value, so the write does nothing: either it is a leftover, or the code meant to read it in between. Remove it, or read it where it matters.
+
+no-lost-write/reported/lost.ts:13:5 aexlint(no-lost-write)
+  ~ Gauge.current = undefined
+  `Gauge.current` is set to undefined here, but `Gauge.current = this` replaces it before anything can read it.
+  help: Nothing can see this value, so the write does nothing: either it is a leftover, or the code meant to read it in between. Remove it, or read it where it matters.
+
+no-lost-write/reported/lost.ts:21:5 aexlint(no-lost-write)
+  ~ out[index] = "slot-empty"
+  `out[index]` is set to "slot-empty" here, but `out[index] = fill.length > 1 ? "slot-...` replaces it before anything can read it.
+  help: Nothing can see this value, so the write does nothing: either it is a leftover, or the code meant to read it in between. Remove it, or read it where it matters.
+
+no-lost-write/reported/lost.ts:28:3 aexlint(no-lost-write)
+  ~ gauge.level = 1
+  `gauge.level` is set to 1 here, but `gauge.level = next` replaces it before anything can read it.
+  help: Nothing can see this value, so the write does nothing: either it is a leftover, or the code meant to read it in between. Remove it, or read it where it matters.
+
+no-lost-write/reported/lost.ts:36:3 aexlint(no-lost-write)
+  ~ points.set(bonus, 0)
+  `points` stores 0 under `bonus` here, but `points.set(bonus, 10)` replaces it before anything can read it.
+  help: Nothing can see this value, so the write does nothing: either it is a leftover, or the code meant to read it in between. Remove it, or read it where it matters.
+
+no-lost-write/reported/lost.ts:44:3 aexlint(no-lost-write)
+  ~ gauge.level = 0
+  `gauge.level` is set to 0 here, but `gauge.level = next` replaces it before anything can read it.
+  help: Nothing can see this value, so the write does nothing: either it is a leftover, or the code meant to read it in between. Remove it, or read it where it matters.
+
 no-multiline-condition/reported.js:1:5 aexlint(no-multiline-condition)
   ~ a ||⏎  b
   This if condition spans 2 lines, so the decision cannot be read at a glance before the body.

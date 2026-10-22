@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-lost-write",
+  "description": "Report writes to a field or array element that another write replaces before anything can read them.",
+  "requiresTypeChecking": true
+}

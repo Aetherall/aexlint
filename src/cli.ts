@@ -154,6 +154,7 @@ function check(): number {
       "aexlint/no-detached-assertion": "error",
       "aexlint/no-default-outside-owner": ["error", { max: 1 }],
       "aexlint/no-detached-key": "error",
+      "aexlint/no-lost-write": "error",
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));
