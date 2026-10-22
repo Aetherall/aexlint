@@ -30,7 +30,8 @@ The shell provides Node.js, pnpm, and Go. The first native build needs network a
 1. Check for an existing Oxlint rule. Define one general problem, not a list of special cases.
 2. Run `pnpm rule:new <name>`, with `--typed` for a type-aware rule. It creates `rules/<name>/` and registers the rule in `src/rules.ts`.
 3. Replace the generated placeholders with a short rule contract, real valid/invalid tests, and an implementation.
-4. Run focused tests, then `pnpm format` and `pnpm check`.
+4. Add the rule to the standalone CLI's defaults in `src/cli.ts`, type-aware rules with `--typed`, and to the README's rule table and default limits. The generator does neither.
+5. Run focused tests, then `pnpm format` and `pnpm check`.
 
 Every rule is tested by its folder in `tests/project/`: one TypeScript project that `pnpm test:project` lints with all rules in a single Oxlint run, comparing the findings with `tests/project/expected.txt`. `tests/project/oxlint.json` enables each rule only for its own folder. Generators handle registration and create the folder and its override. See [AGENTS.md](../AGENTS.md) for constraints and [native.md](native.md) for backend details.
 
