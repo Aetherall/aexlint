@@ -1,3 +1,47 @@
+case-place-annotations/project-unchecked/before.ts:73:31 aexlint(no-derivation-outside-owner)
+  ~ visibleWidth(entry.annotation.text)
+  `text` of `Annotation` goes through `visibleWidth` here and in 2 other functions outside the type's owner (case-place-annotations/project-unchecked/before.ts:98, case-place-annotations/project-unchecked/before.ts:123): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Annotation` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+case-place-annotations/project-unchecked/before.ts:98:20 aexlint(no-derivation-outside-owner)
+  ~ visibleWidth(annotation.text)
+  `text` of `Annotation` goes through `visibleWidth` here and in 2 other functions outside the type's owner (case-place-annotations/project-unchecked/before.ts:73, case-place-annotations/project-unchecked/before.ts:123): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Annotation` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+case-place-annotations/project-unchecked/before.ts:100:7 aexlint(no-inline-scan)
+  ~ targets.push(new AnnotationTarget(key, annotation, index, column, end))
+  This loop carries `column` from one pass to the next and puts values computed from it into `targets`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `column`. A generator owning `column` and yielding those values names the sequence and keeps its state with it. The loop also does other work (`text`), which would then only see finished values.
+
+case-place-annotations/project-unchecked/before.ts:104:28 aexlint(no-positional-separator)
+  ~ text.slice(0, -2)
+  `text` gets a separator with every piece in the loop on line 96, and this `slice` cuts the last one off by its length, not by whether a piece was emitted: when no pass runs, it cuts 2 characters written before the loop. Join the pieces with the separator instead.
+
+case-place-annotations/project-unchecked/before.ts:123:18 aexlint(no-derivation-outside-owner)
+  ~ visibleWidth(annotation.text)
+  `text` of `Annotation` goes through `visibleWidth` here and in 2 other functions outside the type's owner (case-place-annotations/project-unchecked/before.ts:73, case-place-annotations/project-unchecked/before.ts:98): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Annotation` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+case-place-annotations/project-unchecked/before.ts:125:51 aexlint(no-detached-assertion)
+  ~ indices[0]!
+  This assertion holds only because of the check `indices.length` on line 120, which the type of `indices` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+case-place-annotations/project-unchecked/before.ts:125:65 aexlint(no-detached-assertion)
+  ~ indices.at(-1)!
+  This assertion holds only because of the check `indices.length` on line 120, which the type of `indices` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+case-place-annotations/project-unchecked/before.ts:127:9 aexlint(no-split-result)
+  ~ !row.fits(contribution, width)
+  What a branch of this decision writes for the code after it is never used as written: it appends "" to `output.lines`, which only reserves a position `output.place(row.render(index, width,...` fills, and stores entries of `rows` under keys from `output.lines.length`, which no lookup of `rows` uses. Its outcome is also split across `index` and `row`.
+  help: Either the branch's work is lost, or it only makes up what the shared code expects so that code can treat the branch's result like the others'. Do that branch's work inside it, or give its result a path of its own. `rows` only defers the branch's entries to the loop over it, so that loop's work can take each one where the branch makes it, yielded to it when that work belongs outside; `output.lines[index]` must then stop depending on that work running after it.
+
+case-place-annotations/project-unchecked/before.ts:137:18 aexlint(no-detached-key)
+  ~ row.render(index, width, theme, hovered)
+  `row.render` is given `index`, the key `row` is stored under in `rows`: the value needs its own key, so every reader of `rows` passes the two together.
+  help: Each value is made for its key, so the key is part of what it is. Give it to the value where the value is made, and keep the map, if lookups need it, as an index of values that know their key.
+
 max-call-assembly/max-width-19-references-2/reported.ts:2:12 aexlint(max-call-assembly)
   ~ (alpha, beta, gamma)
   These arguments are 20 characters wide on one line and draw on 3 outside names (alpha, beta, gamma); limits are 19 and 2. So much is assembled at this call that it cannot be read at a glance.

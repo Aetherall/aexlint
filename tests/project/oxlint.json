@@ -624,6 +624,39 @@
     },
     {
       "files": [
+        "case-place-annotations/**"
+      ],
+      "rules": {
+        "aexlint/max-interpretation-spread": "error",
+        "aexlint/max-projection-spread": "error",
+        "aexlint/no-caller-enforced-invariant": "error",
+        "aexlint/no-default-outside-owner": "error",
+        "aexlint/no-detached-assertion": "error",
+        "aexlint/no-detached-key": "error",
+        "aexlint/no-embedded-translation": "error",
+        "aexlint/no-external-variant-behavior": "error",
+        "aexlint/no-fact-outside-owner": "error",
+        "aexlint/no-forgeable-validated-result": "error",
+        "aexlint/no-lookup-fallback": "error",
+        "aexlint/no-lost-write": "error",
+        "aexlint/no-overbroad-type-predicate": "error",
+        "aexlint/no-procedural-value-dispatch": "error",
+        "aexlint/no-repeated-conversion": "error",
+        "aexlint/no-repeated-presence-check": "error",
+        "aexlint/no-repeated-selection": "error",
+        "aexlint/no-repeated-value-group": "error",
+        "aexlint/no-repeated-value-policy": "error",
+        "aexlint/no-split-result": "error",
+        "aexlint/no-widened-union": "error",
+        "aexlint/prefer-truthy-presence-check": "error",
+        "aexlint/no-deferred-entry": "error",
+        "aexlint/no-positional-separator": "error",
+        "aexlint/no-inline-scan": "error",
+        "aexlint/no-derivation-outside-owner": "error"
+      }
+    },
+    {
+      "files": [
         "no-deferred-entry/**"
       ],
       "rules": {
