@@ -88,16 +88,17 @@ The plugin enables no rules by default. Type-aware rules need the TypeScript set
 
 ### Syntax
 
-| Rule                                                                   | Reports                                           |
-| ---------------------------------------------------------------------- | ------------------------------------------------- |
-| [max-expression-depth](rules/max-expression-depth/README.md)           | Nested calls                                      |
-| [max-expression-complexity](rules/max-expression-complexity/README.md) | Work inside one expression                        |
-| [max-decision-depth](rules/max-decision-depth/README.md)               | Nested logical groups and ternaries               |
-| [max-call-assembly](rules/max-call-assembly/README.md)                 | Wide calls drawing on many outside names          |
-| [max-held-context](rules/max-held-context/README.md)                   | Enclosing decisions, loops, and callbacks         |
-| [no-else-if](rules/no-else-if/README.md)                               | `else if` chains                                  |
-| [no-multiline-condition](rules/no-multiline-condition/README.md)       | Conditions spanning multiple lines                |
-| [prefer-domain-predicate](rules/prefer-domain-predicate/README.md)     | Unnamed classifications built from several checks |
+| Rule                                                                   | Reports                                                           |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [max-expression-depth](rules/max-expression-depth/README.md)           | Nested calls                                                      |
+| [max-expression-complexity](rules/max-expression-complexity/README.md) | Work inside one expression                                        |
+| [max-decision-depth](rules/max-decision-depth/README.md)               | Nested logical groups and ternaries                               |
+| [max-call-assembly](rules/max-call-assembly/README.md)                 | Wide calls drawing on many outside names                          |
+| [max-held-context](rules/max-held-context/README.md)                   | Enclosing decisions, loops, and callbacks                         |
+| [no-else-if](rules/no-else-if/README.md)                               | `else if` chains                                                  |
+| [no-multiline-condition](rules/no-multiline-condition/README.md)       | Conditions spanning multiple lines                                |
+| [no-positional-separator](rules/no-positional-separator/README.md)     | Separators placed by a pass's position rather than between pieces |
+| [prefer-domain-predicate](rules/prefer-domain-predicate/README.md)     | Unnamed classifications built from several checks                 |
 
 ### Type-aware
 

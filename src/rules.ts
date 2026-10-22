@@ -6,7 +6,8 @@ import rule3 from "../rules/max-expression-depth/rule.ts";
 import rule4 from "../rules/max-held-context/rule.ts";
 import rule5 from "../rules/no-else-if/rule.ts";
 import rule6 from "../rules/no-multiline-condition/rule.ts";
-import rule7 from "../rules/prefer-domain-predicate/rule.ts";
+import rule7 from "../rules/no-positional-separator/rule.ts";
+import rule8 from "../rules/prefer-domain-predicate/rule.ts";
 
 export const rules: Record<string, Rule> = {
   "max-call-assembly": rule0,
@@ -16,7 +17,8 @@ export const rules: Record<string, Rule> = {
   "max-held-context": rule4,
   "no-else-if": rule5,
   "no-multiline-condition": rule6,
-  "prefer-domain-predicate": rule7,
+  "no-positional-separator": rule7,
+  "prefer-domain-predicate": rule8,
 };
 
 export const typedRuleNames: string[] = [

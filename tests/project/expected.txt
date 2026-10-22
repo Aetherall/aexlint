@@ -2179,6 +2179,46 @@ no-overbroad-type-predicate/reported/used-as-filter.ts:2:56 aexlint(no-overbroad
   This comparison rejects value.kind = "lent", which the declared predicate target "Item" permits; a false result does not exclude that target.
   help: A type predicate promises that false excludes its target too. Review the declared target or use a boolean policy; no automatic fix is offered.
 
+no-positional-separator/reported/passes.ts:12:7 aexlint(no-positional-separator)
+  ~ if (index > 0) this.push(", ");
+  `index > 0` places this separator by the pass's position, not by whether a piece came before it: it is only right while every pass emits a piece. Emit it between the pieces actually emitted, by joining them or by tracking whether one was emitted.
+
+no-positional-separator/reported/passes.ts:18:7 aexlint(no-positional-separator)
+  ~ if (0 < index) this.push(" ");
+  `0 < index` places this separator by the pass's position, not by whether a piece came before it: it is only right while every pass emits a piece. Emit it between the pieces actually emitted, by joining them or by tracking whether one was emitted.
+
+no-positional-separator/reported/passes.ts:31:5 aexlint(no-positional-separator)
+  ~ if (index !== 0) out += " / ";
+  `index !== 0` places this separator by the pass's position, not by whether a piece came before it: it is only right while every pass emits a piece. Emit it between the pieces actually emitted, by joining them or by tracking whether one was emitted.
+
+no-positional-separator/reported/passes.ts:41:5 aexlint(no-positional-separator)
+  ~ if (index < names.length - 1) parts.push(new Piece(";"));
+  `index < names.length - 1` places this separator by the pass's position, not by whether a piece comes after it: it is only right while every pass emits a piece. Emit it between the pieces actually emitted, by joining them or by tracking whether one was emitted.
+
+no-positional-separator/reported/passes.ts:50:5 aexlint(no-positional-separator)
+  ~ if (windowIndex > 0) evidence.push("…");
+  `windowIndex > 0` places this separator by the pass's position, not by whether a piece came before it: a pass can end on line 49 without its piece, which leaves the separator at the start, or twice in a row. Emit it between the pieces actually emitted, by joining them or by tracking whether one was emitted.
+
+no-positional-separator/reported/passes.ts:59:5 aexlint(no-positional-separator)
+  ~ if (index > 0) out += ", ";
+  `index > 0` places this separator by the pass's position, not by whether a piece came before it: a pass can end on line 60 without its piece, which leaves the separator at the start, or twice in a row. Emit it between the pieces actually emitted, by joining them or by tracking whether one was emitted.
+
+no-positional-separator/reported/passes.ts:69:10 aexlint(no-positional-separator)
+  ~ text.slice(0, -2)
+  `text` gets a separator with every piece in the loop on line 68, and this `slice` cuts the last one off by its length, not by whether a piece was emitted: it is only right while the cut keeps the separator's length. Join the pieces with the separator instead.
+
+no-positional-separator/reported/passes.ts:75:10 aexlint(no-positional-separator)
+  ~ row.slice(0, -2)
+  `row` gets a separator with every piece in the loop on line 74, and this `slice` cuts the last one off by its length, not by whether a piece was emitted: when no pass runs, it cuts 2 characters written before the loop. Join the pieces with the separator instead.
+
+no-positional-separator/reported/passes.ts:81:10 aexlint(no-positional-separator)
+  ~ path.substring(1)
+  `path` gets a separator with every piece in the loop on line 80, and this `substring` cuts the first one off by its length, not by whether a piece was emitted: it is only right while the cut keeps the separator's length. Join the pieces with the separator instead.
+
+no-positional-separator/reported/passes.ts:87:5 aexlint(no-positional-separator)
+  ~ if (index > 0) out += "|";
+  `index > 0` places this separator by the pass's position, not by whether a piece came before it: it is only right while every pass emits a piece. Emit it between the pieces actually emitted, by joining them or by tracking whether one was emitted.
+
 no-procedural-value-dispatch/dependency-closed/f.ts:4:11 aexlint(no-procedural-value-dispatch)
   ~ kind
   Branches on `kind` contain their own control flow.

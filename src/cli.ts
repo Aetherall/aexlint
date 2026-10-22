@@ -129,6 +129,7 @@ function check(): number {
     "aexlint/no-else-if": "error",
     "aexlint/no-multiline-condition": "error",
     "aexlint/prefer-domain-predicate": "error",
+    "aexlint/no-positional-separator": "error",
   };
   const jsPlugins = [fileURLToPath(new URL("./baseline-plugin.js", import.meta.url))];
   if (values.typed) {

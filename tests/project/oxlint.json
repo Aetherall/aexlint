@@ -629,6 +629,14 @@
       "rules": {
         "aexlint/no-deferred-entry": "error"
       }
+    },
+    {
+      "files": [
+        "no-positional-separator/**"
+      ],
+      "rules": {
+        "aexlint/no-positional-separator": "error"
+      }
     }
   ]
 }

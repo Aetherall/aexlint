@@ -1,24 +1,15 @@
 import { defineRule, type Context, type ESTree, type LineColumn } from "@oxlint/plugins";
-import { childNodes, isClass, isFunctionNode, isInvocation, unwrap } from "../../src/expression.ts";
-
-type Loop =
-  | ESTree.ForStatement
-  | ESTree.ForInStatement
-  | ESTree.ForOfStatement
-  | ESTree.WhileStatement
-  | ESTree.DoWhileStatement;
+import {
+  childNodes,
+  isClass,
+  isFunctionNode,
+  isInvocation,
+  isLoop,
+  type Loop,
+  unwrap,
+} from "../../src/expression.ts";
 
 const exits = ["ReturnStatement", "ThrowStatement", "ContinueStatement", "BreakStatement"];
-
-function isLoop(node: ESTree.Node): node is Loop {
-  return [
-    "ForStatement",
-    "ForInStatement",
-    "ForOfStatement",
-    "WhileStatement",
-    "DoWhileStatement",
-  ].includes(node.type);
-}
 
 /** A function passed directly into a call or construction: its body is part of the operation that receives it. */
 function isArgumentCallback(node: ESTree.Node): boolean {

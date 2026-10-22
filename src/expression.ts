@@ -24,6 +24,23 @@ export function isFunctionNode(
   );
 }
 
+export type Loop =
+  | ESTree.ForStatement
+  | ESTree.ForInStatement
+  | ESTree.ForOfStatement
+  | ESTree.WhileStatement
+  | ESTree.DoWhileStatement;
+
+export function isLoop(node: ESTree.Node): node is Loop {
+  return [
+    "ForStatement",
+    "ForInStatement",
+    "ForOfStatement",
+    "WhileStatement",
+    "DoWhileStatement",
+  ].includes(node.type);
+}
+
 export type Invocation = ESTree.CallExpression | ESTree.NewExpression;
 
 export function isInvocation(node: ESTree.Node): node is Invocation {

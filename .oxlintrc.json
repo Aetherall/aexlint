@@ -8,6 +8,7 @@
     "aexlint/max-expression-depth": ["error", { "max": 3 }],
     "aexlint/max-decision-depth": ["error", { "max": 2 }],
     "aexlint/no-else-if": "error",
+    "aexlint/no-positional-separator": "error",
     "aexlint/max-held-context": ["error", { "max": 3 }],
     "aexlint/no-multiline-condition": "error",
     "aexlint/prefer-domain-predicate": "error",
