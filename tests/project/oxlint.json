@@ -560,6 +560,51 @@
       "rules": {
         "aexlint/no-detached-assertion": "error"
       }
+    },
+    {
+      "files": [
+        "no-default-outside-owner/**"
+      ],
+      "rules": {
+        "aexlint/no-default-outside-owner": "error"
+      }
+    },
+    {
+      "files": [
+        "no-default-outside-owner/empty-options/**"
+      ],
+      "rules": {
+        "aexlint/no-default-outside-owner": [
+          "error",
+          {}
+        ]
+      }
+    },
+    {
+      "files": [
+        "no-default-outside-owner/max-2/**"
+      ],
+      "rules": {
+        "aexlint/no-default-outside-owner": [
+          "error",
+          {
+            "max": 2
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "no-default-outside-owner/max-0/**"
+      ],
+      "rules": {
+        "aexlint/no-default-outside-owner": [
+          "error",
+          {
+            "max": 0
+          }
+        ]
+      }
     }
   ]
 }

@@ -1108,6 +1108,61 @@ no-caller-enforced-invariant/reported/receiver-state-check.ts:5:23 aexlint(no-ca
   `command.crewId` is checked at line 4, then handed to `Leaflet.send`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Leaflet` is not held to it. The check also reads part of `command.actor`, which `Leaflet.send` does not receive. This often means `Leaflet`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
+no-default-outside-owner/dependency-closed/reader.ts:4:10 aexlint(no-default-outside-owner)
+  ~ vent.flow ?? "vent-low"
+  An absent `flow` of `Vent` stands for "vent-low" here, but for "vent-high" at no-default-outside-owner/dependency-closed/reader.ts:8: its readers disagree on what absence means.
+  help: What an absent `flow` stands for belongs to `Vent`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/dependency-closed/reader.ts:8:10 aexlint(no-default-outside-owner)
+  ~ vent.flow ?? "vent-high"
+  An absent `flow` of `Vent` stands for "vent-high" here, but for "vent-low" at no-default-outside-owner/dependency-closed/reader.ts:4: its readers disagree on what absence means.
+  help: What an absent `flow` stands for belongs to `Vent`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/empty-options/reader.ts:4:10 aexlint(no-default-outside-owner)
+  ~ knob.turns ?? 9
+  An absent `turns` of `Knob` is taken for 9 here and at no-default-outside-owner/empty-options/reader.ts:8, outside the type's owner.
+  help: What an absent `turns` stands for belongs to `Knob`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/empty-options/reader.ts:8:11 aexlint(no-default-outside-owner)
+  ~ knob.turns ?? 9
+  An absent `turns` of `Knob` is taken for 9 here and at no-default-outside-owner/empty-options/reader.ts:4, outside the type's owner.
+  help: What an absent `turns` stands for belongs to `Knob`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/max-0/reader.ts:4:11 aexlint(no-default-outside-owner)
+  ~ fan.speed ?? "fan-low"
+  An absent `speed` of `Fan` is taken for "fan-low" here, outside the type's owner.
+  help: What an absent `speed` stands for belongs to `Fan`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/reported/again.ts:4:11 aexlint(no-default-outside-owner)
+  ~ shelf.rows ?? 4
+  An absent `rows` of `Shelf` is taken for 4 here and at no-default-outside-owner/reported/again.ts:8, no-default-outside-owner/reported/readers.ts:13, outside the type's owner.
+  help: What an absent `rows` stands for belongs to `Shelf`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/reported/again.ts:8:3 aexlint(no-default-outside-owner)
+  ~ shelf.rows ??= 4
+  An absent `rows` of `Shelf` is taken for 4 here and at no-default-outside-owner/reported/again.ts:4, no-default-outside-owner/reported/readers.ts:13, outside the type's owner.
+  help: What an absent `rows` stands for belongs to `Shelf`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/reported/readers.ts:4:10 aexlint(no-default-outside-owner)
+  ~ shelf.side ?? "shelf-left"
+  An absent `side` of `Shelf` stands for "shelf-left" here, but for "shelf-right" at no-default-outside-owner/reported/readers.ts:8: its readers disagree on what absence means.
+  help: What an absent `side` stands for belongs to `Shelf`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/reported/readers.ts:8:11 aexlint(no-default-outside-owner)
+  ~ side = "shelf-right"
+  An absent `side` of `Shelf` stands for "shelf-right" here, but for "shelf-left" at no-default-outside-owner/reported/readers.ts:4: its readers disagree on what absence means.
+  help: What an absent `side` stands for belongs to `Shelf`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/reported/readers.ts:13:11 aexlint(no-default-outside-owner)
+  ~ shelf.rows ?? 4
+  An absent `rows` of `Shelf` is taken for 4 here and at no-default-outside-owner/reported/again.ts:4, no-default-outside-owner/reported/again.ts:8, outside the type's owner.
+  help: What an absent `rows` stands for belongs to `Shelf`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
+no-default-outside-owner/reported/readers.ts:17:10 aexlint(no-default-outside-owner)
+  ~ tray.slot ?? "tray-back"
+  An absent `slot` of `Tray` stands for "tray-back" here, but for "tray-front" at no-default-outside-owner/reported/types.ts:9: its readers disagree on what absence means.
+  help: What an absent `slot` stands for belongs to `Tray`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
+
 no-detached-assertion/dependency-closed/use.ts:5:10 aexlint(no-detached-assertion)
   ~ names.at(0)!
   This assertion holds only because of the check `names.length` on line 4, which the type of `names` does not carry.

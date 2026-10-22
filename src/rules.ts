@@ -23,6 +23,7 @@ export const typedRuleNames: string[] = [
   "max-interpretation-spread",
   "max-projection-spread",
   "no-caller-enforced-invariant",
+  "no-default-outside-owner",
   "no-detached-assertion",
   "no-embedded-translation",
   "no-external-variant-behavior",

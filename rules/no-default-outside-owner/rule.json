@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-default-outside-owner",
+  "description": "Report defaults of an optional property decided outside its owner that contradict another default, or repeat more than max times.",
+  "requiresTypeChecking": true
+}
