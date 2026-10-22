@@ -13,17 +13,18 @@ pnpx @aetherall/aexlint check src --typed --format json
 
 `check` defaults to the current directory and runs every syntax rule as an error. `--typed` adds every type-aware rule; the project needs its dependencies installed and a TypeScript project (see below). Default limits:
 
-| Rule                        | Limit                     |
-| --------------------------- | ------------------------- |
-| `max-expression-depth`      | 3                         |
-| `max-expression-complexity` | 4                         |
-| `max-decision-depth`        | 2                         |
-| `max-held-context`          | 3                         |
-| `max-call-assembly`         | width 60, 3 outside names |
-| `max-interpretation-spread` | 4                         |
-| `max-projection-spread`     | 2                         |
-| `no-fact-outside-owner`     | 4                         |
-| `no-default-outside-owner`  | 1                         |
+| Rule                          | Limit                     |
+| ----------------------------- | ------------------------- |
+| `max-expression-depth`        | 3                         |
+| `max-expression-complexity`   | 4                         |
+| `max-decision-depth`          | 2                         |
+| `max-held-context`            | 3                         |
+| `max-call-assembly`           | width 60, 3 outside names |
+| `max-interpretation-spread`   | 4                         |
+| `max-projection-spread`       | 2                         |
+| `no-fact-outside-owner`       | 4                         |
+| `no-default-outside-owner`    | 1                         |
+| `no-derivation-outside-owner` | 2                         |
 
 The limits are starting points, not validated thresholds. For other limits or a subset of rules, use the plugin.
 
@@ -128,6 +129,7 @@ The plugin enables no rules by default. Type-aware rules need the TypeScript set
 | [no-lost-write](rules/no-lost-write/README.md)                                 | Field and element writes replaced before anything can read them                     |
 | [no-deferred-entry](rules/no-deferred-entry/README.md)                         | Entries a local collection only holds back for the one loop over it                 |
 | [no-inline-scan](rules/no-inline-scan/README.md)                               | Loops emitting values computed from state carried across passes                     |
+| [no-derivation-outside-owner](rules/no-derivation-outside-owner/README.md)     | Values computed from a property the same way by several readers outside its owner   |
 
 `max-held-context` allows `else if` chains and `no-else-if` reports them; early returns satisfy both.
 

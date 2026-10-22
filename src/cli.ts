@@ -158,6 +158,7 @@ function check(): number {
       "aexlint/no-lost-write": "error",
       "aexlint/no-deferred-entry": "error",
       "aexlint/no-inline-scan": "error",
+      "aexlint/no-derivation-outside-owner": ["error", { max: 2 }],
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));

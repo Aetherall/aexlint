@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-derivation-outside-owner",
+  "description": "Report a value computed from a property of a type, by the same function, in more than max functions outside the type's owner.",
+  "requiresTypeChecking": true
+}

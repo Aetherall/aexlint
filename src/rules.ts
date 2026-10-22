@@ -27,6 +27,7 @@ export const typedRuleNames: string[] = [
   "no-caller-enforced-invariant",
   "no-default-outside-owner",
   "no-deferred-entry",
+  "no-derivation-outside-owner",
   "no-detached-assertion",
   "no-detached-key",
   "no-embedded-translation",

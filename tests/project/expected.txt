@@ -1213,6 +1213,66 @@ no-deferred-entry/reported/collect.ts:60:31 aexlint(no-deferred-entry)
   `all` only holds this entry for the loop over it on line 62: the entry is complete when stored, and nothing else reaches it before that loop takes it.
   help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
 
+no-derivation-outside-owner/dependency-closed/reader.ts:4:17 aexlint(no-derivation-outside-owner)
+  ~ gauge(spool.thread)
+  `thread` of `Spool` goes through `gauge` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/dependency-closed/reader.ts:8, no-derivation-outside-owner/dependency-closed/reader.ts:12): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Spool` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/dependency-closed/reader.ts:8:17 aexlint(no-derivation-outside-owner)
+  ~ gauge(spool.thread)
+  `thread` of `Spool` goes through `gauge` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/dependency-closed/reader.ts:4, no-derivation-outside-owner/dependency-closed/reader.ts:12): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Spool` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/dependency-closed/reader.ts:12:17 aexlint(no-derivation-outside-owner)
+  ~ gauge(spool.thread)
+  `thread` of `Spool` goes through `gauge` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/dependency-closed/reader.ts:4, no-derivation-outside-owner/dependency-closed/reader.ts:8): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Spool` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:4:22 aexlint(no-derivation-outside-owner)
+  ~ slug(parcel.label)
+  `label` of `Parcel` goes through `slug` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:8, no-derivation-outside-owner/reported/readers.ts:11): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Parcel` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:8:15 aexlint(no-derivation-outside-owner)
+  ~ slug(parcel.label)
+  `label` of `Parcel` goes through `slug` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:4, no-derivation-outside-owner/reported/readers.ts:11): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Parcel` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:11:57 aexlint(no-derivation-outside-owner)
+  ~ slug(parcel.label)
+  `label` of `Parcel` goes through `slug` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:4, no-derivation-outside-owner/reported/readers.ts:8): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Parcel` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:14:22 aexlint(no-derivation-outside-owner)
+  ~ Units.grams(parcel.weight)
+  `weight` of `Parcel` goes through `Units.grams` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:18, no-derivation-outside-owner/reported/readers.ts:22): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Parcel` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:18:21 aexlint(no-derivation-outside-owner)
+  ~ Units.grams(parcel.weight)
+  `weight` of `Parcel` goes through `Units.grams` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:14, no-derivation-outside-owner/reported/readers.ts:22): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Parcel` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:22:34 aexlint(no-derivation-outside-owner)
+  ~ Units.grams(parcel.weight)
+  `weight` of `Parcel` goes through `Units.grams` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:14, no-derivation-outside-owner/reported/readers.ts:18): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Parcel` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:26:10 aexlint(no-derivation-outside-owner)
+  ~ slug(box.content)
+  `content` of `Box` goes through `slug` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:30, no-derivation-outside-owner/reported/readers.ts:34): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Box` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:30:10 aexlint(no-derivation-outside-owner)
+  ~ slug(box.content)
+  `content` of `Box` goes through `slug` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:26, no-derivation-outside-owner/reported/readers.ts:34): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Box` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
+no-derivation-outside-owner/reported/readers.ts:34:11 aexlint(no-derivation-outside-owner)
+  ~ slug(box.content)
+  `content` of `Box` goes through `slug` here and in 2 other functions outside the type's owner (no-derivation-outside-owner/reported/readers.ts:26, no-derivation-outside-owner/reported/readers.ts:30): each reader derives the value itself.
+  help: The readers agree only as long as every copy computes it the same way, and nothing ties the copies together. Derive it once, as a member of `Box` or of a type holding it, or a function beside it, so readers ask for the value instead of computing it.
+
 no-detached-assertion/dependency-closed/use.ts:5:10 aexlint(no-detached-assertion)
   ~ names.at(0)!
   This assertion holds only because of the check `names.length` on line 4, which the type of `names` does not carry.

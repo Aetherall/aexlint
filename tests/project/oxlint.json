@@ -645,6 +645,27 @@
       "rules": {
         "aexlint/no-inline-scan": "error"
       }
+    },
+    {
+      "files": [
+        "no-derivation-outside-owner/**"
+      ],
+      "rules": {
+        "aexlint/no-derivation-outside-owner": "error"
+      }
+    },
+    {
+      "files": [
+        "no-derivation-outside-owner/max-3/**"
+      ],
+      "rules": {
+        "aexlint/no-derivation-outside-owner": [
+          "error",
+          {
+            "max": 3
+          }
+        ]
+      }
     }
   ]
 }

@@ -29,7 +29,8 @@
     "aexlint/no-lookup-fallback": "error",
     "aexlint/no-widened-union": "error",
     "aexlint/max-interpretation-spread": ["error", { "max": 4 }],
-    "aexlint/no-deferred-entry": "error"
+    "aexlint/no-deferred-entry": "error",
+    "aexlint/no-derivation-outside-owner": ["error", { "max": 2 }]
   },
   "ignorePatterns": ["dist", "node_modules", "tests/project"]
 }
