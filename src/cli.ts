@@ -157,6 +157,7 @@ function check(): number {
       "aexlint/no-detached-key": "error",
       "aexlint/no-lost-write": "error",
       "aexlint/no-deferred-entry": "error",
+      "aexlint/no-inline-scan": "error",
     });
   }
   const directory = mkdtempSync(join(tmpdir(), "aexlint-cli-"));

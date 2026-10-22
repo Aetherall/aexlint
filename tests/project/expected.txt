@@ -1914,6 +1914,51 @@ no-forgeable-validated-result/reported/type-and-content-test.ts:1:17 aexlint(no-
   `ranged` rejects some inputs, then returns `{ value: number; }`, which other code can produce without that check.
   help: Code that receives a value of type `{ value: number; }` cannot tell whether it passed `ranged`, and each other place that builds or changes such a value must repeat the check or skip it. Rejection: throw at line 2.
 
+no-inline-scan/dependency-closed/use.ts:6:5 aexlint(no-inline-scan)
+  ~ sink.put(offset)
+  This loop carries `offset` from one pass to the next and puts values computed from it into `sink.values`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `offset`. A generator owning `offset` and yielding those values names the sequence and keeps its state with it.
+
+no-inline-scan/reported/scans.ts:23:5 aexlint(no-inline-scan)
+  ~ found.push(new Hit(column, end))
+  This loop carries `column` from one pass to the next and puts values computed from it into `found`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `column`. A generator owning `column` and yielding those values names the sequence and keeps its state with it. The loop also does other work (`text`), which would then only see finished values.
+
+no-inline-scan/reported/scans.ts:35:5 aexlint(no-inline-scan)
+  ~ names.push(parent.name)
+  This loop carries `current` from one pass to the next and puts values computed from it into `names`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `current`. A generator owning `current` and yielding those values names the sequence and keeps its state with it.
+
+no-inline-scan/reported/scans.ts:46:7 aexlint(no-inline-scan)
+  ~ out.push(current)
+  This loop carries `current` from one pass to the next and puts values computed from it into `out`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `current`. A generator owning `current` and yielding those values names the sequence and keeps its state with it.
+
+no-inline-scan/reported/scans.ts:61:5 aexlint(no-inline-scan)
+  ~ byNumber.set(number++, line)
+  This loop carries `number` from one pass to the next and puts values computed from it into `byNumber`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `number`. A generator owning `number` and yielding those values names the sequence and keeps its state with it.
+
+no-inline-scan/reported/scans.ts:70:30 aexlint(no-inline-scan)
+  ~ parts.push(text.slice(cursor, span.start))
+  This loop carries `cursor` from one pass to the next and puts values computed from it into `parts`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `cursor`. A generator owning `cursor` and yielding those values names the sequence and keeps its state with it.
+
+no-inline-scan/reported/scans.ts:80:5 aexlint(no-inline-scan)
+  ~ out.push([previous, value])
+  This loop carries `previous` from one pass to the next and puts values computed from it into `out`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `previous`. A generator owning `previous` and yielding those values names the sequence and keeps its state with it.
+
+no-inline-scan/reported/scans.ts:94:5 aexlint(no-inline-scan)
+  ~ lines.push(...page.lines)
+  This loop carries `count`, `page` from one pass to the next and puts values computed from `page` into `lines`: a sequence with its own state, written inline.
+  help: Each value depends on what earlier passes did, so a reader runs the loop in their head to know it, down to whether it emits before or after advancing `count`, `page`. A generator owning `count`, `page` and yielding those values names the sequence and keeps its state with it.
+
+no-inline-scan/reported/scans.ts:104:5 aexlint(no-inline-scan)
+  ~ out.push(`${index}: ${name}`)
+  This loop carries `index` from one pass to the next and puts values computed from it into `out`: a sequence with its own state, written inline.
+  help: `index` only counts passes, yet a reader checks that every pass reaches its increment, and whether values see it before or after. The iteration can own it: a `for` incrementor, `entries()`, or an `enumerate` generator for other iterables.
+
 no-lookup-fallback/dependency-closed/f.ts:3:81 aexlint(no-lookup-fallback)
   ~ "k4"
   `"k4"` answers for "butte" | "mesa" of `kind` without naming them.
