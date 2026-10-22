@@ -552,6 +552,14 @@
       "rules": {
         "aexlint/no-split-result": "error"
       }
+    },
+    {
+      "files": [
+        "no-detached-assertion/**"
+      ],
+      "rules": {
+        "aexlint/no-detached-assertion": "error"
+      }
     }
   ]
 }

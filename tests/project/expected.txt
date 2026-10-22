@@ -1108,6 +1108,96 @@ no-caller-enforced-invariant/reported/receiver-state-check.ts:5:23 aexlint(no-ca
   `command.crewId` is checked at line 4, then handed to `Leaflet.send`, which stores it without that check.
   help: The rule this check enforces lives with this caller rather than with the data, so other code that creates or changes a `Leaflet` is not held to it. The check also reads part of `command.actor`, which `Leaflet.send` does not receive. This often means `Leaflet`, or a value type it takes, should own the rule; that its parameters carry information the caller must keep consistent; or that a domain operation is missing. If the rule only applies to this operation, it belongs here.
 
+no-detached-assertion/dependency-closed/use.ts:5:10 aexlint(no-detached-assertion)
+  ~ names.at(0)!
+  This assertion holds only because of the check `names.length` on line 4, which the type of `names` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/project-unchecked/anchors.ts:4:60 aexlint(no-detached-assertion)
+  ~ indices[0]!
+  This assertion holds only because of the check `indices.length` on line 3, which the type of `indices` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/project-unchecked/anchors.ts:4:82 aexlint(no-detached-assertion)
+  ~ indices[indices.length - 1]!
+  This assertion holds only because of the check `indices.length` on line 3, which the type of `indices` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/project-unchecked/anchors.ts:9:10 aexlint(no-detached-assertion)
+  ~ lines[0]!
+  This assertion holds only because of the check `lines.length < 2` on line 8, which the type of `lines` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/project-unchecked/anchors.ts:16:10 aexlint(no-detached-assertion)
+  ~ counts[key]!
+  This assertion holds only because of the check `key in counts` on line 13, which the type of `counts` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/project-unchecked/anchors.ts:16:25 aexlint(no-detached-assertion)
+  ~ counts[other]!
+  This assertion holds only because of the check `Object.hasOwn(counts, other)` on line 14, which the type of `counts` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/project-unchecked/anchors.ts:16:42 aexlint(no-detached-assertion)
+  ~ counts[third]!
+  This assertion holds only because of the check `counts.hasOwnProperty(third)` on line 15, which the type of `counts` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/generic.ts:5:10 aexlint(no-detached-assertion)
+  ~ rows.at(0)!
+  This assertion holds only because of the check `rows.length` on line 4, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/generic.ts:10:10 aexlint(no-detached-assertion)
+  ~ entries.get(key)!
+  This assertion holds only because of the check `entries.has(key)` on line 9, which the type of `entries` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/generic.ts:15:10 aexlint(no-detached-assertion)
+  ~ rows.at(0)!
+  This assertion holds only because of the check `rows.length < 1` on line 14, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:3:10 aexlint(no-detached-assertion)
+  ~ counts.get(key)!
+  This assertion holds only because of the check `counts.has(key)` on line 2, which the type of `counts` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:8:11 aexlint(no-detached-assertion)
+  ~ rows.at(0)!
+  This assertion holds only because of the check `rows.length === 0` on line 7, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:8:24 aexlint(no-detached-assertion)
+  ~ rows.at(-1)!
+  This assertion holds only because of the check `rows.length === 0` on line 7, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:14:44 aexlint(no-detached-assertion)
+  ~ rows.at(-1)!
+  This assertion holds only because of the check `rows.length` on line 12, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:22:10 aexlint(no-detached-assertion)
+  ~ rows.at(1)!
+  This assertion holds only because of the check `count < 2` on line 21, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:22:24 aexlint(no-detached-assertion)
+  ~ counts.get(key)!
+  This assertion holds only because of the check `counts.has(key)` on line 20, which the type of `counts` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:29:10 aexlint(no-detached-assertion)
+  ~ rows.at(2)!
+  This assertion holds only because of the check `rows.length > 2` on line 28, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
+no-detached-assertion/reported/lookups.ts:38:10 aexlint(no-detached-assertion)
+  ~ rows.at(3)!
+  This assertion holds only because of the check `requireRows(rows)` on line 37, which the type of `rows` does not carry.
+  help: Nothing ties the assertion to the check: moving, changing or dropping the check leaves the assertion in place and wrong. Check the entry itself rather than the size or key, or keep a value that only exists when the entry does, such as the entry read once, or a type for a list that is not empty.
+
 no-else-if/reported.ts:1:19 aexlint(no-else-if)
   ~ else if
   This `else if` applies only when every earlier condition in its chain is false, so its meaning depends on the conditions above it.

@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-detached-assertion",
+  "description": "Report non-null assertions of an entry that hold only because of a size or key check the types do not carry.",
+  "requiresTypeChecking": true
+}
