@@ -1163,6 +1163,56 @@ no-default-outside-owner/reported/readers.ts:17:10 aexlint(no-default-outside-ow
   An absent `slot` of `Tray` stands for "tray-back" here, but for "tray-front" at no-default-outside-owner/reported/types.ts:9: its readers disagree on what absence means.
   help: What an absent `slot` stands for belongs to `Tray`. Resolve it there once, with a member or a function beside the type, or make the property required and set it where values are made, so its readers cannot disagree.
 
+no-deferred-entry/dependency-closed/use.ts:5:31 aexlint(no-deferred-entry)
+  ~ crates.push(new Crate(label))
+  `crates` only holds this entry for the loop over it on line 7: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:20:5 aexlint(no-deferred-entry)
+  ~ shifts.push(new Shift(crew, 12))
+  `shifts` only holds this entry for the loop over it on line 26: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:22:5 aexlint(no-deferred-entry)
+  ~ shifts.push(new Shift(crew, 8))
+  `shifts` only holds this entry for the loop over it on line 26: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:23:17 aexlint(no-deferred-entry)
+  ~ shifts.push(new Shift(crew, 4))
+  `shifts` only holds this entry for the loop over it on line 26: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:32:31 aexlint(no-deferred-entry)
+  ~ boxes.push(new Boxed(value))
+  `boxes` only holds this entry for the loop over it on line 34: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:42:3 aexlint(no-deferred-entry)
+  ~ all.push({ kind: "memo", text })
+  `all` only holds this entry for the loop over it on line 45: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:43:3 aexlint(no-deferred-entry)
+  ~ all.push({ kind: "alarm", level })
+  `all` only holds this entry for the loop over it on line 45: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:51:3 aexlint(no-deferred-entry)
+  ~ byRole.set("pilot-seat", new Shift(lead, 2))
+  `byRole` only holds this entry for the loop over it on line 54: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:52:3 aexlint(no-deferred-entry)
+  ~ byRole.set("rear-seat", new Shift(back, 3))
+  `byRole` only holds this entry for the loop over it on line 54: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
+no-deferred-entry/reported/collect.ts:60:31 aexlint(no-deferred-entry)
+  ~ all.push(value.size)
+  `all` only holds this entry for the loop over it on line 62: the entry is complete when stored, and nothing else reaches it before that loop takes it.
+  help: The collection holds work back without changing it, so the reader has to find the loop to learn what happens to each entry, and every entry stays alive until then. Do the loop's work where the entry is made, or yield the entry from a generator the loop consumes.
+
 no-detached-assertion/dependency-closed/use.ts:5:10 aexlint(no-detached-assertion)
   ~ names.at(0)!
   This assertion holds only because of the check `names.length` on line 4, which the type of `names` does not carry.

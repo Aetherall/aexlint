@@ -1,0 +1,5 @@
+{
+  "name": "aexlint/no-deferred-entry",
+  "description": "Report entries a local collection only holds back for the one loop over it, complete when stored and reached by nothing else.",
+  "requiresTypeChecking": true
+}

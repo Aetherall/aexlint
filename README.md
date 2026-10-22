@@ -125,6 +125,7 @@ The plugin enables no rules by default. Type-aware rules need the TypeScript set
 | [no-default-outside-owner](rules/no-default-outside-owner/README.md)           | Defaults of optional properties that readers outside the owner repeat or contradict |
 | [no-detached-key](rules/no-detached-key/README.md)                             | Map values whose methods are given the key they are stored under                    |
 | [no-lost-write](rules/no-lost-write/README.md)                                 | Field and element writes replaced before anything can read them                     |
+| [no-deferred-entry](rules/no-deferred-entry/README.md)                         | Entries a local collection only holds back for the one loop over it                 |
 
 `max-held-context` allows `else if` chains and `no-else-if` reports them; early returns satisfy both.
 

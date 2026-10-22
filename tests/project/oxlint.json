@@ -621,6 +621,14 @@
           }
         ]
       }
+    },
+    {
+      "files": [
+        "no-deferred-entry/**"
+      ],
+      "rules": {
+        "aexlint/no-deferred-entry": "error"
+      }
     }
   ]
 }

@@ -27,7 +27,8 @@
     "aexlint/no-embedded-translation": "error",
     "aexlint/no-lookup-fallback": "error",
     "aexlint/no-widened-union": "error",
-    "aexlint/max-interpretation-spread": ["error", { "max": 4 }]
+    "aexlint/max-interpretation-spread": ["error", { "max": 4 }],
+    "aexlint/no-deferred-entry": "error"
   },
   "ignorePatterns": ["dist", "node_modules", "tests/project"]
 }
