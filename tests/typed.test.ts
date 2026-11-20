@@ -310,6 +310,63 @@ test("one whole-program request covers the project's declaration files", (t) => 
   assert.deepEqual(covered.toSorted(), ["dependency.ts", "globals.d.ts", "input.ts"]);
 });
 
+function wholeProgram(root: string, file: string, rules: unknown[]) {
+  const configs = [{ file_paths: [join(root, file)], rules }];
+  const input = JSON.stringify({ version: 2, whole_programs: true, configs });
+  const result = spawnSync(backend, ["headless"], { cwd: root, input, maxBuffer: 64 << 20 });
+  if (result.error) throw result.error;
+  const messages = decodeFrames(result.stdout);
+  const relative = (path: string) => path.slice(root.length + 1);
+  return {
+    covered: messages.programFiles.map(relative).toSorted(),
+    reported: messages.diagnostics.flatMap((d) => (d.file_path ? [relative(d.file_path)] : [])),
+  };
+}
+
+function headingCheck(name: string): string {
+  return `type Heading = "north" | "south" | "east";\nexport function ${name}(heading: Heading): number {\n  return heading === "north" ? 1 : 0;\n}\n`;
+}
+
+function siblings(t: { after: (fn: () => void) => void }) {
+  const { root, write } = project(t);
+  for (const folder of ["a", "b"]) {
+    mkdirSync(join(root, folder));
+    write(
+      `${folder}/tsconfig.json`,
+      JSON.stringify({
+        compilerOptions: { strict: true, target: "ESNext", module: "NodeNext", types: [] },
+        include: ["*.ts"],
+      }),
+    );
+    write(`${folder}/first.ts`, headingCheck("first"));
+  }
+  return { root, write };
+}
+
+const spread = [{ name: "aexlint/max-interpretation-spread", options: { max: 1 } }];
+
+test("projects checked alike share one whole-program request and keep their own cross-file facts", (t) => {
+  const { root, write } = siblings(t);
+  const shared = wholeProgram(root, "a/first.ts", spread);
+  assert.deepEqual(shared.covered, ["a/first.ts", "b/first.ts", "dependency.ts", "input.ts"]);
+  assert.deepEqual(shared.reported, []);
+  write("a/second.ts", headingCheck("second"));
+  assert.deepEqual(wholeProgram(root, "a/first.ts", spread).reported.toSorted(), [
+    "a/first.ts",
+    "a/second.ts",
+  ]);
+});
+
+test("a project declaring globals the others lack gets its own whole-program request", (t) => {
+  const { root, write } = siblings(t);
+  write("b/globals.ts", "declare global {\n  const loose: number;\n}\nexport {};\n");
+  assert.deepEqual(wholeProgram(root, "a/first.ts", spread).covered, [
+    "a/first.ts",
+    "dependency.ts",
+    "input.ts",
+  ]);
+});
+
 test("tsconfig errors are left to the compiler and the files are still linted", (t) => {
   const { write, lint } = project(t);
   write(
