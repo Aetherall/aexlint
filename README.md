@@ -11,7 +11,7 @@ pnpx @aetherall/aexlint check
 pnpx @aetherall/aexlint check src --typed --format json
 ```
 
-`check` defaults to the current directory and runs every syntax rule as an error. `--typed` adds every type-aware rule; the project needs its dependencies installed and a TypeScript project (see below). Default limits:
+`check` defaults to the current directory and runs every syntax rule as an error. `--typed` adds every type-aware rule; the project needs its dependencies installed and a TypeScript project (see below). Findings are kept in your user cache directory (`AEXLINT_CACHE_DIR` overrides it): those of syntax rules are reused while the file is unchanged, those of type-aware rules while none of the files its project reads has changed. Other checkouts and worktrees of the same repository share them. `--no-cache` recomputes them all. Default limits:
 
 | Rule                          | Limit                     |
 | ----------------------------- | ------------------------- |

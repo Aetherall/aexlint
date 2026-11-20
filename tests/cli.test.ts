@@ -34,10 +34,11 @@ function snapshot(root: string): Record<string, string> {
   return files;
 }
 
-function consumer(t: TestContext) {
+function consumer(t: TestContext, shared?: string) {
   const root = mkdtempSync(join(tmpdir(), "aexlint-cli-"));
   const outside = mkdtempSync(join(tmpdir(), "aexlint-baseline-"));
   const baseline = join(outside, "baseline");
+  const cache = shared ?? join(outside, "cache");
   t.after(() => {
     rmSync(root, { recursive: true, force: true });
     rmSync(outside, { recursive: true, force: true });
@@ -52,6 +53,7 @@ function consumer(t: TestContext) {
     cwd: root,
     encoding: "utf8",
     timeout: 60_000,
+    env: { ...process.env, AEXLINT_CACHE_DIR: cache },
   };
   const run = (args: string[], expectedStatus = 0) => {
     const before = snapshot(root);
@@ -86,11 +88,15 @@ function consumer(t: TestContext) {
       .split("\n")
       .filter((line) => line && !line.startsWith("#"));
   };
-  return { write, run, check, record, baseline };
+  return { write, run, check, record, baseline, cache };
 }
 
 function codes(diagnostics: Diagnostic[]): string[] {
   return diagnostics.map(({ code }) => code).toSorted();
+}
+
+function sorted(diagnostics: Diagnostic[]): Diagnostic[] {
+  return diagnostics.toSorted((a, b) => a.code.localeCompare(b.code));
 }
 
 function recordedFiles(lines: string[]): (string | undefined)[] {
@@ -215,6 +221,82 @@ test("CLI reports predicate contracts and observes dependency-only changes", (t)
   assert.doesNotMatch(diagnostics[0]!.message, /"restrictions"|"observedHarm"/);
   write("product.ts", 'export interface Product { category: "physical"; id: string }\n');
   assert.deepEqual(check(["--typed"]), []);
+});
+
+test("CLI keeps syntax findings of unchanged files and recomputes them when a file changes", (t) => {
+  const { write, check, cache } = consumer(t);
+  write("deep.js", depthViolation);
+  write("flat.js", "publish(input);\n");
+  const first = check(["--no-cache"], 1);
+  assert.deepEqual(codes(first), ["aexlint(max-expression-depth)"]);
+  assert.equal(existsSync(cache), false);
+  assert.deepEqual(check([], 1), first);
+  assert.equal(readdirSync(cache).length, 1);
+  assert.deepEqual(check([], 1), first);
+  write("flat.js", depthViolation);
+  const files = check([], 1).map(({ filename }) => filename);
+  assert.deepEqual(files.toSorted(), ["deep.js", "flat.js"]);
+  write("deep.js", "publish(input);\n");
+  assert.deepEqual(
+    check([], 1).map(({ filename }) => filename),
+    ["flat.js"],
+  );
+});
+
+function guard(name: string): string {
+  return `import type { Product } from "./product.js";\nexport const ${name} = (value: Product | undefined): value is Product => !!value && value.category === "physical";\n`;
+}
+
+test("CLI keeps typed findings of unchanged projects and recomputes them when files are added", (t) => {
+  const { write, check, cache } = consumer(t);
+  const kept = () =>
+    readdirSync(cache, { recursive: true }).filter((name) => String(name).endsWith(".run"));
+  write(
+    "tsconfig.json",
+    JSON.stringify({
+      compilerOptions: { strict: true, target: "ESNext", module: "NodeNext", types: [] },
+      include: ["*.ts"],
+    }),
+  );
+  write("product.ts", "export interface Product { category: string; id: string }\n");
+  write("guard.ts", guard("isPhysical"));
+  assert.deepEqual(check(["--no-cache"]), []);
+  const first = check(["--typed", "--no-cache"], 1);
+  assert.equal(existsSync(cache), false);
+  assert.deepEqual(check(["--typed"], 1), first);
+  assert.equal(kept().length, 1);
+  assert.deepEqual(check(["--typed"], 1), first);
+  write("other.ts", guard("isShipped"));
+  const files = check(["--typed"], 1).map(({ filename }) => filename);
+  assert.deepEqual(files.toSorted(), ["guard.ts", "other.ts"]);
+});
+
+test("CLI reuses findings from another checkout of the same files and keeps those of each", (t) => {
+  const first = consumer(t);
+  const second = consumer(t, first.cache);
+  const kept = () =>
+    readdirSync(first.cache, { recursive: true }).filter((name) => String(name).endsWith(".run"));
+  const config = JSON.stringify({
+    compilerOptions: { strict: true, target: "ESNext", module: "NodeNext", types: [] },
+    include: ["*.ts"],
+  });
+  for (const { write } of [first, second]) {
+    write("tsconfig.json", config);
+    write("product.ts", "export interface Product { category: string; id: string }\n");
+    write("guard.ts", guard("isPhysical") + depthViolation);
+  }
+  const found = sorted(first.check(["--typed"], 1));
+  assert.deepEqual(codes(found), [
+    "aexlint(max-expression-depth)",
+    "aexlint(no-overbroad-type-predicate)",
+  ]);
+  assert.deepEqual(sorted(second.check(["--typed"], 1)), found);
+  assert.equal(kept().length, 1);
+  second.write("product.ts", 'export interface Product { category: "physical"; id: string }\n');
+  assert.deepEqual(codes(second.check(["--typed"], 1)), ["aexlint(max-expression-depth)"]);
+  assert.equal(kept().length, 2);
+  assert.deepEqual(sorted(first.check(["--typed"], 1)), found);
+  assert.equal(kept().length, 2);
 });
 
 test("CLI respects ignore files, repeated ignore patterns, and disable comments", (t) => {

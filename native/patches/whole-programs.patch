@@ -70,13 +70,14 @@
  			rules := make([]linter.ConfiguredRule, len(cfg))
  
  			for i, headlessRule := range cfg {
-@@ -448,6 +475,9 @@
+@@ -448,6 +475,10 @@
  		},
  		SuppressProgramDiagnostics: suppressProgramDiagnostics(),
  		TimingStore:                timingStore,
 +		WholePrograms:              payload.WholePrograms,
 +		AssignPrograms:             tsConfigResolver.FindTsConfigParallel,
 +		OnProgramFiles:             func(files []string) { diagnosticsChan <- anyDiagnostic{programFiles: files} },
++		OnProgramInputs:            onProgramInputs,
  	})
  
  	close(diagnosticsChan)
@@ -92,17 +93,63 @@
  type headlessConfig struct {
 --- a/internal/linter/linter.go
 +++ b/internal/linter/linter.go
-@@ -61,6 +61,9 @@
+@@ -18,6 +18,7 @@
+ 	"github.com/microsoft/typescript-go/shim/checker"
+ 	"github.com/microsoft/typescript-go/shim/compiler"
+ 	"github.com/microsoft/typescript-go/shim/core"
++	"github.com/microsoft/typescript-go/shim/tsoptions"
+ 	"github.com/microsoft/typescript-go/shim/tspath"
+ 	"github.com/microsoft/typescript-go/shim/vfs"
+ )
+@@ -61,6 +62,47 @@
  	TypeErrors                 TypeErrors
  	SuppressProgramDiagnostics bool
  	TimingStore                *RuleTimingStore
 +	WholePrograms              bool
 +	AssignPrograms             func(files []string) map[string]string
 +	OnProgramFiles             func(files []string)
++	OnProgramInputs            func(inputs ProgramInputs)
++}
++
++// ProgramInputs names what a whole-program run read: the files of its programs and of their configs, and the root
++// files each config named.
++type ProgramInputs struct {
++	Files []string
++	Roots map[string][]string
++}
++
++func programInputs(programs ...*compiler.Program) ProgramInputs {
++	inputs := ProgramInputs{Roots: map[string][]string{}}
++	seen := map[string]bool{}
++	add := func(file string) {
++		if file != "" && !seen[file] {
++			seen[file] = true
++			inputs.Files = append(inputs.Files, file)
++		}
++	}
++	config := func(parsed *tsoptions.ParsedCommandLine) {
++		add(parsed.ConfigName())
++		for _, extended := range parsed.ExtendedSourceFiles() {
++			add(extended)
++		}
++	}
++	for _, program := range programs {
++		for _, file := range program.SourceFiles() {
++			add(file.FileName())
++		}
++		config(program.CommandLine())
++		program.RangeResolvedProjectReference(func(_ tspath.Path, referenced *tsoptions.ParsedCommandLine, _ *tsoptions.ParsedCommandLine, _ int) bool {
++			if referenced != nil {
++				config(referenced)
++			}
++			return true
++		})
++	}
++	return inputs
  }
  
  // This is same as `RunLinterOptions` but for a single program.
-@@ -75,6 +78,7 @@
+@@ -75,6 +117,7 @@
  	Fixes                Fixes
  	TypeErrors           TypeErrors
  	TimingStore          *RuleTimingStore
@@ -110,7 +157,7 @@
  }
  
  func RunLinter(options RunLinterOptions) error {
-@@ -90,13 +94,44 @@
+@@ -90,13 +133,55 @@
  	typeErrors := options.TypeErrors
  	suppressProgramDiagnostics := options.SuppressProgramDiagnostics
  	timingStore := options.TimingStore
@@ -135,6 +182,17 @@
 +				for member := range group.members {
 +					grouped[member] = true
 +				}
++				if options.OnProgramInputs != nil {
++					programs := []*compiler.Program{group.program}
++					for _, member := range group.members {
++						programs = append(programs, member)
++					}
++					inputs := programInputs(programs...)
++					for name, member := range group.members {
++						inputs.Roots[name] = member.CommandLine().FileNames()
++					}
++					options.OnProgramInputs(inputs)
++				}
 +				if err := lintGroup(group, configFileName, workload, assignPrograms, onProgramFiles, RunLinterOnProgramOptions{
 +					LogLevel:             logLevel,
 +					Workers:              workers,
@@ -155,7 +213,18 @@
  		currentDirectory := tspath.GetDirectoryPath(configFileName)
  		host := utils.NewCachedFSCompilerHost(currentDirectory, fs, bundled.LibPath(), nil, nil)
  
-@@ -123,9 +158,22 @@
+@@ -118,14 +203,33 @@
+ 			log.Printf("Program created with %d source files", len(program.GetSourceFiles()))
+ 		}
+ 
++		if wholePrograms && options.OnProgramInputs != nil {
++			inputs := programInputs(program)
++			inputs.Roots[configFileName] = program.CommandLine().FileNames()
++			options.OnProgramInputs(inputs)
++		}
++
+ 		fileSet := make(map[string]struct{}, len(filePaths))
+ 		for _, f := range filePaths {
  			fileSet[f] = struct{}{}
  		}
  
@@ -179,7 +248,7 @@
  				sourceFiles = append(sourceFiles, sf)
  				delete(fileSet, sf.FileName())
  			}
-@@ -148,6 +196,14 @@
+@@ -148,6 +252,14 @@
  			panic(fmt.Sprintf("Expected file '%s' to be in program '%s'", unmatchedFilesString, configFileName))
  		}
  
@@ -194,7 +263,7 @@
  		err = RunLinterOnProgram(RunLinterOnProgramOptions{
  			LogLevel:             logLevel,
  			Program:              program,
-@@ -472,6 +528,7 @@
+@@ -472,6 +584,7 @@
  	fixState := options.Fixes
  	typeErrors := options.TypeErrors
  	timingStore := options.TimingStore
@@ -202,7 +271,7 @@
  
  	reportTypeScriptDiagnostics(program, files, typeErrors, onInternalDiagnostic)
  	workloadQueue := makeCheckerWorkloadQueue(program, files)
-@@ -509,6 +566,9 @@
+@@ -509,6 +622,9 @@
  						}
  						ctxBuilder.file = file
  						ctx.SourceFile = file
@@ -212,7 +281,7 @@
  
  						rules := getRulesForFile(file)
  						for _, r := range rules {
-@@ -567,6 +627,9 @@
+@@ -567,6 +683,9 @@
  					}
  					ctxBuilder.file = file
  					ctx.SourceFile = file

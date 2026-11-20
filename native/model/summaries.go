@@ -5,6 +5,7 @@ import (
 	"sync"
 	"weak"
 
+	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
 	"github.com/microsoft/typescript-go/shim/compiler"
 )
@@ -16,12 +17,14 @@ type sharedKey struct {
 	program weak.Pointer[compiler.Program]
 }
 
-// sharedFacts holds the facts analyzers using one checker for one program share: function summaries and classified
-// sites. A checker can serve several programs' files, and these facts depend on the program through the subclasses and
-// callers it sees.
+// sharedFacts holds the facts analyzers using one checker for one program share: function summaries, classified sites
+// and the classes derived from each class. A checker can serve several programs' files, and these facts depend on the
+// program through the subclasses and callers it sees.
 type sharedFacts struct {
-	summaries sync.Map
-	sites     sync.Map
+	summaries   sync.Map
+	sites       sync.Map
+	derived     sync.Once
+	derivedFrom map[*ast.Node][]*ast.Node
 }
 
 // sharedFactsOf returns the facts shared by analyzers using tc for program, keyed weakly and released when the checker

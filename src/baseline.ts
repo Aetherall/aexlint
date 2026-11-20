@@ -49,7 +49,7 @@ function findingOf(message: string): string {
   return message.split("\nhelp: ")[0] ?? message;
 }
 
-function messageOf(rule: Rule, diagnostic: Diagnostic): string {
+export function messageOf(rule: Rule, diagnostic: Diagnostic): string {
   const template = diagnostic.messageId
     ? (rule.meta?.messages?.[diagnostic.messageId] ?? "")
     : (diagnostic.message ?? "");

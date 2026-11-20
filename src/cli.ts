@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync, type SpawnSyncOptionsWithStringEncoding } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -21,6 +21,7 @@ const help = `Usage: aexlint check [options] [paths...]
 Check the current directory when no paths are supplied.
 
   --typed                  Include type-aware rules (requires a TS project)
+  --no-cache               Recompute every finding instead of reusing those of unchanged files and projects
   -f, --format <format>     Oxlint output format (default: default)
   --ignore-pattern <glob>   Additional ignore pattern; repeatable
   --baseline <file>        Skip diagnostics recorded in a baseline file
@@ -39,6 +40,12 @@ function readIgnorePatterns(): string[] {
   if (!existsSync(ignoreFile)) return [];
   const lines = readFileSync(ignoreFile, "utf8").split(/\r?\n/);
   return lines.map((line) => line.trim()).filter((line) => line && !line.startsWith("#"));
+}
+
+function cacheDirectory(): string {
+  if (process.env.AEXLINT_CACHE_DIR) return resolve(process.env.AEXLINT_CACHE_DIR);
+  if (process.platform === "darwin") return join(homedir(), "Library/Caches/aexlint");
+  return join(process.env.XDG_CACHE_HOME || join(homedir(), ".cache"), "aexlint");
 }
 
 function failed(reason: string): Error {
@@ -93,6 +100,7 @@ function check(): number {
       "ignore-pattern": { type: "string", multiple: true },
       baseline: { type: "string" },
       "write-baseline": { type: "string" },
+      "no-cache": { type: "boolean" },
       help: { type: "boolean", short: "h" },
       version: { type: "boolean", short: "V" },
     },
@@ -174,7 +182,15 @@ function check(): number {
     const patterns = [...readIgnorePatterns(), ...(values["ignore-pattern"] ?? [])];
     for (const pattern of patterns) args.push("--ignore-pattern", pattern);
     args.push("--", ...(paths.length ? paths : ["."]));
-    const { AEXLINT_BASELINE: _, AEXLINT_RECORD: __, ...env } = process.env;
+    const { AEXLINT_BASELINE: _, AEXLINT_RECORD: __, AEXLINT_FINDINGS: ___, ...env } = process.env;
+    const cache = values["no-cache"] ? undefined : cacheDirectory();
+    if (cache) env.AEXLINT_FINDINGS = cache;
+    if (values.typed) {
+      env.AEXLINT_TYPED_RUN = JSON.stringify({
+        prefetch_roots: (paths.length ? paths : ["."]).map((path) => resolve(path)),
+        ...(cache ? { cache_dir: cache } : {}),
+      });
+    }
     if (baseline) env.AEXLINT_BASELINE = resolve(baseline);
     const recorded = join(directory, "recorded");
     if (record) env.AEXLINT_RECORD = recorded;
