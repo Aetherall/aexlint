@@ -10,12 +10,12 @@ export interface ServeResult {
 const pause = new Int32Array(new SharedArrayBuffer(4));
 
 function retrying(attempt: () => number): number {
-  for (;;) {
+  for (let delay = 0.01; ; delay = Math.min(delay * 2, 5)) {
     try {
       return attempt();
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EAGAIN") throw error;
-      Atomics.wait(pause, 0, 0, 5);
+      Atomics.wait(pause, 0, 0, delay);
     }
   }
 }

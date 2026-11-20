@@ -126,13 +126,25 @@ export function unwrap(node: ESTree.Node): ESTree.Node {
 export function childNodes(
   visitorKeys: Readonly<Record<string, readonly string[]>>,
   node: ESTree.Node,
-  keep: (key: string) => boolean = () => true,
+  keep?: (key: string) => boolean,
 ): ESTree.Node[] {
   const fields = node as unknown as Record<string, ESTree.Node | (ESTree.Node | null)[] | null>;
   const children: ESTree.Node[] = [];
-  for (const key of (visitorKeys[node.type] ?? []).filter(keep)) {
+  const keys = visitorKeys[node.type];
+  if (!keys) return children;
+  for (let k = 0; k < keys.length; k++) {
+    const key = keys[k]!;
+    if (keep && !keep(key)) continue;
     const value = fields[key];
-    for (const child of Array.isArray(value) ? value : [value]) if (child) children.push(child);
+    if (!value) continue;
+    if (!Array.isArray(value)) {
+      children.push(value);
+      continue;
+    }
+    for (let i = 0; i < value.length; i++) {
+      const child = value[i];
+      if (child) children.push(child);
+    }
   }
   return children;
 }

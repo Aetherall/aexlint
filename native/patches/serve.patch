@@ -10,21 +10,481 @@
  
  	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
  
---- a/cmd/tsgolint/serve.go
+--- /dev/null
++++ b/cmd/tsgolint/cache.go
+@@ -0,0 +1,444 @@
++package main
++
++import (
++	"bytes"
++	"crypto/sha256"
++	"encoding/binary"
++	"encoding/gob"
++	"encoding/hex"
++	"io"
++	"io/fs"
++	"os"
++	"path/filepath"
++	"slices"
++	"sort"
++	"strings"
++	"sync"
++	"sync/atomic"
++	"time"
++
++	"github.com/microsoft/typescript-go/shim/bundled"
++	"github.com/microsoft/typescript-go/shim/core"
++	"github.com/microsoft/typescript-go/shim/tsoptions"
++	"github.com/microsoft/typescript-go/shim/tspath"
++	"github.com/microsoft/typescript-go/shim/vfs/cachedvfs"
++	"github.com/microsoft/typescript-go/shim/vfs/osvfs"
++	"github.com/typescript-eslint/tsgolint/internal/linter"
++	"github.com/typescript-eslint/tsgolint/internal/utils"
++)
++
++// onProgramInputs receives what each whole-program run reads while a run is being recorded.
++var onProgramInputs func(inputs linter.ProgramInputs)
++
++// unusedFor is how long an answer is kept without being used.
++const unusedFor = 7 * 24 * time.Hour
++
++// settled is how long before a run a file must have been written for its timestamp to tell it from one written
++// during the run, given how coarsely file systems stamp times.
++const settled = 50 * time.Millisecond
++
++// variants is how many answers are kept for one project, for the checkouts and branches that differ in it.
++const variants = 8
++
++// saveEvery is how often the hashes of the files read so far are written while answers are being computed.
++const saveEvery = 2 * time.Second
++
++type cachedInput struct {
++	Path string
++	Hash [sha256.Size]byte
++}
++
++// cachedRun is the answer to one whole-program request with everything it depends on: the files its programs read
++// and the root files each of its configs named. Paths under the working directory are relative to it, in the answer
++// too, so that another checkout of the same files reuses it.
++type cachedRun struct {
++	Output []byte
++	Inputs []cachedInput
++	Roots  map[string][sha256.Size]byte
++}
++
++type fileState struct {
++	Size     int64
++	Modified int64
++	Hash     [sha256.Size]byte
++}
++
++// runCache keeps whole-program answers on disk between runs of one backend build, set of project configs and set of
++// rules, wherever the checkout is. An answer is reused while every file its programs read has the same content and
++// every config still names the same root files. A file that would be read only once it exists is not tracked unless
++// a config names it. The hash of each file is remembered per working directory with its size and modification time.
++type runCache struct {
++	directory string
++	cwd       string
++	index     string
++	mu        sync.RWMutex
++	states    map[string]fileState
++	changed   atomic.Bool
++	saved     time.Time
++	roots     sync.Map
++	packages  sync.Map
++}
++
++// portable tells whether directory is written the same way by every JSON encoder, so that it can be found in an
++// answer and replaced.
++func portable(directory string) bool {
++	return !strings.ContainsFunc(directory, func(r rune) bool {
++		return r < 0x20 || r > 0x7e || strings.ContainsRune("\"\\<>&", r)
++	})
++}
++
++func openCache(directory string, key string) *runCache {
++	cwd, err := os.Getwd()
++	if err != nil {
++		return nil
++	}
++	hash := sha256.New()
++	executable, err := os.Executable()
++	if err != nil {
++		return nil
++	}
++	binary, err := os.Open(executable)
++	if err != nil {
++		return nil
++	}
++	_, err = io.Copy(hash, binary)
++	binary.Close()
++	if err != nil {
++		return nil
++	}
++	hash.Write([]byte("\x00" + key + "\x00"))
++	if !portable(cwd) {
++		hash.Write([]byte(cwd + "\x00"))
++	}
++	cache := &runCache{cwd: tspath.NormalizeSlashes(cwd), states: map[string]fileState{}, saved: time.Now()}
++	configs := []string{}
++	filepath.WalkDir(cwd, func(path string, entry fs.DirEntry, err error) error {
++		if err != nil {
++			return nil
++		}
++		name := entry.Name()
++		if entry.IsDir() {
++			if path != cwd && (name == "node_modules" || strings.HasPrefix(name, ".")) {
++				return filepath.SkipDir
++			}
++			return nil
++		}
++		if strings.HasSuffix(name, ".json") && (strings.HasPrefix(name, "tsconfig") || strings.HasPrefix(name, "jsconfig")) {
++			configs = append(configs, path)
++		}
++		return nil
++	})
++	for _, config := range configs {
++		content, err := os.ReadFile(config)
++		if err != nil {
++			return nil
++		}
++		hash.Write([]byte(cache.relative(tspath.NormalizeSlashes(config)) + "\x00"))
++		hash.Write(content)
++		hash.Write([]byte{0})
++	}
++	cache.directory = filepath.Join(directory, hex.EncodeToString(hash.Sum(nil))[:32])
++	if os.MkdirAll(cache.directory, 0o755) != nil {
++		return nil
++	}
++	now := time.Now()
++	os.Chtimes(cache.directory, now, now)
++	others, _ := os.ReadDir(directory)
++	for _, other := range others {
++		if info, err := other.Info(); err == nil && other.IsDir() && now.Sub(info.ModTime()) > unusedFor {
++			os.RemoveAll(filepath.Join(directory, other.Name()))
++		}
++	}
++	place := sha256.Sum256([]byte(cwd))
++	cache.index = filepath.Join(cache.directory, hex.EncodeToString(place[:])[:32]+".stat")
++	if content, err := os.ReadFile(cache.index); err == nil {
++		if gob.NewDecoder(bytes.NewReader(content)).Decode(&cache.states) != nil {
++			cache.states = map[string]fileState{}
++		}
++	}
++	return cache
++}
++
++func (c *runCache) relative(path string) string {
++	if rest, ok := strings.CutPrefix(path, c.cwd+"/"); ok {
++		return rest
++	}
++	return path
++}
++
++func (c *runCache) absolute(path string) string {
++	if filepath.IsAbs(path) {
++		return path
++	}
++	return c.cwd + "/" + path
++}
++
++// moved rewrites the working directory in every message of a headless output, from one spelling to another.
++func moved(output []byte, from string, to string) []byte {
++	result := make([]byte, 0, len(output))
++	for len(output) >= 5 {
++		size := int(binary.LittleEndian.Uint32(output[:4]))
++		if len(output) < 5+size {
++			break
++		}
++		message := output[5 : 5+size]
++		for _, end := range []string{"/", "\""} {
++			message = bytes.ReplaceAll(message, []byte(from+end), []byte(to+end))
++		}
++		result = binary.LittleEndian.AppendUint32(result, uint32(len(message)))
++		result = append(result, output[4])
++		result = append(result, message...)
++		output = output[5+size:]
++	}
++	return append(result, output...)
++}
++
++// elsewhere stands for the working directory in a stored answer; no JSON text holds this byte.
++const elsewhere = "\x00"
++
++func (c *runCache) rootsOf(config string) [sha256.Size]byte {
++	once, _ := c.roots.LoadOrStore(config, sync.OnceValue(func() [sha256.Size]byte {
++		path := c.absolute(config)
++		host := utils.NewCachedFSCompilerHost(tspath.GetDirectoryPath(path), bundled.WrapFS(cachedvfs.From(osvfs.FS())), bundled.LibPath(), nil, nil)
++		parsed, diagnostics := tsoptions.GetParsedCommandLineOfConfigFile(path, &core.CompilerOptions{}, nil, host, nil)
++		if len(diagnostics) > 0 || parsed == nil {
++			return [sha256.Size]byte{}
++		}
++		return c.rootsHash(parsed.FileNames())
++	}))
++	return once.(func() [sha256.Size]byte)()
++}
++
++func (c *runCache) rootsHash(files []string) [sha256.Size]byte {
++	hash := sha256.New()
++	for _, file := range files {
++		hash.Write([]byte(c.relative(file) + "\x00"))
++	}
++	return [sha256.Size]byte(hash.Sum(nil))
++}
++
++// hashOf returns the content hash of a file and when it was last written. The hash is remembered with the file's
++// size and modification time once the file has been left alone long enough for those to identify its content.
++func (c *runCache) hashOf(path string) (hash [sha256.Size]byte, modified time.Time, ok bool) {
++	info, err := os.Stat(c.absolute(path))
++	if err != nil {
++		return hash, modified, false
++	}
++	modified = info.ModTime()
++	c.mu.RLock()
++	state, known := c.states[path]
++	c.mu.RUnlock()
++	if known && state.Size == info.Size() && state.Modified == modified.UnixNano() {
++		return state.Hash, modified, true
++	}
++	content, err := os.ReadFile(c.absolute(path))
++	if err != nil || int64(len(content)) != info.Size() {
++		return hash, modified, false
++	}
++	hash = sha256.Sum256(content)
++	if time.Since(modified) > settled {
++		c.mu.Lock()
++		c.states[path] = fileState{info.Size(), modified.UnixNano(), hash}
++		c.mu.Unlock()
++		c.changed.Store(true)
++	}
++	return hash, modified, true
++}
++
++// save writes the remembered file hashes of this working directory.
++func (c *runCache) save() {
++	if c == nil || !c.changed.Swap(false) {
++		return
++	}
++	c.saved = time.Now()
++	var encoded bytes.Buffer
++	c.mu.RLock()
++	err := gob.NewEncoder(&encoded).Encode(c.states)
++	c.mu.RUnlock()
++	if err == nil {
++		c.write(c.index, encoded.Bytes())
++	}
++}
++
++func (c *runCache) write(path string, content []byte) {
++	temporary, err := os.CreateTemp(c.directory, "new-*")
++	if err != nil {
++		return
++	}
++	_, err = temporary.Write(content)
++	if temporary.Close() != nil || err != nil || os.Rename(temporary.Name(), path) != nil {
++		os.Remove(temporary.Name())
++	}
++}
++
++func (c *runCache) current(run *cachedRun) bool {
++	for config, roots := range run.Roots {
++		if c.rootsOf(config) != roots {
++			return false
++		}
++	}
++	stale := make(chan bool, 32)
++	chunk := (len(run.Inputs) + 31) / 32
++	parts := 0
++	for start := 0; start < len(run.Inputs); start += chunk {
++		parts++
++		go func(inputs []cachedInput) {
++			stale <- slices.ContainsFunc(inputs, func(input cachedInput) bool {
++				hash, _, ok := c.hashOf(input.Path)
++				return !ok || hash != input.Hash
++			})
++		}(run.Inputs[start:min(start+chunk, len(run.Inputs))])
++	}
++	valid := true
++	for range parts {
++		if <-stale {
++			valid = false
++		}
++	}
++	return valid
++}
++
++// load returns the stored answers that are current here, by the file each covers. Of the answers stored for one
++// project, the most recently used current one is taken; those beyond the newest few or unused for too long are
++// removed.
++func (c *runCache) load() map[string]served {
++	entries, err := os.ReadDir(c.directory)
++	if err != nil {
++		return nil
++	}
++	type stored struct {
++		path string
++		used time.Time
++	}
++	projects := map[string][]stored{}
++	now := time.Now()
++	for _, entry := range entries {
++		info, err := entry.Info()
++		if err != nil {
++			continue
++		}
++		path := filepath.Join(c.directory, entry.Name())
++		project, _, isRun := strings.Cut(strings.TrimSuffix(entry.Name(), ".run"), "-")
++		if !strings.HasSuffix(entry.Name(), ".run") || !isRun {
++			if now.Sub(info.ModTime()) > unusedFor {
++				os.Remove(path)
++			}
++			continue
++		}
++		projects[project] = append(projects[project], stored{path, info.ModTime()})
++	}
++	var mu sync.Mutex
++	var wg sync.WaitGroup
++	answers := map[string]served{}
++	for _, runs := range projects {
++		wg.Go(func() {
++			sort.Slice(runs, func(i, j int) bool { return runs[i].used.After(runs[j].used) })
++			found := false
++			for i, stored := range runs {
++				if i >= variants || now.Sub(stored.used) > unusedFor {
++					os.Remove(stored.path)
++					continue
++				}
++				if found {
++					continue
++				}
++				content, err := os.ReadFile(stored.path)
++				run := cachedRun{}
++				if err != nil || gob.NewDecoder(bytes.NewReader(content)).Decode(&run) != nil {
++					os.Remove(stored.path)
++					continue
++				}
++				if !c.current(&run) {
++					continue
++				}
++				found = true
++				os.Chtimes(stored.path, now, now)
++				output := moved(run.Output, elsewhere, c.cwd)
++				covered := coveredFiles(output)
++				mu.Lock()
++				for _, file := range covered {
++					answers[file] = served{output, 0}
++				}
++				mu.Unlock()
++			}
++		})
++	}
++	wg.Wait()
++	c.save()
++	return answers
++}
++
++func (c *runCache) packageOf(directory string) string {
++	if found, ok := c.packages.Load(directory); ok {
++		return found.(string)
++	}
++	found := filepath.Join(directory, "package.json")
++	if _, err := os.Stat(found); err != nil {
++		found = ""
++		if parent := filepath.Dir(directory); parent != directory {
++			found = c.packageOf(parent)
++		}
++	}
++	c.packages.Store(directory, found)
++	return found
++}
++
++// store records the answer to the request for seed, unless one of its inputs may have changed since the run started.
++func (c *runCache) store(seed string, output []byte, recorded []linter.ProgramInputs, started time.Time) {
++	run := cachedRun{Output: moved(output, c.cwd, elsewhere), Roots: map[string][sha256.Size]byte{}}
++	paths := map[string]bool{}
++	for _, inputs := range recorded {
++		for config, roots := range inputs.Roots {
++			run.Roots[c.relative(config)] = c.rootsHash(roots)
++		}
++		for _, file := range inputs.Files {
++			if strings.HasPrefix(file, "bundled:") {
++				continue
++			}
++			paths[c.relative(file)] = true
++			if manifest := c.packageOf(filepath.Dir(file)); manifest != "" {
++				paths[c.relative(manifest)] = true
++			}
++		}
++	}
++	for path := range paths {
++		run.Inputs = append(run.Inputs, cachedInput{Path: path})
++	}
++	slices.SortFunc(run.Inputs, func(a, b cachedInput) int { return strings.Compare(a.Path, b.Path) })
++	var wg sync.WaitGroup
++	var fresh atomic.Bool
++	fresh.Store(true)
++	chunk := max((len(run.Inputs)+31)/32, 1)
++	for start := 0; start < len(run.Inputs); start += chunk {
++		inputs := run.Inputs[start:min(start+chunk, len(run.Inputs))]
++		wg.Go(func() {
++			for i := range inputs {
++				hash, modified, ok := c.hashOf(inputs[i].Path)
++				if !ok || !modified.Before(started.Add(-settled)) {
++					fresh.Store(false)
++					return
++				}
++				inputs[i].Hash = hash
++			}
++		})
++	}
++	wg.Wait()
++	if time.Since(c.saved) > saveEvery {
++		c.save()
++	}
++	if !fresh.Load() {
++		return
++	}
++	var encoded bytes.Buffer
++	if gob.NewEncoder(&encoded).Encode(run) != nil {
++		return
++	}
++	project := sha256.Sum256([]byte(c.relative(seed)))
++	content := sha256.New()
++	for _, input := range run.Inputs {
++		content.Write([]byte(input.Path + "\x00"))
++		content.Write(input.Hash[:])
++	}
++	name := hex.EncodeToString(project[:])[:32] + "-" + hex.EncodeToString(content.Sum(nil))[:32] + ".run"
++	c.write(filepath.Join(c.directory, name), encoded.Bytes())
++}
+--- /dev/null
 +++ b/cmd/tsgolint/serve.go
-@@ -0,0 +1,116 @@
+@@ -0,0 +1,354 @@
 +package main
 +
 +import (
 +	"bytes"
 +	"encoding/binary"
++	stdjson "encoding/json"
 +	"errors"
 +	"flag"
 +	"fmt"
 +	"io"
 +	"os"
++	"slices"
++	"strings"
++	"sync/atomic"
++	"time"
 +
 +	"github.com/go-json-experiment/json"
++	"github.com/microsoft/typescript-go/shim/bundled"
++	"github.com/microsoft/typescript-go/shim/core"
++	"github.com/microsoft/typescript-go/shim/tsoptions"
++	"github.com/microsoft/typescript-go/shim/tspath"
++	"github.com/microsoft/typescript-go/shim/vfs/cachedvfs"
++	"github.com/microsoft/typescript-go/shim/vfs/osvfs"
++	"github.com/typescript-eslint/tsgolint/internal/linter"
++	"github.com/typescript-eslint/tsgolint/internal/utils"
 +)
 +
 +type serveResult struct {
@@ -39,6 +499,11 @@
 +// little-endian length followed by the bytes. Once both streams are open, a "ready" frame is
 +// written. Each response is a JSON result frame followed by the headless output frame. The loop
 +// ends when the request stream is closed.
++//
++// A whole-program request naming prefetch_roots asks for the other projects under those roots to
++// be linted with the same rules while no request is waiting, so that the requests for their files
++// are answered from what is already computed. The process exits as soon as the request stream is
++// closed, whatever is being prefetched.
 +func runServe(args []string) int {
 +	if len(args) != 2 {
 +		fmt.Fprintln(os.Stderr, "usage: serve <request-fifo> <response-fifo>")
@@ -59,16 +524,54 @@
 +	if writeServeFrame(responses, []byte("ready")) != nil {
 +		return 1
 +	}
++	var prefetching atomic.Bool
++	var closed atomic.Bool
++	frames := make(chan []byte)
++	failed := make(chan error, 1)
++	go func() {
++		for {
++			payload, err := readServeFrame(requests)
++			if err != nil {
++				closed.Store(true)
++				if prefetching.Load() {
++					os.Exit(0)
++				}
++				failed <- err
++				close(frames)
++				return
++			}
++			frames <- payload
++		}
++	}()
++	answers := &prefetched{}
 +	for {
-+		payload, err := readServeFrame(requests)
-+		if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
++		var payload []byte
++		open := true
++		if answers.waiting() {
++			select {
++			case payload, open = <-frames:
++			default:
++				prefetching.Store(true)
++				if closed.Load() {
++					answers.cache.save()
++					return 0
++				}
++				answers.next()
++				prefetching.Store(false)
++				continue
++			}
++		} else {
++			payload, open = <-frames
++		}
++		if !open {
++			if err := <-failed; !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
++				fmt.Fprintf(os.Stderr, "error reading request: %v\n", err)
++				return 1
++			}
++			answers.cache.save()
 +			return 0
 +		}
-+		if err != nil {
-+			fmt.Fprintf(os.Stderr, "error reading request: %v\n", err)
-+			return 1
-+		}
-+		output, status := serveHeadless(payload)
++		output, status := answers.answer(payload)
 +		result, err := json.Marshal(serveResult{Status: status})
 +		if err != nil {
 +			return 1
@@ -77,6 +580,188 @@
 +			return 1
 +		}
 +	}
++}
++
++type served struct {
++	output []byte
++	status int
++}
++
++// prefetched holds the answers to the whole-program requests sharing one set of rules, by the file each covers, and
++// one file of each project still to prefetch.
++type prefetched struct {
++	key     string
++	fields  map[string]stdjson.RawMessage
++	rules   stdjson.RawMessage
++	answers map[string]served
++	pending []string
++	cache   *runCache
++}
++
++type serveConfig struct {
++	FilePaths []string           `json:"file_paths"`
++	Rules     stdjson.RawMessage `json:"rules"`
++}
++
++func (p *prefetched) waiting() bool {
++	return len(p.pending) > 0
++}
++
++// answer runs payload, or returns what an earlier run covering its file answered. Only a request for one file's whole
++// program as it is on disk can be answered so.
++func (p *prefetched) answer(payload []byte) ([]byte, int) {
++	fields := map[string]stdjson.RawMessage{}
++	configs := []serveConfig{}
++	if stdjson.Unmarshal(payload, &fields) != nil || stdjson.Unmarshal(fields["configs"], &configs) != nil {
++		return serveHeadless(payload)
++	}
++	roots := []string{}
++	named := stdjson.Unmarshal(fields["prefetch_roots"], &roots) == nil
++	delete(fields, "prefetch_roots")
++	directory := ""
++	stdjson.Unmarshal(fields["cache_dir"], &directory)
++	delete(fields, "cache_dir")
++	_, overridden := fields["source_overrides"]
++	if string(fields["whole_programs"]) != "true" || overridden || len(configs) != 1 || len(configs[0].FilePaths) != 1 {
++		stripped, err := stdjson.Marshal(fields)
++		if err != nil {
++			return serveHeadless(payload)
++		}
++		return serveHeadless(stripped)
++	}
++	file := configs[0].FilePaths[0]
++	delete(fields, "configs")
++	rest, _ := stdjson.Marshal(fields)
++	if key := string(rest) + string(configs[0].Rules); p.answers == nil || key != p.key {
++		p.key, p.fields, p.rules, p.answers, p.pending = key, fields, configs[0].Rules, map[string]served{}, nil
++		p.cache = nil
++		if directory != "" {
++			if p.cache = openCache(directory, key); p.cache != nil {
++				p.answers = p.cache.load()
++			}
++		}
++		if named {
++			p.pending = projectFiles(roots)
++		}
++	}
++	if found, ok := p.answers[tspath.NormalizeSlashes(file)]; ok {
++		return found.output, found.status
++	}
++	return p.run(file)
++}
++
++// next prefetches the first pending project no answer covers yet.
++func (p *prefetched) next() {
++	for len(p.pending) > 0 {
++		file := p.pending[0]
++		p.pending = p.pending[1:]
++		if _, ok := p.answers[file]; !ok {
++			p.run(file)
++			return
++		}
++	}
++}
++
++func (p *prefetched) run(file string) ([]byte, int) {
++	fields := map[string]stdjson.RawMessage{}
++	for name, value := range p.fields {
++		fields[name] = value
++	}
++	configs, err := stdjson.Marshal([]serveConfig{{FilePaths: []string{file}, Rules: p.rules}})
++	if err != nil {
++		return nil, 1
++	}
++	fields["configs"] = configs
++	payload, err := stdjson.Marshal(fields)
++	if err != nil {
++		return nil, 1
++	}
++	recorded := []linter.ProgramInputs{}
++	if p.cache != nil {
++		onProgramInputs = func(inputs linter.ProgramInputs) { recorded = append(recorded, inputs) }
++	}
++	started := time.Now()
++	output, status := serveHeadless(payload)
++	onProgramInputs = nil
++	if status == 0 {
++		for _, covered := range coveredFiles(output) {
++			p.answers[covered] = served{output, status}
++		}
++		if len(recorded) > 0 {
++			p.cache.store(file, output, recorded, started)
++		}
++	}
++	return output, status
++}
++
++// coveredFiles lists the files a headless output answers for: those of the programs it linted and those it matched to
++// no program.
++func coveredFiles(output []byte) []string {
++	files := []string{}
++	for len(output) >= 5 {
++		size := int(binary.LittleEndian.Uint32(output[:4]))
++		kind := headlessMessageType(output[4])
++		if len(output) < 5+size {
++			break
++		}
++		if kind == headlessMessageTypeProgramFiles || kind == headlessMessageTypeUnmatchedFiles {
++			var message headlessProgramFilesPayload
++			if json.Unmarshal(output[5:5+size], &message) == nil {
++				files = append(files, message.Files...)
++			}
++		}
++		output = output[5+size:]
++	}
++	return files
++}
++
++// projectFiles returns one source file of each tsconfig.json under the current directory whose directory is under one
++// of roots or contains it, largest project first, so that the longest program starts earliest.
++func projectFiles(roots []string) []string {
++	cwd, err := os.Getwd()
++	if err != nil {
++		return nil
++	}
++	cwd = tspath.NormalizeSlashes(cwd)
++	within := func(path string, directory string) bool {
++		return path == directory || strings.HasPrefix(path, strings.TrimSuffix(directory, "/")+"/")
++	}
++	fs := bundled.WrapFS(cachedvfs.From(osvfs.FS()))
++	host := utils.NewCachedFSCompilerHost(cwd, fs, bundled.LibPath(), nil, nil)
++	type project struct {
++		file  string
++		files int
++	}
++	projects := []project{}
++	var walk func(directory string)
++	walk = func(directory string) {
++		entries := fs.GetAccessibleEntries(directory)
++		wanted := slices.ContainsFunc(roots, func(root string) bool {
++			root = tspath.NormalizeSlashes(root)
++			return within(directory, root) || within(root, directory)
++		})
++		if wanted && slices.Contains(entries.Files, "tsconfig.json") {
++			parsed, diagnostics := tsoptions.GetParsedCommandLineOfConfigFile(tspath.CombinePaths(directory, "tsconfig.json"), &core.CompilerOptions{}, nil, host, nil)
++			if len(diagnostics) == 0 && parsed != nil && len(parsed.Errors) == 0 {
++				names := parsed.FileNames()
++				if i := slices.IndexFunc(names, func(name string) bool { return !tspath.IsDeclarationFileName(name) }); i >= 0 {
++					projects = append(projects, project{tspath.NormalizeSlashes(names[i]), len(names)})
++				}
++			}
++		}
++		for _, name := range entries.Directories {
++			if name != "node_modules" && !strings.HasPrefix(name, ".") {
++				walk(tspath.CombinePaths(directory, name))
++			}
++		}
++	}
++	walk(cwd)
++	slices.SortStableFunc(projects, func(a, b project) int { return b.files - a.files })
++	files := []string{}
++	for _, found := range projects {
++		files = append(files, found.file)
++	}
++	return files
 +}
 +
 +func serveHeadless(payload []byte) ([]byte, int) {

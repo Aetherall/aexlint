@@ -147,14 +147,24 @@ var derivedClasses = NewShared(func(program *compiler.Program) *derived {
 	return index
 })
 
-// subclasses returns the project classes extending class directly, resolving each derived class's base once.
+// subclasses returns the project classes extending class directly, resolving each derived class's base once per
+// checker and program.
 func (m *Analyzer) subclasses(class *ast.Node) []*ast.Node {
 	if m.derivedFrom == nil {
-		m.derivedFrom = map[*ast.Node][]*ast.Node{}
-		for _, c := range derivedClasses.For(m.ctx.Program).classes {
-			if base := m.baseOf(c); base != nil {
-				m.derivedFrom[base] = append(m.derivedFrom[base], c)
+		build := func() map[*ast.Node][]*ast.Node {
+			derivedFrom := map[*ast.Node][]*ast.Node{}
+			for _, c := range derivedClasses.For(m.ctx.Program).classes {
+				if base := m.baseOf(c); base != nil {
+					derivedFrom[base] = append(derivedFrom[base], c)
+				}
 			}
+			return derivedFrom
+		}
+		if m.sharedFacts == nil {
+			m.derivedFrom = build()
+		} else {
+			m.sharedFacts.derived.Do(func() { m.sharedFacts.derivedFrom = build() })
+			m.derivedFrom = m.sharedFacts.derivedFrom
 		}
 	}
 	return m.derivedFrom[class]

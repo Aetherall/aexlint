@@ -70,13 +70,14 @@
  			rules := make([]linter.ConfiguredRule, len(cfg))
  
  			for i, headlessRule := range cfg {
-@@ -448,6 +475,9 @@
+@@ -448,6 +475,10 @@
  		},
  		SuppressProgramDiagnostics: suppressProgramDiagnostics(),
  		TimingStore:                timingStore,
 +		WholePrograms:              payload.WholePrograms,
 +		AssignPrograms:             tsConfigResolver.FindTsConfigParallel,
 +		OnProgramFiles:             func(files []string) { diagnosticsChan <- anyDiagnostic{programFiles: files} },
++		OnProgramInputs:            onProgramInputs,
  	})
  
  	close(diagnosticsChan)
@@ -92,17 +93,71 @@
  type headlessConfig struct {
 --- a/internal/linter/linter.go
 +++ b/internal/linter/linter.go
-@@ -61,6 +61,9 @@
+@@ -18,6 +18,7 @@
+ 	"github.com/microsoft/typescript-go/shim/checker"
+ 	"github.com/microsoft/typescript-go/shim/compiler"
+ 	"github.com/microsoft/typescript-go/shim/core"
++	"github.com/microsoft/typescript-go/shim/tsoptions"
+ 	"github.com/microsoft/typescript-go/shim/tspath"
+ 	"github.com/microsoft/typescript-go/shim/vfs"
+ )
+@@ -61,6 +62,47 @@
  	TypeErrors                 TypeErrors
  	SuppressProgramDiagnostics bool
  	TimingStore                *RuleTimingStore
 +	WholePrograms              bool
 +	AssignPrograms             func(files []string) map[string]string
 +	OnProgramFiles             func(files []string)
++	OnProgramInputs            func(inputs ProgramInputs)
++}
++
++// ProgramInputs names what a whole-program run read: the files of its programs and of their configs, and the root
++// files each config named.
++type ProgramInputs struct {
++	Files []string
++	Roots map[string][]string
++}
++
++func programInputs(programs ...*compiler.Program) ProgramInputs {
++	inputs := ProgramInputs{Roots: map[string][]string{}}
++	seen := map[string]bool{}
++	add := func(file string) {
++		if file != "" && !seen[file] {
++			seen[file] = true
++			inputs.Files = append(inputs.Files, file)
++		}
++	}
++	config := func(parsed *tsoptions.ParsedCommandLine) {
++		add(parsed.ConfigName())
++		for _, extended := range parsed.ExtendedSourceFiles() {
++			add(extended)
++		}
++	}
++	for _, program := range programs {
++		for _, file := range program.SourceFiles() {
++			add(file.FileName())
++		}
++		config(program.CommandLine())
++		program.RangeResolvedProjectReference(func(_ tspath.Path, referenced *tsoptions.ParsedCommandLine, _ *tsoptions.ParsedCommandLine, _ int) bool {
++			if referenced != nil {
++				config(referenced)
++			}
++			return true
++		})
++	}
++	return inputs
  }
  
  // This is same as `RunLinterOptions` but for a single program.
-@@ -90,6 +93,9 @@
+@@ -75,6 +117,7 @@
+ 	Fixes                Fixes
+ 	TypeErrors           TypeErrors
+ 	TimingStore          *RuleTimingStore
++	ProgramOf            func(file *ast.SourceFile) *compiler.Program
+ }
+ 
+ func RunLinter(options RunLinterOptions) error {
+@@ -90,13 +133,55 @@
  	typeErrors := options.TypeErrors
  	suppressProgramDiagnostics := options.SuppressProgramDiagnostics
  	timingStore := options.TimingStore
@@ -110,9 +165,66 @@
 +	assignPrograms := options.AssignPrograms
 +	onProgramFiles := options.OnProgramFiles
  
++	root := currentDirectory
++	grouped := map[string]bool{}
  	idx := 0
  	for configFileName, filePaths := range workload.Programs {
-@@ -123,9 +129,22 @@
++		if grouped[configFileName] {
++			idx++
++			continue
++		}
+ 		if logLevel == utils.LogLevelDebug {
+ 			log.Printf("[%d/%d] Running linter on program: %s", idx+1, len(workload.Programs), configFileName)
+ 		}
+ 
++		if wholePrograms {
++			if group := groupProgram(root, configFileName, fs, suppressProgramDiagnostics, logLevel); group != nil {
++				for member := range group.members {
++					grouped[member] = true
++				}
++				if options.OnProgramInputs != nil {
++					programs := []*compiler.Program{group.program}
++					for _, member := range group.members {
++						programs = append(programs, member)
++					}
++					inputs := programInputs(programs...)
++					for name, member := range group.members {
++						inputs.Roots[name] = member.CommandLine().FileNames()
++					}
++					options.OnProgramInputs(inputs)
++				}
++				if err := lintGroup(group, configFileName, workload, assignPrograms, onProgramFiles, RunLinterOnProgramOptions{
++					LogLevel:             logLevel,
++					Workers:              workers,
++					GetRulesForFile:      getRulesForFile,
++					OnDiagnostic:         onRuleDiagnostic,
++					OnInternalDiagnostic: onInternalDiagnostic,
++					Fixes:                fixState,
++					TypeErrors:           typeErrors,
++					TimingStore:          timingStore,
++				}); err != nil {
++					return err
++				}
++				idx++
++				continue
++			}
++		}
++
+ 		currentDirectory := tspath.GetDirectoryPath(configFileName)
+ 		host := utils.NewCachedFSCompilerHost(currentDirectory, fs, bundled.LibPath(), nil, nil)
+ 
+@@ -118,14 +203,33 @@
+ 			log.Printf("Program created with %d source files", len(program.GetSourceFiles()))
+ 		}
+ 
++		if wholePrograms && options.OnProgramInputs != nil {
++			inputs := programInputs(program)
++			inputs.Roots[configFileName] = program.CommandLine().FileNames()
++			options.OnProgramInputs(inputs)
++		}
++
+ 		fileSet := make(map[string]struct{}, len(filePaths))
+ 		for _, f := range filePaths {
  			fileSet[f] = struct{}{}
  		}
  
@@ -120,7 +232,7 @@
 +		if wholePrograms {
 +			var candidates []string
 +			for _, sf := range program.SourceFiles() {
-+				if !sf.IsDeclarationFile && !strings.Contains(sf.FileName(), "/node_modules/") &&
++				if !strings.Contains(sf.FileName(), "/node_modules/") &&
 +					(tspath.HasTSFileExtension(sf.FileName()) || tspath.HasJSFileExtension(sf.FileName())) {
 +					candidates = append(candidates, sf.FileName())
 +				}
@@ -136,7 +248,7 @@
  				sourceFiles = append(sourceFiles, sf)
  				delete(fileSet, sf.FileName())
  			}
-@@ -148,6 +167,14 @@
+@@ -148,6 +252,14 @@
  			panic(fmt.Sprintf("Expected file '%s' to be in program '%s'", unmatchedFilesString, configFileName))
  		}
  
@@ -151,3 +263,339 @@
  		err = RunLinterOnProgram(RunLinterOnProgramOptions{
  			LogLevel:             logLevel,
  			Program:              program,
+@@ -472,6 +584,7 @@
+ 	fixState := options.Fixes
+ 	typeErrors := options.TypeErrors
+ 	timingStore := options.TimingStore
++	programOf := options.ProgramOf
+ 
+ 	reportTypeScriptDiagnostics(program, files, typeErrors, onInternalDiagnostic)
+ 	workloadQueue := makeCheckerWorkloadQueue(program, files)
+@@ -509,6 +622,9 @@
+ 						}
+ 						ctxBuilder.file = file
+ 						ctx.SourceFile = file
++						if programOf != nil {
++							ctx.Program = programOf(file)
++						}
+ 
+ 						rules := getRulesForFile(file)
+ 						for _, r := range rules {
+@@ -567,6 +683,9 @@
+ 					}
+ 					ctxBuilder.file = file
+ 					ctx.SourceFile = file
++					if programOf != nil {
++						ctx.Program = programOf(file)
++					}
+ 
+ 					rules := getRulesForFile(file)
+ 					timingStats := make([]RuleTimingStat, len(rules))
+--- /dev/null
++++ b/internal/linter/groups.go
+@@ -0,0 +1,305 @@
++package linter
++
++import (
++	"encoding/json"
++	"fmt"
++	"log"
++	"slices"
++	"strings"
++	"sync"
++
++	"github.com/microsoft/typescript-go/shim/ast"
++	"github.com/microsoft/typescript-go/shim/bundled"
++	"github.com/microsoft/typescript-go/shim/compiler"
++	"github.com/microsoft/typescript-go/shim/core"
++	"github.com/microsoft/typescript-go/shim/tsoptions"
++	"github.com/microsoft/typescript-go/shim/tspath"
++	"github.com/microsoft/typescript-go/shim/vfs"
++	"github.com/typescript-eslint/tsgolint/internal/utils"
++)
++
++// programGroup is one program checking the files of several configs that read them alike. Each member keeps its own
++// program, which rules see as the file's program, so cross-file facts stay within the files that config includes.
++type programGroup struct {
++	program *compiler.Program
++	members map[string]*compiler.Program
++}
++
++var (
++	siblingsMu sync.Mutex
++	siblings   = map[string]map[string][]string{}
++)
++
++// configSiblings maps each tsconfig.json under root to the configs whose compiler options differ only in where output goes.
++func configSiblings(root string, fs vfs.FS) map[string][]string {
++	siblingsMu.Lock()
++	defer siblingsMu.Unlock()
++	if found, ok := siblings[root]; ok {
++		return found
++	}
++	configs := []string{}
++	var walk func(dir string)
++	walk = func(dir string) {
++		entries := fs.GetAccessibleEntries(dir)
++		if slices.Contains(entries.Files, "tsconfig.json") {
++			configs = append(configs, tspath.CombinePaths(dir, "tsconfig.json"))
++		}
++		for _, name := range entries.Directories {
++			if name != "node_modules" && !strings.HasPrefix(name, ".") {
++				walk(tspath.CombinePaths(dir, name))
++			}
++		}
++	}
++	walk(root)
++	host := utils.NewCachedFSCompilerHost(root, fs, bundled.LibPath(), nil, nil)
++	byOptions := map[string][]string{}
++	for _, config := range configs {
++		parsed, diagnostics := tsoptions.GetParsedCommandLineOfConfigFile(config, &core.CompilerOptions{}, nil, host, nil)
++		if len(diagnostics) > 0 || parsed == nil || len(parsed.Errors) > 0 {
++			continue
++		}
++		key, ok := checkingOptions(parsed.CompilerOptions())
++		if ok {
++			byOptions[key] = append(byOptions[key], config)
++		}
++	}
++	found := map[string][]string{}
++	for _, members := range byOptions {
++		if len(members) < 2 {
++			continue
++		}
++		slices.Sort(members)
++		for _, member := range members {
++			found[member] = members
++		}
++	}
++	siblings[root] = found
++	return found
++}
++
++func checkingOptions(options *core.CompilerOptions) (string, bool) {
++	raw, err := json.Marshal(options)
++	if err != nil {
++		return "", false
++	}
++	var fields map[string]any
++	if json.Unmarshal(raw, &fields) != nil {
++		return "", false
++	}
++	for _, output := range []string{"outDir", "rootDir", "declarationDir", "tsBuildInfoFile", "configFilePath"} {
++		delete(fields, output)
++	}
++	key, err := json.Marshal(fields)
++	return string(key), err == nil
++}
++
++var (
++	classesMu sync.Mutex
++	classes   = map[string][]string{}
++)
++
++// groupProgram builds one program from the root files and references of the siblings of configFileName that contain
++// the same files declaring globals, and keeps the members whose own program reads every one of its files exactly as the
++// group program does. It returns nil when no other config joins configFileName.
++func groupProgram(root string, configFileName string, fs vfs.FS, suppressProgramDiagnostics bool, logLevel utils.LogLevel) *programGroup {
++	siblings := configSiblings(root, fs)[configFileName]
++	if siblings == nil {
++		return nil
++	}
++	classesMu.Lock()
++	class, known := classes[configFileName]
++	classesMu.Unlock()
++	if known && len(class) < 2 {
++		return nil
++	}
++	own := map[string]*compiler.Program{}
++	candidates := siblings
++	if known {
++		candidates = class
++	}
++	byGlobals := map[string][]string{}
++	for _, member := range candidates {
++		program, _, err := utils.CreateProgram(false, fs, tspath.GetDirectoryPath(member), member, utils.NewCachedFSCompilerHost(tspath.GetDirectoryPath(member), fs, bundled.LibPath(), nil, nil), suppressProgramDiagnostics)
++		if err != nil || program == nil {
++			continue
++		}
++		own[member] = program
++		key := globalFiles(program)
++		byGlobals[key] = append(byGlobals[key], member)
++	}
++	classesMu.Lock()
++	for _, members := range byGlobals {
++		for _, member := range members {
++			classes[member] = members
++		}
++	}
++	class = classes[configFileName]
++	classesMu.Unlock()
++	if len(class) < 2 {
++		return nil
++	}
++	host := utils.NewCachedFSCompilerHost(tspath.GetDirectoryPath(class[0]), fs, bundled.LibPath(), nil, nil)
++	var first *tsoptions.ParsedCommandLine
++	files := []string{}
++	seenFiles := map[string]bool{}
++	references := []*core.ProjectReference{}
++	seenReferences := map[string]bool{}
++	for _, member := range class {
++		parsed := own[member].CommandLine()
++		if first == nil {
++			first = parsed
++		}
++		for _, file := range parsed.FileNames() {
++			if !seenFiles[file] {
++				seenFiles[file] = true
++				files = append(files, file)
++			}
++		}
++		for _, reference := range parsed.ProjectReferences() {
++			if !seenReferences[reference.Path] {
++				seenReferences[reference.Path] = true
++				references = append(references, reference)
++			}
++		}
++	}
++	config := tsoptions.NewParsedCommandLine(first.CompilerOptions(), files, tspath.ComparePathsOptions{
++		CurrentDirectory:          first.GetCurrentDirectory(),
++		UseCaseSensitiveFileNames: fs.UseCaseSensitiveFileNames(),
++	})
++	config.ParsedConfig.ProjectReferences = references
++	config.ConfigFile = first.ConfigFile
++	program := compiler.NewProgram(compiler.ProgramOptions{
++		Config:                      config,
++		SingleThreaded:              core.TSFalse,
++		Host:                        host,
++		UseSourceOfProjectReference: true,
++	})
++	if program == nil {
++		return nil
++	}
++	group := &programGroup{program: program, members: map[string]*compiler.Program{}}
++	for _, member := range class {
++		if difference := differenceIn(own[member], program); difference == "" {
++			group.members[member] = own[member]
++		} else if logLevel == utils.LogLevelDebug {
++			log.Printf("Program group of %s: %s is checked alone: %s", configFileName, member, difference)
++		}
++	}
++	if group.members[configFileName] == nil || len(group.members) < 2 {
++		return nil
++	}
++	return group
++}
++
++// globalFiles lists the program's files that declare globals, which every program sharing a checker must agree on.
++func globalFiles(program *compiler.Program) string {
++	found := []string{}
++	for _, file := range program.SourceFiles() {
++		if !declaresNothingGlobal(file) {
++			found = append(found, string(file.Path()))
++		}
++	}
++	slices.Sort(found)
++	return strings.Join(found, "\x00")
++}
++
++// differenceIn names the first way group reads own's files differently than own does, or returns "". Every file of own
++// must have the same parse and resolutions in group, and every other file of group be a module that declares nothing
++// global, so checking own's files in group gives what own alone would. Declaration files of installed packages are
++// exempt: the same package installed twice is kept once per program, and which copy each program keeps can differ.
++func differenceIn(own *compiler.Program, group *compiler.Program) string {
++	ownModules := own.GetResolvedModules()
++	groupModules := group.GetResolvedModules()
++	ownTypes := own.GetResolvedTypeReferenceDirectives()
++	groupTypes := group.GetResolvedTypeReferenceDirectives()
++	for _, file := range own.SourceFiles() {
++		path := file.Path()
++		if file.IsDeclarationFile && strings.Contains(file.FileName(), "/node_modules/") {
++			continue
++		}
++		if group.GetSourceFileByPath(path) != file {
++			return "parsed differently: " + file.FileName()
++		}
++		if len(ownModules[path]) != len(groupModules[path]) || len(ownTypes[path]) != len(groupTypes[path]) {
++			return "resolves a different number of imports: " + file.FileName()
++		}
++		for key, resolution := range ownModules[path] {
++			other, ok := groupModules[path][key]
++			if !ok || (resolution == nil) != (other == nil) || (resolution != nil && resolution.ResolvedFileName != other.ResolvedFileName) {
++				return "resolves " + key.Name + " differently: " + file.FileName()
++			}
++		}
++		for key, resolution := range ownTypes[path] {
++			other, ok := groupTypes[path][key]
++			if !ok || (resolution == nil) != (other == nil) || (resolution != nil && resolution.ResolvedFileName != other.ResolvedFileName) {
++				return "resolves " + key.Name + " differently: " + file.FileName()
++			}
++		}
++	}
++	for _, file := range group.SourceFiles() {
++		if own.GetSourceFileByPath(file.Path()) == nil && !declaresNothingGlobal(file) {
++			return "declares globals: " + file.FileName()
++		}
++	}
++	return ""
++}
++
++func declaresNothingGlobal(file *ast.SourceFile) bool {
++	if file.ExternalModuleIndicator == nil || len(file.ModuleAugmentations) > 0 || len(file.AmbientModuleNames) > 0 {
++		return false
++	}
++	return !slices.ContainsFunc(file.Statements.Nodes, func(statement *ast.Node) bool {
++		return statement.Kind == ast.KindNamespaceExportDeclaration
++	})
++}
++
++// lintGroup lints, in the group program, every file a member config owns, with that member's program as the file's.
++func lintGroup(group *programGroup, configFileName string, workload Workload, assignPrograms func(files []string) map[string]string, onProgramFiles func(files []string), options RunLinterOnProgramOptions) error {
++	var candidates []string
++	for _, sf := range group.program.SourceFiles() {
++		if !strings.Contains(sf.FileName(), "/node_modules/") &&
++			(tspath.HasTSFileExtension(sf.FileName()) || tspath.HasJSFileExtension(sf.FileName())) {
++			candidates = append(candidates, sf.FileName())
++		}
++	}
++	assigned := assignPrograms(candidates)
++	requested := map[string]string{}
++	for member := range group.members {
++		for _, f := range workload.Programs[member] {
++			requested[f] = member
++		}
++	}
++	programs := make(map[*ast.SourceFile]*compiler.Program, len(candidates))
++	sourceFiles := make([]*ast.SourceFile, 0, len(candidates))
++	for _, sf := range group.program.SourceFiles() {
++		owner, ok := requested[sf.FileName()]
++		if !ok {
++			owner = assigned[sf.FileName()]
++		}
++		own := group.members[owner]
++		if own == nil || own.GetSourceFileByPath(sf.Path()) != sf {
++			continue
++		}
++		programs[sf] = own
++		sourceFiles = append(sourceFiles, sf)
++		delete(requested, sf.FileName())
++	}
++	if len(requested) > 0 {
++		unmatched := []string{}
++		for f := range requested {
++			unmatched = append(unmatched, f)
++		}
++		panic(fmt.Sprintf("Expected file '%s' to be in program '%s'", strings.Join(unmatched, ", "), configFileName))
++	}
++	if onProgramFiles != nil {
++		names := make([]string, len(sourceFiles))
++		for i, sf := range sourceFiles {
++			names[i] = sf.FileName()
++		}
++		onProgramFiles(names)
++	}
++	options.Program = group.program
++	options.Files = sourceFiles
++	options.ProgramOf = func(file *ast.SourceFile) *compiler.Program { return programs[file] }
++	return RunLinterOnProgram(options)
++}

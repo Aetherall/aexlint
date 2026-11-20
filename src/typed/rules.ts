@@ -218,6 +218,10 @@ function start(): Channel {
 }
 
 const channel = start();
+const run = JSON.parse(process.env.AEXLINT_TYPED_RUN ?? "{}") as {
+  prefetch_roots?: string[];
+  cache_dir?: string;
+};
 const batches = new Map<string, Map<string, NativeDiagnostic[]>>();
 let pending: Pending = { file: "", requests: [], diagnostics: null };
 
@@ -240,7 +244,7 @@ function runBatch(
 ): Map<string, NativeDiagnostic[]> {
   const overrides = onDiskAs(file, text) ? {} : { source_overrides: { [file]: text } };
   const configs = [{ file_paths: [file], rules: requests }];
-  const payload = { version: 2, configs, whole_programs: true, ...overrides };
+  const payload = { version: 2, configs, whole_programs: true, ...run, ...overrides };
   const { result, stdout } = channel(Buffer.from(JSON.stringify(payload)));
   if (result.error) throw new Error(result.error);
   const exit = new Error(
