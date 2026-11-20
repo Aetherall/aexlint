@@ -15,7 +15,6 @@ import (
 // Vocabulary is a union of at least two string or number literals, identified by its sorted value keys.
 type Vocabulary struct {
 	Values []string
-	Type   *checker.Type
 	shown  map[string]string
 }
 
@@ -163,7 +162,7 @@ func (m *Analyzer) vocabularyOf(t *checker.Type) *Vocabulary {
 		shown[key] = m.ctx.TypeChecker.TypeToString(member)
 	}
 	slices.Sort(values)
-	v := &Vocabulary{Values: slices.Compact(values), Type: t, shown: shown}
+	v := &Vocabulary{Values: slices.Compact(values), shown: shown}
 	if len(v.Values) < 2 {
 		v = nil
 	}
@@ -739,8 +738,17 @@ func (m *Analyzer) question(n *ast.Node) *Site {
 // Classify returns the site a root asks, or nil when it tests no vocabulary.
 func (m *Analyzer) Classify(root *ast.Node) *Site {
 	if s, ok := m.sites[root]; ok {
+		m.readProvisional = m.readProvisional || m.provisionalSites[root]
 		return s
 	}
+	if m.sharedFacts != nil {
+		if found, ok := m.sharedFacts.sites.Load(root); ok {
+			m.sites[root] = found.(*Site)
+			return m.sites[root]
+		}
+	}
+	outer := m.readProvisional
+	m.readProvisional = false
 	var s *Site
 	switch root.Kind {
 	case ast.KindArrayLiteralExpression:
@@ -756,5 +764,11 @@ func (m *Analyzer) Classify(root *ast.Node) *Site {
 		s.Group = strings.Join(s.Tests[0].Claim.Accepted, "\x00")
 	}
 	m.sites[root] = s
+	if m.readProvisional {
+		m.provisionalSites[root] = true
+	} else if m.sharedFacts != nil {
+		m.sharedFacts.sites.Store(root, s)
+	}
+	m.readProvisional = outer || m.readProvisional
 	return s
 }

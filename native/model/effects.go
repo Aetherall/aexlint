@@ -376,8 +376,8 @@ func (m *Analyzer) Summary(fn *ast.Node) FunctionSummary {
 		m.readProvisional = m.readProvisional || m.provisional[fn]
 		return summary
 	}
-	if m.checkerSummaries != nil {
-		if shared, ok := m.checkerSummaries.Load(fn); ok {
+	if m.sharedFacts != nil {
+		if shared, ok := m.sharedFacts.summaries.Load(fn); ok {
 			m.summaries[fn] = shared.(FunctionSummary)
 			return m.summaries[fn]
 		}
@@ -447,8 +447,8 @@ func (m *Analyzer) Summary(fn *ast.Node) FunctionSummary {
 	m.summaries[fn] = summary
 	if !m.readProvisional {
 		delete(m.provisional, fn)
-		if m.checkerSummaries != nil {
-			m.checkerSummaries.Store(fn, summary)
+		if m.sharedFacts != nil {
+			m.sharedFacts.summaries.Store(fn, summary)
 		}
 	}
 	m.readProvisional = outer || m.readProvisional
