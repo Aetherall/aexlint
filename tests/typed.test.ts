@@ -294,6 +294,22 @@ test("typed rules skip files outside every TypeScript project", (t) => {
   assert.deepEqual(missing.diagnostics, []);
 });
 
+test("one whole-program request covers the project's declaration files", (t) => {
+  const { root, write } = project(t);
+  write("globals.d.ts", "declare const configured: string;\n");
+  const input = JSON.stringify({
+    version: 2,
+    whole_programs: true,
+    configs: [{ file_paths: [join(root, "input.ts")], rules: [{ name: "aexlint/type-probe" }] }],
+  });
+  const result = spawnSync(backend, ["headless"], { cwd: root, input, maxBuffer: 64 << 20 });
+  if (result.error) throw result.error;
+  const covered = decodeFrames(result.stdout).programFiles.map((file) =>
+    file.slice(root.length + 1),
+  );
+  assert.deepEqual(covered.toSorted(), ["dependency.ts", "globals.d.ts", "input.ts"]);
+});
+
 test("tsconfig errors are left to the compiler and the files are still linted", (t) => {
   const { write, lint } = project(t);
   write(
