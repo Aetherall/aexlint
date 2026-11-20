@@ -58,6 +58,8 @@ Cross-file rules may share an index when it is:
 
 `model.Shared` gives an index this lifecycle, and `model.Collect` walks a program's project files in parallel to build one; see `native/model/index.go`. Race-detector coverage and cleanup-after-collection behavior have not been verified.
 
+Function summaries are the one checker-derived fact shared across invocations. `Analyzer.Summary` keeps each summary for later analyzers using the same checker, keyed weakly by the checker, because summaries are plain data computed only from the program and checker. A summary whose computation read a provisional result stays with its analyzer: within a recursive cycle, each function's summary depends on where the cycle was entered, and so does every summary that read it. Shared summaries must not be mutated; callers clone their paths before extending them.
+
 ## Tests and upgrades
 
 Rules are tested through `tests/project/` (see [development](development.md#adding-a-rule)). `pnpm native:test` runs the test-only probes (`model-facts`, `type-probe`); add `--update` only for intentional snapshot changes. Native ranges are byte offsets.

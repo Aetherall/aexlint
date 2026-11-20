@@ -367,12 +367,25 @@ type SummaryRead struct {
 	Size   bool
 }
 
-// Summary returns the summary of a project function with a body.
+// Summary returns the summary of a project function with a body. A summary is computed once per checker and shared
+// with later analyzers, unless its computation read a provisional result: the placeholder of a function still being
+// summarized, met through recursion, or a summary that read one. Such a summary depends on where its cycle was
+// entered, so it stays with this analyzer.
 func (m *Analyzer) Summary(fn *ast.Node) FunctionSummary {
 	if summary, ok := m.summaries[fn]; ok {
+		m.readProvisional = m.readProvisional || m.provisional[fn]
 		return summary
 	}
+	if m.checkerSummaries != nil {
+		if shared, ok := m.checkerSummaries.Load(fn); ok {
+			m.summaries[fn] = shared.(FunctionSummary)
+			return m.summaries[fn]
+		}
+	}
 	m.summaries[fn] = FunctionSummary{}
+	m.provisional[fn] = true
+	outer := m.readProvisional
+	m.readProvisional = false
 	parameters := map[*ast.Symbol]int{}
 	for i, parameter := range fn.Parameters() {
 		if symbol := parameter.Symbol(); symbol != nil && parameter.Name().Kind == ast.KindIdentifier && !m.assigned(symbol) {
@@ -432,6 +445,13 @@ func (m *Analyzer) Summary(fn *ast.Node) FunctionSummary {
 	summary.Throws = m.flowControl().of(fn.Body()).throws || len(m.Throwing([]*ast.Node{fn.Body()})) > 0
 	summary.Fresh = m.returnsLocal(fn)
 	m.summaries[fn] = summary
+	if !m.readProvisional {
+		delete(m.provisional, fn)
+		if m.checkerSummaries != nil {
+			m.checkerSummaries.Store(fn, summary)
+		}
+	}
+	m.readProvisional = outer || m.readProvisional
 	return summary
 }
 

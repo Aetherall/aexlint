@@ -3,6 +3,7 @@ package model
 import (
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/microsoft/typescript-go/shim/ast"
 	"github.com/microsoft/typescript-go/shim/checker"
@@ -35,11 +36,14 @@ type Analyzer struct {
 	rebound           map[*ast.Symbol]bool
 	overriddenMembers map[*ast.Node]bool
 	derivedFrom       map[*ast.Node][]*ast.Node
+	checkerSummaries  *sync.Map
+	provisional       map[*ast.Node]bool
+	readProvisional   bool
 }
 
 // NewAnalyzer reads one invocation's program with its checker.
 func NewAnalyzer(ctx rule.RuleContext) *Analyzer {
-	return &Analyzer{ctx: ctx, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}, aliases: map[*ast.Symbol]*Value{}, summaries: map[*ast.Node]FunctionSummary{}, overwritten: map[*ast.Node][]Overwritten{}, unaddressed: map[*ast.Node][]UnaddressedKey{}, buffers: map[*ast.Node][]Buffer{}, originsOf: map[*ast.Node][]ValueSource{}, privacy: map[privacyKey]int{}, locals: map[privacyKey]bool{}, defaults: map[*ast.Node]knownDefault{}, rebound: map[*ast.Symbol]bool{}, overriddenMembers: map[*ast.Node]bool{}}
+	return &Analyzer{ctx: ctx, checkerSummaries: summariesOf(ctx.TypeChecker), provisional: map[*ast.Node]bool{}, sites: map[*ast.Node]*Site{}, vocabs: map[*checker.Type]*Vocabulary{}, truthiness: map[*checker.Type]bool{}, flows: map[*ast.Node]*Flow{}, stored: map[storedKey]bool{}, aliases: map[*ast.Symbol]*Value{}, summaries: map[*ast.Node]FunctionSummary{}, overwritten: map[*ast.Node][]Overwritten{}, unaddressed: map[*ast.Node][]UnaddressedKey{}, buffers: map[*ast.Node][]Buffer{}, originsOf: map[*ast.Node][]ValueSource{}, privacy: map[privacyKey]int{}, locals: map[privacyKey]bool{}, defaults: map[*ast.Node]knownDefault{}, rebound: map[*ast.Symbol]bool{}, overriddenMembers: map[*ast.Node]bool{}}
 }
 
 // DecisionForm is how many arms of a decision do work: at most one for a guard, several for a dispatch.
